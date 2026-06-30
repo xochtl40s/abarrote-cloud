@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Abarrotes Cloud - Terminal de Venta</title>
+    <meta th:name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --bg-card: #111726;
+            --bg-input: #151c2e;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-cyan: #00f0c2;
+            --accent-hover: #00d1aa;
+            --danger-red: #f43f5e;
+            --border-color: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .pos-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .pos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .pos-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .info-superior {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .cajero-tag {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .btn-logout {
+            background-color: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #334155;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn-logout:hover {
+            background-color: var(--danger-red);
+            border-color: var(--danger-red);
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        /* TU BARRA DE BÚSQUEDA INTEGRADA Y CORREGIDA */
+        .search-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            background-color: var(--bg-input);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-main);
+            box-sizing: border-box;
+            font-weight: 500;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        /* DROPDOWN FLOTANTE QUE PASA POR ENCIMA DE LA TABLA OSCURA */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #151c2e;
+            border: 2px solid var(--accent-cyan);
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 999999 !important; /* Capa suprema absoluta */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+            display: none;
+        }
+
+        .dropdown-row {
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-row:hover {
+            background-color: rgba(0, 240, 194, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .pos-layout {
+            display: grid;
+            grid-template-columns: 2.4fr 1.6fr;
+            gap: 25px;
+        }
+
+        .table-wrapper {
+            background-color: #0b1120;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            min-height: 320px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #111726;
+            color: var(--text-muted);
+            padding: 12px 16px;
+            font-size: 11px;
+            text-transform: uppercase;
+            text-align: left;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .panel-totales {
+            background-color: #111726;
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .total-box {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-align: right;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-cyan {
+            background-color: var(--accent-cyan);
+            color: #090d16;
+        }
+
+        .btn-cancelar {
+            background: none;
+            color: var(--text-muted);
+            text-decoration: underline;
+            border: none;
+            margin-top: 15px;
+            cursor: pointer;
+            width: 100%;
+            display: block;
+            text-align: center;
+        }
+
+        .btn-quitar {
+            background: none;
+            border: none;
+            color: var(--danger-red);
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pos-container">
+        <div class="pos-header">
+            <h2>🛒 Terminal de Venta
