@@ -21,10 +21,21 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+
+                // 🔓 Rutas públicas (sin login)
+                .requestMatchers(
+                        "/login",
+                        "/version",
+                        "/css/**",
+                        "/js/**"
+                ).permitAll()
+
+                // 🔐 Rutas protegidas por roles
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/pos/inicio").hasRole("ADMIN")
                 .requestMatchers("/pos/caja").hasAnyRole("CAJERO", "ADMIN")
+
+                // 🔐 Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -33,7 +44,6 @@ public class SecurityConfig {
                 .permitAll()
             )
             .logout(logout -> logout
-                // Permite que /logout funcione con un enlace normal (GET)
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
                 .logoutSuccessUrl("/login?logout")
                 .permitAll()
