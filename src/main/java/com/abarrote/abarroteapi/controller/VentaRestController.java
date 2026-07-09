@@ -100,4 +100,30 @@ public class VentaRestController {
             return ResponseEntity.badRequest().body(Map.of("status", "ERROR", "message", e.getMessage()));
         }
     }
+@Autowired
+private com.abarrote.abarroteapi.service.VentaService ventaService;
+
+
+@PostMapping("/registrar")
+public ResponseEntity<?> registrarVenta(
+        @RequestBody com.abarrote.abarroteapi.dto.VentaRequest request) {
+
+    try {
+
+        var venta = ventaService.registrarVenta(request);
+
+        return ResponseEntity.ok(Map.of(
+                "mensaje", "Venta registrada correctamente",
+                "idVenta", venta.getId(),
+                "total", venta.getTotal()
+        ));
+
+    } catch(Exception e) {
+
+        return ResponseEntity.badRequest()
+                .body(Map.of(
+                        "error", e.getMessage()
+                ));
+    }
+}
 }
