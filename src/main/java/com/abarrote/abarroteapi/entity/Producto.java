@@ -11,37 +11,63 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 50)
-    private String codigoBarras;
-
-    @Column(nullable = false, length = 150)
     private String nombre;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    private String codigoBarras;
+
     private BigDecimal precioCompra;
 
-    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precioVenta;
 
-    @Column(nullable = false)
     private Integer stock;
 
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Producto() {}
 
-    public String getCodigoBarras() { return codigoBarras; }
-    public void setCodigoBarras(String codigoBarras) { this.codigoBarras = codigoBarras.trim(); }
+    public Long getId() {
+        return id;
+    }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre.trim(); }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public BigDecimal getPrecioCompra() { return precioCompra; }
-    public void setPrecioCompra(BigDecimal precioCompra) { this.precioCompra = precioCompra; }
+    public String getNombre() {
+        return nombre;
+    }
 
-    public BigDecimal getPrecioVenta() { return precioVenta; }
-    public void setPrecioVenta(BigDecimal precioVenta) { this.precioVenta = precioVenta; }
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 
-    public Integer getStock() { return stock; }
-    public void setStock(Integer stock) { this.stock = stock; }
+    public String getCodigoBarras() {
+        return codigoBarras;
+    }
+
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
+    }
+
+    public BigDecimal getPrecioCompra() {
+        return precioCompra;
+    }
+
+    public void setPrecioCompra(BigDecimal precioCompra) {
+        this.precioCompra = precioCompra;
+    }
+
+    public BigDecimal getPrecioVenta() {
+        return precioVenta;
+    }
+
+    public void setPrecioVenta(BigDecimal precioVenta) {
+        this.precioVenta = precioVenta;
+    }
+
+    public Integer getStock() {
+        return stock;
+    }
+
+    public void setStock(Integer stock) {
+        this.stock = stock;
+    }
 }
