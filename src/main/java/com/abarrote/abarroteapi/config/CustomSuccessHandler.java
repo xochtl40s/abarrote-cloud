@@ -21,9 +21,9 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         boolean isCajero = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_CAJERO"));
 
         if (isAdmin) {
-            response.sendRedirect("/pos/inicio");
+            response.sendRedirect("/admin");
         } else if (isCajero) {
-            response.sendRedirect("/pos/caja");
+            response.sendRedirect("/pos");
         } else {
             response.sendRedirect("/login?error");
         }

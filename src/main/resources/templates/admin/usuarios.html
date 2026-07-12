@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Usuarios')}"><style th:replace="~{layout :: styles}"></style></head>
+<body>
+<div class="wrapper">
+<div th:replace="~{layout :: admin-sidebar}"></div>
+<div class="main-content">
+<div class="page-header"><h1>👥 Usuarios</h1><button class="btn btn-primary" onclick="mostrarFormulario()">➕ Nuevo Usuario</button></div>
+<div class="card" id="formularioUsuario" style="display: none;">
+<div class="card-header"><span class="card-title" id="formTitulo">Nuevo Usuario</span><button onclick="ocultarFormulario()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button></div>
+<form id="usuarioForm" onsubmit="guardarUsuario(event)">
+<input type="hidden" id="usuarioId">
+<div class="form-row">
+<div class="form-group"><label>Nombre *</label><input type="text" class="form-control" id="nombre" required></div>
+<div class="form-group"><label>Username *</label><input type="text" class="form-control" id="username" required></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Contraseña <span id="passHint">*</span></label><input type="password" class="form-control" id="password"></div>
+<div class="form-group"><label>Rol *</label><select class="form-control" id="rol" required><option value="CAJERO">CAJERO</option><option value="ADMIN">ADMIN</option></select></div>
+<div class="form-group"><label>Activo</label><select class="form-control" id="activo"><option value="true">Sí</option><option value="false">No</option></select></div>
+</div>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
+<button type="button" class="btn btn-cancel" onclick="ocultarFormulario()" style="margin-left:0.5rem;">Cancelar</button>
+</form>
+</div>
+<div class="card">
+<div class="card-header"><span class="card-title">Lista de Usuarios</span></div>
+<div class="table-container">
+<table>
+<thead><tr><th>ID</th><th>Nombre</th><th>Username</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+<tbody>
+<tr th:each="u : ${usuarios}" th:data-id="${u.id}">
+<td th:text="${u.id}">1</td>
+<td th:text="${u.nombre}">Usuario</td>
+<td th:text="${u.username}">user</td>
+<td><span class="badge" th:class="${u.rol == 'ADMIN'} ? 'badge-info' : 'badge-warning'" th:text="${u.rol}">ROL</span></td>
+<td><span class="badge badge-success" th:if="${u.activo}">Activo</span><span class="badge badge-danger" th:unless="${u.activo}">Inactivo</span></td>
+<td><button class="btn btn-sm btn-warning" onclick="editarUsuario(this)">✏️</button><button class="btn btn-sm btn-danger" onclick="eliminarUsuario(this)">🗑️</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<script>
+function mostrarFormulario(){document.getElementById('formularioUsuario').style.display='block';document.getElementById('formTitulo').textContent='Nuevo Usuario';document.getElementById('usuarioForm').reset();document.getElementById('usuarioId').value='';document.getElementById('passHint').textContent='*';document.getElementById('password').required=true;}
+function ocultarFormulario(){document.getElementById('formularioUsuario').style.display='none';}
+async function guardarUsuario(e){e.preventDefault();const id=document.getElementById('usuarioId').value;const data={nombre:document.getElementById('nombre').value,username:document.getElementById('username').value,password:document.getElementById('password').value,rol:document.getElementById('rol').value,activo:document.getElementById('activo').value==='true'};if(!id&&!data.password){alert('❌ La contraseña es obligatoria');return;}const url=id?`/api/usuarios/${id}`:'/api/usuarios';const method=id?'PUT':'POST';try{const response=await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await response.json();if(result.success){alert('✅ Usuario guardado');location.reload();}else{alert('❌ '+result.message);}}catch(error){alert('❌ Error: '+error.message);}}
+function editarUsuario(btn){const row=btn.closest('tr');document.getElementById('usuarioId').value=row.dataset.id;document.getElementById('nombre').value=row.cells[1].textContent;document.getElementById('username').value=row.cells[2].textContent;document.getElementById('rol').value=row.cells[3].textContent.trim();document.getElementById('activo').value=row.cells[4].querySelector('.badge-success')?'true':'false';document.getElementById('password').value='';document.getElementById('password').required=false;document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';document.getElementById('formTitulo').textContent='Editar Usuario';document.getElementById('formularioUsuario').style.display='block';window.scrollTo(0,0);}
+
+// ===== ELIMINAR (BORRAR DEFINITIVAMENTE) =====
+async function eliminarUsuario(btn){
+    const row = btn.closest('tr');
+    const nombre = row.cells[1].textContent;
+    const username = row.cells[2].textContent;
+    
+    if(!confirm('⚠️ ¿ELIMINAR permanentemente al usuario "' + nombre + '" (' + username + ')?\n\nEsta acción NO se puede deshacer.')) return;
+    
+    const id = row.dataset.id;
+    try{
+        const response = await fetch(`/api/usuarios/${id}`, {method:'DELETE'});
+        const result = await response.json();
+        if(result.success){
+            alert('✅ Usuario eliminado permanentemente');
+            location.reload();
+        }else{
+            alert('❌ '+result.message);
+        }
+    }catch(error){
+        alert('❌ Error: '+error.message);
+    }
+}
+</script>
+</body>
+</html>

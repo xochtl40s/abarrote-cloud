@@ -1,91 +1,177 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abarrotes Cloud - Acceso Profesional</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Login - Abarrote Cloud</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 20px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .login-header .logo {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+        }
+        .login-header h1 {
+            color: #4ade80;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .login-header p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin-top: 0.3rem;
+        }
+        .alert-success {
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .form-group {
+            margin-bottom: 1.3rem;
+        }
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .form-group label i {
+            margin-right: 0.3rem;
+        }
+        .password-wrapper {
+            position: relative;
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.9rem 1.2rem;
+            border: 2px solid #333;
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #4ade80;
+        }
+        .form-control::placeholder {
+            color: #64748b;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.2rem;
+        }
+        .toggle-password:hover {
+            color: #4ade80;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 222, 128, 0.3);
+        }
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
-<body class="bg-slate-900 flex h-screen w-screen items-center justify-center font-sans antialiased">
-
-    <div class="w-full max-w-md p-8 space-y-6 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700">
-        
-        <div class="text-center">
-            <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 tracking-tight">
-                Abarrotes Cloud
-            </h1>
-            <p class="mt-2 text-sm text-slate-400">Sistema Integral de Punto de Venta</p>
-        </div>
-
-        <div th:if="${param.error}" class="p-3 text-sm text-red-400 bg-red-950/50 border border-red-800 rounded-lg text-center">
-            Usuario o contraseña incorrectos. Verifica tus credenciales.
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">🏪</div>
+            <h1>Abarrote Cloud</h1>
+            <p>Sistema de Punto de Venta</p>
         </div>
         
-        <div th:if="${param.logout}" class="p-3 text-sm text-emerald-400 bg-emerald-950/50 border border-emerald-800 rounded-lg text-center">
-            Sesión cerrada de forma segura.
+        <div th:if="${param.logout}" class="alert-success">
+            ✅ Has cerrado sesión correctamente
         </div>
-
-	<form th:action="@{/login}" method="POST" class="space-y-5">
-            
-            <div>
-                <label for="username" class="block text-sm font-medium text-slate-300">Usuario</label>
-                <div class="mt-1">
-                    <input id="username" name="username" type="text" required
-                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition duration-200"
-                           placeholder="Ingresa tu identificador">
+        
+        <div th:if="${param.error}" class="error-message">
+            ❌ Usuario o contraseña incorrectos
+        </div>
+        
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label>👤 Usuario</label>
+                <input type="text" name="username" class="form-control" placeholder="Ingresa tu usuario" required autofocus>
+            </div>
+            <div class="form-group">
+                <label>🔒 Contraseña</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" class="form-control" id="passwordInput" placeholder="Ingresa tu contraseña" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword()">👁️</button>
                 </div>
             </div>
-
-            <div>
-                <label for="password" class="block text-sm font-medium text-slate-300">Contraseña</label>
-                <div class="mt-1 relative rounded-md shadow-sm">
-                    <input id="password" name="password" type="password" required
-                           class="w-full px-4 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition duration-200 pr-12"
-                           placeholder="••••••••">
-                    
-                    <button type="button" id="btnTogglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-cyan-400 transition duration-200">
-                        <svg id="iconEyeOpen" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <svg id="iconEyeClosed" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a10.024 10.024 0 014.501-4.829m4.809-1.229A10.06 10.06 0 0112 5c4.478 0 8.268 2.943 9.542 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21m-3.414-3.414L3 3m10 10a3 3 0 10-4-4m4 4a3 3 0 01-4-4" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div class="pt-2">
-                <button type="submit" 
-                        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-slate-900 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 focus:outline-none transition duration-200">
-                    Iniciar Sesión
-                </button>
-            </div>
+            <button type="submit" class="btn-login">Iniciar Sesión</button>
         </form>
-	
-
-        <div class="text-center pt-2">
-            <span class="text-xs text-slate-500">Módulo de Autenticación Centralizado &copy; 2026</span>
-        </div>
     </div>
-	<script>
-        	const passwordInput = document.getElementById('password');
-	        const btnTogglePassword = document.getElementById('btnTogglePassword');
-	        const iconEyeOpen = document.getElementById('iconEyeOpen');
-	        const iconEyeClosed = document.getElementById('iconEyeClosed');
 
-        	btnTogglePassword.addEventListener('click', () => {
-            	// Cambiar el tipo de input
-            	if (passwordInput.type === 'password') {
-                	passwordInput.type = 'text';
-             	   	iconEyeOpen.classList.add('hidden');
-                	iconEyeClosed.classList.remove('hidden');
-            	} else {
-                	passwordInput.type = 'password';
-                	iconEyeOpen.classList.remove('hidden');
-                	iconEyeClosed.classList.add('hidden');
-            	}
-        	});
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const btn = document.querySelector('.toggle-password');
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
     </script>
 </body>
 </html>

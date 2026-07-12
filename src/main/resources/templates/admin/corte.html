@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Corte de Caja')}"><style th:replace="~{layout :: styles}"></style></head>
+<style>
+.corte-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+.corte-card { background: linear-gradient(135deg, #1a5f2a, #2d8a3e); color: white; border-radius: 16px; padding: 2rem; text-align: center; }
+.corte-card h2 { font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0; }
+.corte-card p { opacity: 0.9; font-size: 1rem; }
+.corte-card.secondary { background: linear-gradient(135deg, #0f3460, #1e4d8c); }
+.corte-card.warning { background: linear-gradient(135deg, #92400e, #d97706); }
+@media print { .sidebar, .page-header button, .btn { display: none !important; } .main-content { margin-left: 0 !important; } body { background: white !important; } }
+</style>
+<body>
+<div class="wrapper">
+<div th:replace="~{layout :: admin-sidebar}"></div>
+<div class="main-content">
+<div class="page-header"><h1>💰 Corte de Caja</h1><button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button></div>
+<div class="corte-resumen">
+<div class="corte-card"><p>Fecha</p><h2 th:text="${#temporals.format(fecha, 'dd/MM/yyyy')}">01/01/2024</h2></div>
+<div class="corte-card secondary"><p>Total Ventas</p><h2 th:text="'₲ ' + ${#numbers.formatDecimal(totalVentas, 1, 'COMMA', 2, 'POINT')}">₲ 0.00</h2></div>
+<div class="corte-card warning"><p>Número de Ventas</p><h2 th:text="${numeroVentas}">0</h2></div>
+</div>
+<div class="card">
+<div class="card-header"><span class="card-title">📋 Detalle de Ventas del Día</span></div>
+<div class="table-container">
+<table>
+<thead><tr><th># Venta</th><th>Hora</th><th>Cajero</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
+<tbody>
+<tr th:each="v : ${ventas}"><td th:text="'#' + ${v.id}">#1</td><td th:text="${#temporals.format(v.fecha, 'HH:mm')}">12:00</td><td th:text="${v.usuario != null} ? ${v.usuario.nombre} : 'N/A'">Cajero</td><td th:text="${v.detalles.size()}">0</td><td th:text="'₲ ' + ${#numbers.formatDecimal(v.total, 1, 'COMMA', 2, 'POINT')}">0</td><td><span class="badge badge-success" th:if="${v.estado.name() == 'COMPLETADA'}">Completada</span><span class="badge badge-danger" th:if="${v.estado.name() == 'CANCELADA'}">Cancelada</span></td></tr>
+<tr th:if="${ventas.isEmpty()}"><td colspan="6" style="text-align:center; color:#888;">No hay ventas registradas hoy</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" style="margin-top: 2rem; page-break-inside: avoid;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem;">
+<div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 0.5rem; margin-top: 4rem;">Firma del Cajero</div></div>
+<div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 0.5rem; margin-top: 4rem;">Firma del Administrador</div></div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Productos')}"><style th:replace="~{layout :: styles}"></style></head>
+<body>
+<div class="wrapper">
+<div th:replace="~{layout :: admin-sidebar}"></div>
+<div class="main-content">
+<div class="page-header"><h1>📦 Productos</h1><button class="btn btn-primary" onclick="mostrarFormulario()">➕ Nuevo Producto</button></div>
+<div class="card" id="formularioProducto" style="display: none;">
+<div class="card-header"><span class="card-title" id="formTitulo">Nuevo Producto</span><button onclick="ocultarFormulario()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✕</button></div>
+<form id="productoForm" onsubmit="guardarProducto(event)">
+<input type="hidden" id="productoId">
+<div class="form-row">
+<div class="form-group"><label>Nombre *</label><input type="text" class="form-control" id="nombre" required></div>
+<div class="form-group"><label>Código de Barras</label><input type="text" class="form-control" id="codigoBarras"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Precio Compra *</label><input type="number" class="form-control" id="precioCompra" step="0.01" min="0.01" required></div>
+<div class="form-group"><label>Precio Venta *</label><input type="number" class="form-control" id="precioVenta" step="0.01" min="0.01" required></div>
+<div class="form-group"><label>Stock *</label><input type="number" class="form-control" id="stock" min="0" required></div>
+<div class="form-group"><label>Stock Mínimo</label><input type="number" class="form-control" id="stockMinimo" min="0" value="5"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Categoría</label><select class="form-control" id="categoriaId"><option value="">Sin categoría</option><option th:each="cat : ${categorias}" th:value="${cat.id}" th:text="${cat.nombre}"></option></select></div>
+<div class="form-group"><label>Descripción</label><input type="text" class="form-control" id="descripcion"></div>
+</div>
+<button type="submit" class="btn btn-primary">💾 Guardar</button>
+</form>
+</div>
+<div class="card">
+<div class="card-header"><span class="card-title">Lista de Productos</span><input type="text" class="form-control" style="width: 250px;" placeholder="🔍 Buscar..." onkeyup="filtrarProductos(this.value)"></div>
+<div class="table-container">
+<table id="tablaProductos">
+<thead><tr><th>ID</th><th>Nombre</th><th>Código</th><th>Precio Venta</th><th>Stock</th><th>Categoría</th><th>Estado</th><th>Acciones</th></tr></thead>
+<tbody>
+<tr th:each="prod : ${productos}" th:data-id="${prod.id}">
+<td th:text="${prod.id}">1</td>
+<td th:text="${prod.nombre}">Producto</td>
+<td th:text="${prod.codigoBarras}">-</td>
+<td th:text="'₲ ' + ${#numbers.formatDecimal(prod.precioVenta, 1, 'COMMA', 2, 'POINT')}">0</td>
+<td><span th:class="${prod.stockBajo} ? 'badge badge-danger' : 'badge badge-success'" th:text="${prod.stock}">0</span></td>
+<td th:text="${prod.categoriaNombre} ?: '-'">-</td>
+<td><span class="badge badge-success" th:if="${prod.activo}">Activo</span><span class="badge badge-danger" th:unless="${prod.activo}">Inactivo</span></td>
+<td><button class="btn btn-sm btn-warning" onclick="editarProducto(this)">✏️</button><button class="btn btn-sm btn-danger" onclick="eliminarProducto(this)">🗑️</button></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<script>
+function mostrarFormulario(){document.getElementById('formularioProducto').style.display='block';document.getElementById('formTitulo').textContent='Nuevo Producto';document.getElementById('productoForm').reset();document.getElementById('productoId').value='';}
+function ocultarFormulario(){document.getElementById('formularioProducto').style.display='none';}
+async function guardarProducto(e){e.preventDefault();const id=document.getElementById('productoId').value;const data={nombre:document.getElementById('nombre').value,codigoBarras:document.getElementById('codigoBarras').value,descripcion:document.getElementById('descripcion').value,precioCompra:parseFloat(document.getElementById('precioCompra').value),precioVenta:parseFloat(document.getElementById('precioVenta').value),stock:parseInt(document.getElementById('stock').value),stockMinimo:parseInt(document.getElementById('stockMinimo').value),categoriaId:document.getElementById('categoriaId').value||null};const url=id?`/api/productos/${id}`:'/api/productos';const method=id?'PUT':'POST';try{const response=await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await response.json();if(result.success){alert('✅ Producto guardado');location.reload();}else{alert('❌ '+result.message);}}catch(error){alert('Error: '+error.message);}}
+function editarProducto(btn){const row=btn.closest('tr');document.getElementById('productoId').value=row.dataset.id;document.getElementById('nombre').value=row.cells[1].textContent;document.getElementById('codigoBarras').value=row.cells[2].textContent!=='-'?row.cells[2].textContent:'';fetch(`/api/productos/${row.dataset.id}`).then(r=>r.json()).then(result=>{if(result.success){const p=result.data;document.getElementById('precioCompra').value=p.precioCompra;document.getElementById('precioVenta').value=p.precioVenta;document.getElementById('stock').value=p.stock;document.getElementById('stockMinimo').value=p.stockMinimo;document.getElementById('descripcion').value=p.descripcion||'';document.getElementById('categoriaId').value=p.categoriaId||'';}});document.getElementById('formTitulo').textContent='Editar Producto';document.getElementById('formularioProducto').style.display='block';window.scrollTo(0,0);}
+async function eliminarProducto(btn){if(!confirm('¿Eliminar este producto?'))return;const id=btn.closest('tr').dataset.id;try{const response=await fetch(`/api/productos/${id}`,{method:'DELETE'});const result=await response.json();if(result.success){alert('✅ Producto eliminado');location.reload();}else{alert('❌ '+result.message);}}catch(error){alert('Error: '+error.message);}}
+function filtrarProductos(query){const rows=document.querySelectorAll('#tablaProductos tbody tr');rows.forEach(row=>{const nombre=row.cells[1].textContent.toLowerCase();const codigo=row.cells[2].textContent.toLowerCase();row.style.display=(nombre.includes(query.toLowerCase())||codigo.includes(query.toLowerCase()))?'':'none';});}
+</script>
+</body>
+</html>

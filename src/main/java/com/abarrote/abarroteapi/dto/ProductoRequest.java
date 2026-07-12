@@ -1,47 +1,37 @@
-package com.abarrote.abarroteapi.entity;
+package com.abarrote.abarroteapi.dto;
 
-import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "producto")
-public class Producto {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
+public class ProductoRequest {
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(min = 2, max = 100)
     private String nombre;
 
-    @Column(unique = true)
+    @Size(max = 50)
     private String codigoBarras;
 
+    @Size(max = 255)
     private String descripcion;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @NotNull
+    @DecimalMin("0.01")
     private BigDecimal precioCompra;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @NotNull
+    @DecimalMin("0.01")
     private BigDecimal precioVenta;
 
-    @Column(nullable = false)
+    @NotNull
+    @Min(0)
     private Integer stock;
 
-    @Column(nullable = false)
+    @Min(0)
     private Integer stockMinimo = 5;
 
-    @ManyToOne
-    @JoinColumn(name = "categoria_id")
-    private Categoria categoria;
+    private Long categoriaId;
 
-    @Column(nullable = false)
-    private Boolean activo = true;
-
-    public Producto() {}
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // Getters y Setters
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
     public String getCodigoBarras() { return codigoBarras; }
@@ -56,12 +46,6 @@ public class Producto {
     public void setStock(Integer stock) { this.stock = stock; }
     public Integer getStockMinimo() { return stockMinimo; }
     public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
-    public Categoria getCategoria() { return categoria; }
-    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
-    public Boolean getActivo() { return activo; }
-    public void setActivo(Boolean activo) { this.activo = activo; }
-
-    public Boolean getStockBajo() {
-        return stock <= stockMinimo;
-    }
+    public Long getCategoriaId() { return categoriaId; }
+    public void setCategoriaId(Long categoriaId) { this.categoriaId = categoriaId; }
 }

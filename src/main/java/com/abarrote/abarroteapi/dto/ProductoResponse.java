@@ -1,44 +1,18 @@
-package com.abarrote.abarroteapi.entity;
+package com.abarrote.abarroteapi.dto;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 
-@Entity
-@Table(name = "producto")
-public class Producto {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ProductoResponse {
     private Long id;
-
-    @Column(nullable = false)
     private String nombre;
-
-    @Column(unique = true)
     private String codigoBarras;
-
     private String descripcion;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal precioCompra;
-
-    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precioVenta;
-
-    @Column(nullable = false)
     private Integer stock;
-
-    @Column(nullable = false)
-    private Integer stockMinimo = 5;
-
-    @ManyToOne
-    @JoinColumn(name = "categoria_id")
-    private Categoria categoria;
-
-    @Column(nullable = false)
-    private Boolean activo = true;
-
-    public Producto() {}
+    private Integer stockMinimo;
+    private Boolean stockBajo;
+    private String categoriaNombre;
+    private Boolean activo;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -48,20 +22,16 @@ public class Producto {
     public void setCodigoBarras(String codigoBarras) { this.codigoBarras = codigoBarras; }
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
-    public BigDecimal getPrecioCompra() { return precioCompra; }
-    public void setPrecioCompra(BigDecimal precioCompra) { this.precioCompra = precioCompra; }
     public BigDecimal getPrecioVenta() { return precioVenta; }
     public void setPrecioVenta(BigDecimal precioVenta) { this.precioVenta = precioVenta; }
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
     public Integer getStockMinimo() { return stockMinimo; }
     public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
-    public Categoria getCategoria() { return categoria; }
-    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
+    public Boolean getStockBajo() { return stockBajo; }
+    public void setStockBajo(Boolean stockBajo) { this.stockBajo = stockBajo; }
+    public String getCategoriaNombre() { return categoriaNombre; }
+    public void setCategoriaNombre(String categoriaNombre) { this.categoriaNombre = categoriaNombre; }
     public Boolean getActivo() { return activo; }
     public void setActivo(Boolean activo) { this.activo = activo; }
-
-    public Boolean getStockBajo() {
-        return stock <= stockMinimo;
-    }
 }

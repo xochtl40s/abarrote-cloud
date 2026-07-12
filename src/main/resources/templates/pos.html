@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - Abarrote Cloud</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .pos-container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            height: 100vh;
+        }
+        .products-panel {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 1rem;
+        }
+        .pos-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+        .pos-header h1 { font-size: 1.3rem; color: #4ade80; }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .cajero { color: #888; font-size: 0.85rem; }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .connection-status.online {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+        .connection-status.offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+        }
+        .connection-status.syncing {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+        .connection-status .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .connection-status.online .dot { background: #4ade80; }
+        .connection-status.offline .dot { background: #ef4444; }
+        .connection-status.syncing .dot { background: #f59e0b; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        
+        .pending-badge {
+            background: #f59e0b;
+            color: #1a1a2e;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            margin-left: 0.3rem;
+        }
+        
+        .logout-btn {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .logout-btn:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+        
+        /* ===== FILTROS DE CATEGORÍA ===== */
+        .category-filters {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding: 0.5rem 0;
+        }
+        .category-chip {
+            padding: 0.4rem 1rem;
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+        .category-chip:hover {
+            border-color: #4ade80;
+            color: #4ade80;
+        }
+        .category-chip.active {
+            background: #4ade80;
+            color: #1a1a2e;
+            border-color: #4ade80;
+            font-weight: 600;
+        }
+        
+        .search-box { display: flex; gap: 0.5rem; }
+        .search-box input {
+            flex: 1; padding: 0.8rem 1rem; border: 2px solid #333;
+            border-radius: 8px; background: #16213e; color: #fff; font-size: 1rem;
+        }
+        .search-box input:focus { outline: none; border-color: #4ade80; }
+        .search-box button {
+            padding: 0.8rem 1.2rem; background: #4ade80; color: #1a1a2e;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+        }
+        .search-results {
+            flex: 1; overflow-y: auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 0.8rem; padding-right: 0.5rem;
+        }
+        .product-card {
+            background: #16213e; border: 1px solid #333; border-radius: 10px;
+            padding: 1rem; cursor: pointer; transition: all 0.2s; text-align: center;
+        }
+        .product-card:hover { border-color: #4ade80; transform: translateY(-2px); }
+        .product-card .name { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .product-card .price { color: #4ade80; font-size: 1.1rem; font-weight: 700; }
+        .product-card .stock { font-size: 0.75rem; color: #888; margin-top: 0.3rem; }
+        .product-card .stock.bajo { color: #ef4444; }
+        .product-card .category-tag {
+            font-size: 0.7rem;
+            color: #60a5fa;
+            margin-top: 0.2rem;
+        }
+        .ticket-panel {
+            background: #0f3460; display: flex; flex-direction: column;
+            border-left: 1px solid #333;
+        }
+        .ticket-header { padding: 1rem; border-bottom: 1px solid #333; text-align: center; }
+        .ticket-header h2 { font-size: 1.1rem; color: #4ade80; }
+        .ticket-header .ticket-num { font-size: 0.8rem; color: #888; }
+        .ticket-items { flex: 1; overflow-y: auto; padding: 1rem; }
+        .ticket-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.7rem; background: #16213e; border-radius: 8px; margin-bottom: 0.5rem;
+        }
+        .ticket-item .info { flex: 1; }
+        .ticket-item .info .name { font-size: 0.9rem; font-weight: 600; }
+        .ticket-item .info .qty-price { font-size: 0.8rem; color: #888; }
+        .ticket-item .total { font-weight: 700; color: #4ade80; }
+        .ticket-item .remove {
+            background: none; border: none; color: #ef4444; cursor: pointer;
+            font-size: 1.2rem; margin-left: 0.5rem;
+        }
+        .ticket-empty { text-align: center; color: #888; padding: 3rem 1rem; }
+        .ticket-footer { padding: 1rem; border-top: 1px solid #333; background: #1a1a2e; }
+        .ticket-total {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;
+        }
+        .ticket-total .amount { color: #4ade80; }
+        .btn-cobrar {
+            width: 100%; padding: 1rem;
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: #1a1a2e; border: none; border-radius: 10px;
+            font-size: 1.2rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-cobrar:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4); }
+        .btn-cobrar:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
+        .btn-cancelar {
+            width: 100%; padding: 0.7rem; background: transparent;
+            color: #ef4444; border: 1px solid #ef4444;
+            border-radius: 8px; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem;
+        }
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #16213e; border-radius: 16px; padding: 2rem;
+            width: 90%; max-width: 400px; text-align: center;
+        }
+        .modal h2 { color: #4ade80; margin-bottom: 1rem; }
+        .modal .total-modal { font-size: 2rem; font-weight: 700; color: #4ade80; margin: 1rem 0; }
+        .modal input {
+            width: 100%; padding: 1rem; font-size: 1.5rem; text-align: center;
+            border: 2px solid #333; border-radius: 10px;
+            background: #1a1a2e; color: #fff; margin-bottom: 1rem;
+        }
+        .modal .cambio { font-size: 1.2rem; color: #888; margin-bottom: 1rem; }
+        .modal .cambio span { color: #4ade80; font-weight: 700; }
+        .modal-buttons { display: flex; gap: 0.5rem; }
+        .modal-buttons button { flex: 1; padding: 0.9rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .modal-buttons .btn-confirm { background: #4ade80; color: #1a1a2e; }
+        .modal-buttons .btn-cancel { background: #333; color: #fff; }
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #4ade80; color: #1a1a2e; padding: 1rem 2rem;
+            border-radius: 8px; font-weight: 600; opacity: 0;
+            transition: all 0.3s; z-index: 2000;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.error { background: #ef4444; color: #fff; }
+        .toast.warning { background: #f59e0b; color: #1a1a2e; }
+    </style>
+</head>
+<body>
+    <div class="pos-container">
+        <div class="products-panel">
+            <div class="pos-header">
+                <h1>🏪 Abarrote Cloud - POS</h1>
+                <div class="header-right">
+                    <div class="connection-status online" id="connectionStatus">
+                        <span class="dot"></span>
+                        <span id="connectionText">Online</span>
+                        <span class="pending-badge" id="pendingBadge" style="display:none;">0</span>
+                    </div>
+                    <span class="cajero" th:text="'Cajero: ' + ${cajero}">Cajero</span>
+                    <form th:action="@{/logout}" method="post" style="margin:0;">
+                        <button type="submit" class="logout-btn">🚪 Cerrar Sesión</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- ===== FILTROS DE CATEGORÍA ===== -->
+            <div class="category-filters" id="categoryFilters">
+                <div class="category-chip active" onclick="filtrarPorCategoria(null)">📦 Todos</div>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar producto..." autofocus>
+                <button onclick="buscarProductos()">Buscar</button>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div style="color: #888; text-align: center; padding: 3rem;">Escribe para buscar productos o selecciona una categoría...</div>
+            </div>
+        </div>
+        <div class="ticket-panel">
+            <div class="ticket-header">
+                <h2>🧾 Ticket de Venta</h2>
+                <div class="ticket-num" id="ticketNum">#0001</div>
+            </div>
+            <div class="ticket-items" id="ticketItems">
+                <div class="ticket-empty">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
+                    <p>Agrega productos para comenzar</p>
+                </div>
+            </div>
+            <div class="ticket-footer">
+                <div class="ticket-total">
+                    <span>TOTAL</span>
+                    <span class="amount" id="ticketTotal">₲ 0.00</span>
+                </div>
+                <button class="btn-cobrar" id="btnCobrar" onclick="abrirCobro()" disabled>💵 COBRAR</button>
+                <button class="btn-cancelar" onclick="cancelarVenta()">❌ Cancelar Venta</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modalCobro">
+        <div class="modal">
+            <h2>💵 Cobrar</h2>
+            <div class="total-modal" id="modalTotal">₲ 0.00</div>
+            <input type="number" id="inputPago" placeholder="Monto recibido" step="0.01" min="0">
+            <div class="cambio">Cambio: <span id="cambio">₲ 0.00</span></div>
+            <div class="modal-buttons">
+                <button class="btn-confirm" onclick="confirmarCobro()">✅ Confirmar</button>
+                <button class="btn-cancel" onclick="cerrarCobro()">❌ Cancelar</button>
+            </div>
+        </div>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+        // ============================================================
+        // ===== SISTEMA OFFLINE - INDEXEDDB =====
+        // ============================================================
+        
+        const DB_NAME = 'AbarrotePOS';
+        const DB_VERSION = 1;
+        let db;
+        let categoriasCache = [];
+        let categoriaActiva = null;
+        
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => { db = request.result; resolve(db); };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('productos')) {
+                        db.createObjectStore('productos', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('categorias')) {
+                        db.createObjectStore('categorias', { keyPath: 'id' });
+                    }
+                    if (!db.objectStoreNames.contains('ventasPendientes')) {
+                        db.createObjectStore('ventasPendientes', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+        
+        async function cacheProductos(productos) {
+            const tx = db.transaction('productos', 'readwrite');
+            const store = tx.objectStore('productos');
+            for (const p of productos) {
+                await new Promise((resolve, reject) => {
+                    const req = store.put(p);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            }
+        }
+        
+        async function cacheCategorias(categorias) {
+            const tx = db.transaction('categorias', 'readwrite');
+            const store = tx.objectStore('categorias');
+            for (const c of categorias) {
+                await new Promise((resolve, reject) => {
+                    const req = store.put(c);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            }
+            categoriasCache = categorias;
+        }
+        
+        async function getProductosCache() {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('productos', 'readonly');
+                const store = tx.objectStore('productos');
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function getCategoriasCache() {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('categorias', 'readonly');
+                const store = tx.objectStore('categorias');
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function guardarVentaPendiente(venta) {
+            const tx = db.transaction('ventasPendientes', 'readwrite');
+            const store = tx.objectStore('ventasPendientes');
+            return new Promise((resolve, reject) => {
+                const req = store.add({ venta: venta, fecha: new Date().toISOString(), intentos: 0 });
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+        
+        async function getVentasPendientes() {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('ventasPendientes', 'readonly');
+                const store = tx.objectStore('ventasPendientes');
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result || []);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function eliminarVentaPendiente(id) {
+            const tx = db.transaction('ventasPendientes', 'readwrite');
+            const store = tx.objectStore('ventasPendientes');
+            return new Promise((resolve, reject) => {
+                const req = store.delete(id);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+        
+        async function actualizarBadgePendientes() {
+            try {
+                const pendientes = await getVentasPendientes();
+                const badge = document.getElementById('pendingBadge');
+                if (pendientes.length > 0) {
+                    badge.textContent = pendientes.length;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (e) { console.error('Error badge:', e); }
+        }
+        
+        // ============================================================
+        // ===== DETECCIÓN DE CONEXIÓN =====
+        // ============================================================
+        
+        let isOnline = navigator.onLine;
+        
+        function updateConnectionStatus() {
+            const status = document.getElementById('connectionStatus');
+            const text = document.getElementById('connectionText');
+            isOnline = navigator.onLine;
+            
+            if (isOnline) {
+                status.className = 'connection-status online';
+                text.textContent = 'Online';
+                sincronizarVentasPendientes();
+            } else {
+                status.className = 'connection-status offline';
+                text.textContent = 'Offline';
+            }
+        }
+        
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // ============================================================
+        // ===== SINCRONIZACIÓN =====
+        // ============================================================
+        
+        let isSyncing = false;
+        
+        async function sincronizarVentasPendientes() {
+            if (isSyncing || !isOnline) return;
+            isSyncing = true;
+            
+            const status = document.getElementById('connectionStatus');
+            const text = document.getElementById('connectionText');
+            status.className = 'connection-status syncing';
+            text.textContent = 'Sincronizando...';
+            
+            try {
+                const pendientes = await getVentasPendientes();
+                if (pendientes.length === 0) {
+                    status.className = 'connection-status online';
+                    text.textContent = 'Online';
+                    isSyncing = false;
+                    return;
+                }
+                
+                mostrarToast(`🔄 Sincronizando ${pendientes.length} venta(s)...`, false, 5000);
+                
+                for (const item of pendientes) {
+                    try {
+                        const response = await fetch('/api/ventas/registrar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(item.venta)
+                        });
+                        
+                        if (response.ok) {
+                            await eliminarVentaPendiente(item.id);
+                        } else {
+                            console.error(`Error sincronizando venta ${item.id}:`, await response.text());
+                        }
+                    } catch (error) {
+                        console.error(`Error de red sincronizando venta ${item.id}:`, error);
+                    }
+                }
+                
+                await actualizarBadgePendientes();
+                const restantes = await getVentasPendientes();
+                
+                if (restantes.length === 0) {
+                    mostrarToast('✅ Todas las ventas sincronizadas', false);
+                    status.className = 'connection-status online';
+                    text.textContent = 'Online';
+                } else {
+                    mostrarToast(`⚠️ ${restantes.length} venta(s) pendiente(s)`, true);
+                    status.className = 'connection-status offline';
+                    text.textContent = `Offline (${restantes.length} pendientes)`;
+                }
+            } catch (error) {
+                console.error('Error en sincronización:', error);
+                status.className = 'connection-status offline';
+                text.textContent = 'Error sync';
+            } finally {
+                isSyncing = false;
+            }
+        }
+        
+        setInterval(async () => {
+            const pendientes = await getVentasPendientes();
+            if (pendientes.length > 0 && isOnline && !isSyncing) {
+                sincronizarVentasPendientes();
+            }
+        }, 30000);
+        
+        // ============================================================
+        // ===== CARGA INICIAL =====
+        // ============================================================
+        
+        async function cargarTodosLosProductos() {
+            console.log('🔄 Cargando productos...');
+            if (!isOnline) {
+                console.log('📴 Sin internet, usando caché');
+                return;
+            }
+            try {
+                const response = await fetch('/api/productos');
+                if (response.ok) {
+                    const result = await response.json();
+                    let productos = [];
+                    if (result && result.success && Array.isArray(result.data)) {
+                        productos = result.data;
+                    }
+                    if (productos.length > 0) {
+                        await cacheProductos(productos);
+                        console.log(`✅ ${productos.length} productos cacheados`);
+                    }
+                }
+            } catch (e) {
+                console.log('❌ Error cargando productos:', e.message);
+            }
+        }
+        
+        async function cargarCategorias() {
+            console.log('🔄 Cargando categorías...');
+            if (!isOnline) {
+                const cache = await getCategoriasCache();
+                renderizarFiltrosCategorias(cache);
+                return;
+            }
+            try {
+                const response = await fetch('/api/categorias');
+                if (response.ok) {
+                    const result = await response.json();
+                    let categorias = [];
+                    if (result && result.success && Array.isArray(result.data)) {
+                        categorias = result.data;
+                    }
+                    if (categorias.length > 0) {
+                        await cacheCategorias(categorias);
+                        renderizarFiltrosCategorias(categorias);
+                        console.log(`✅ ${categorias.length} categorías cacheadas`);
+                    }
+                }
+            } catch (e) {
+                console.log('❌ Error cargando categorías:', e.message);
+                const cache = await getCategoriasCache();
+                renderizarFiltrosCategorias(cache);
+            }
+        }
+        
+        function renderizarFiltrosCategorias(categorias) {
+            const container = document.getElementById('categoryFilters');
+            let html = `<div class="category-chip active" onclick="filtrarPorCategoria(null)">📦 Todos</div>`;
+            categorias.forEach(cat => {
+                html += `<div class="category-chip" onclick="filtrarPorCategoria(${cat.id}, this)" data-id="${cat.id}">${cat.nombre}</div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        // ============================================================
+        // ===== FILTRAR POR CATEGORÍA =====
+        // ============================================================
+        
+        async function filtrarPorCategoria(categoriaId, elemento) {
+            categoriaActiva = categoriaId;
+            
+            // Actualizar UI
+            document.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
+            if (elemento) {
+                elemento.classList.add('active');
+            } else {
+                document.querySelector('.category-chip').classList.add('active');
+            }
+            
+            // Filtrar productos
+            const productos = await getProductosCache();
+            let filtrados = productos;
+            
+            if (categoriaId) {
+                filtrados = productos.filter(p => {
+                    const catId = p.categoria ? p.categoria.id : (p.categoriaId || null);
+                    return catId === categoriaId;
+                });
+            }
+            
+            if (filtrados.length > 0) {
+                mostrarProductos(filtrados);
+                if (!isOnline) {
+                    mostrarToast('📴 Modo offline', true, 2000);
+                }
+            } else {
+                document.getElementById('searchResults').innerHTML = 
+                    '<div style="color: #888; text-align: center; padding: 3rem;">No hay productos en esta categoría</div>';
+            }
+        }
+        
+        // ============================================================
+        // ===== BÚSQUEDA DE PRODUCTOS =====
+        // ============================================================
+        
+        let carrito = [];
+        let contadorTicket = 1;
+        
+        async function buscarProductos() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            
+            // Primero intentar online
+            if (isOnline) {
+                try {
+                    const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(query)}`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        let productos = [];
+                        if (result && result.success && Array.isArray(result.data)) {
+                            productos = result.data;
+                        }
+                        if (productos.length > 0) {
+                            mostrarProductos(productos);
+                            await cacheProductos(productos);
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.log('Error online, intentando caché...');
+                }
+            }
+            
+            // Fallback a caché
+            try {
+                const productosCache = await getProductosCache();
+                console.log('📦 Productos en caché:', productosCache.length);
+                let filtrados = productosCache.filter(p => 
+                    p && p.nombre && p.nombre.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                // Aplicar filtro de categoría activa
+                if (categoriaActiva) {
+                    filtrados = filtrados.filter(p => {
+                        const catId = p.categoria ? p.categoria.id : (p.categoriaId || null);
+                        return catId === categoriaActiva;
+                    });
+                }
+                
+                if (filtrados.length > 0) {
+                    mostrarProductos(filtrados);
+                    if (!isOnline) {
+                        mostrarToast('📴 Modo offline - usando caché', true, 3000);
+                    }
+                } else {
+                    if (productosCache.length === 0) {
+                        mostrarToast('❌ No hay productos en caché. Conecta a internet y busca primero.', true);
+                    } else {
+                        mostrarToast('❌ No se encontraron productos', true);
+                    }
+                }
+            } catch (e) {
+                mostrarToast('❌ Error al leer caché', true);
+            }
+        }
+        
+        function mostrarProductos(productos) {
+            const container = document.getElementById('searchResults');
+            if (!productos || productos.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center; padding: 3rem;">No se encontraron productos</div>';
+                return;
+            }
+            container.innerHTML = productos.map(p => {
+                const precio = p.precioVenta || p.precio || 0;
+                const stock = p.stock !== undefined ? p.stock : (p.existencia || 0);
+                const stockBajo = p.stockBajo || (stock <= 5);
+                const categoriaNombre = p.categoria ? p.categoria.nombre : (p.categoriaNombre || '');
+                return `
+                <div class="product-card" onclick="agregarAlCarrito(${p.id}, '${(p.nombre || '').replace(/'/g, "\\'")}', ${precio}, ${stock})">
+                    <div class="name">${p.nombre || 'Sin nombre'}</div>
+                    <div class="price">₲ ${formatearPrecio(precio)}</div>
+                    ${categoriaNombre ? `<div class="category-tag">${categoriaNombre}</div>` : ''}
+                    <div class="stock ${stockBajo ? 'bajo' : ''}">Stock: ${stock}${stockBajo ? ' ⚠️' : ''}</div>
+                </div>
+            `}).join('');
+        }
+        
+        function agregarAlCarrito(id, nombre, precio, stock) {
+            const existente = carrito.find(item => item.id === id);
+            if (existente) {
+                if (existente.cantidad >= stock) { mostrarToast('Stock insuficiente', true); return; }
+                existente.cantidad++;
+            } else {
+                if (stock <= 0) { mostrarToast('Producto sin stock', true); return; }
+                carrito.push({ id, nombre, precio, cantidad: 1, stock });
+            }
+            actualizarTicket();
+            mostrarToast(`✅ ${nombre} agregado`);
+        }
+        
+        function actualizarTicket() {
+            const container = document.getElementById('ticketItems');
+            const btnCobrar = document.getElementById('btnCobrar');
+            if (carrito.length === 0) {
+                container.innerHTML = `<div class="ticket-empty"><div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div><p>Agrega productos para comenzar</p></div>`;
+                btnCobrar.disabled = true;
+                document.getElementById('ticketTotal').textContent = '₲ 0.00';
+                return;
+            }
+            let total = 0;
+            container.innerHTML = carrito.map((item, index) => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                return `<div class="ticket-item"><div class="info"><div class="name">${item.nombre}</div><div class="qty-price">${item.cantidad} x ₲ ${formatearPrecio(item.precio)}</div></div><div class="total">₲ ${formatearPrecio(subtotal)}</div><button class="remove" onclick="quitarDelCarrito(${index})">✕</button></div>`;
+            }).join('');
+            document.getElementById('ticketTotal').textContent = '₲ ' + formatearPrecio(total);
+            btnCobrar.disabled = false;
+        }
+        
+        function quitarDelCarrito(index) { carrito.splice(index, 1); actualizarTicket(); }
+        
+        function cancelarVenta() {
+            if (carrito.length === 0) return;
+            if (!confirm('¿Cancelar la venta actual?')) return;
+            carrito = []; actualizarTicket(); mostrarToast('Venta cancelada');
+        }
+        
+        function abrirCobro() {
+            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            document.getElementById('modalTotal').textContent = '₲ ' + formatearPrecio(total);
+            document.getElementById('inputPago').value = '';
+            document.getElementById('cambio').textContent = '₲ 0.00';
+            document.getElementById('modalCobro').classList.add('active');
+            document.getElementById('inputPago').focus();
+        }
+        
+        function cerrarCobro() { document.getElementById('modalCobro').classList.remove('active'); }
+        
+        document.getElementById('inputPago').addEventListener('input', function() {
+            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            const pago = parseFloat(this.value) || 0;
+            document.getElementById('cambio').textContent = '₲ ' + formatearPrecio(Math.max(0, pago - total));
+        });
+        
+        async function confirmarCobro() {
+            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            const pago = parseFloat(document.getElementById('inputPago').value) || 0;
+            if (pago < total) { mostrarToast('El pago es insuficiente', true); return; }
+            
+            const items = carrito.map(item => ({ productoId: item.id, cantidad: item.cantidad }));
+            const ventaData = { items: items };
+            
+            if (isOnline) {
+                try {
+                    const response = await fetch('/api/ventas/registrar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ventaData)
+                    });
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            mostrarToast(`✅ Venta #${result.data.idVenta} registrada`);
+                            carrito = []; actualizarTicket(); cerrarCobro();
+                            contadorTicket++; document.getElementById('ticketNum').textContent = '#' + String(contadorTicket).padStart(4, '0');
+                            return;
+                        }
+                    }
+                    await guardarVentaOffline(ventaData);
+                } catch (error) {
+                    await guardarVentaOffline(ventaData);
+                }
+            } else {
+                await guardarVentaOffline(ventaData);
+            }
+        }
+        
+        async function guardarVentaOffline(ventaData) {
+            await guardarVentaPendiente(ventaData);
+            await actualizarBadgePendientes();
+            mostrarToast('📴 Venta guardada offline. Se sincronizará cuando haya conexión.', true, 5000);
+            carrito = []; actualizarTicket(); cerrarCobro();
+            contadorTicket++; document.getElementById('ticketNum').textContent = '#' + String(contadorTicket).padStart(4, '0');
+            updateConnectionStatus();
+        }
+        
+        function formatearPrecio(numero) {
+            return parseFloat(numero).toLocaleString('es-PY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        
+        function mostrarToast(mensaje, esError = false, duracion = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = mensaje;
+            toast.className = 'toast' + (esError ? ' error' : '') + (mensaje.includes('📴') ? ' warning' : '');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duracion);
+        }
+        
+        document.getElementById('searchInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') buscarProductos(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrarCobro(); });
+        
+        // Inicializar
+        openDB().then(async () => {
+            console.log('✅ IndexedDB lista');
+            await cargarTodosLosProductos();
+            await cargarCategorias();
+            await actualizarBadgePendientes();
+            updateConnectionStatus();
+        }).catch(err => console.error('❌ Error IndexedDB:', err));
+    </script>
+</body>
+</html>
