@@ -1,76 +1,1726 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: head('Usuarios')}"><style th:replace="~{layout :: styles}"></style></head>
-<body>
-<div class="wrapper">
-<div th:replace="~{layout :: admin-sidebar}"></div>
-<div class="main-content">
-<div class="page-header"><h1>👥 Usuarios</h1><button class="btn btn-primary" onclick="mostrarFormulario()">➕ Nuevo Usuario</button></div>
-<div class="card" id="formularioUsuario" style="display: none;">
-<div class="card-header"><span class="card-title" id="formTitulo">Nuevo Usuario</span><button onclick="ocultarFormulario()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button></div>
-<form id="usuarioForm" onsubmit="guardarUsuario(event)">
-<input type="hidden" id="usuarioId">
-<div class="form-row">
-<div class="form-group"><label>Nombre *</label><input type="text" class="form-control" id="nombre" required></div>
-<div class="form-group"><label>Username *</label><input type="text" class="form-control" id="username" required></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>Contraseña <span id="passHint">*</span></label><input type="password" class="form-control" id="password"></div>
-<div class="form-group"><label>Rol *</label><select class="form-control" id="rol" required><option value="CAJERO">CAJERO</option><option value="ADMIN">ADMIN</option></select></div>
-<div class="form-group"><label>Activo</label><select class="form-control" id="activo"><option value="true">Sí</option><option value="false">No</option></select></div>
-</div>
-<button type="submit" class="btn btn-primary">💾 Guardar</button>
-<button type="button" class="btn btn-cancel" onclick="ocultarFormulario()" style="margin-left:0.5rem;">Cancelar</button>
-</form>
-</div>
-<div class="card">
-<div class="card-header"><span class="card-title">Lista de Usuarios</span></div>
-<div class="table-container">
-<table>
-<thead><tr><th>ID</th><th>Nombre</th><th>Username</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-<tbody>
-<tr th:each="u : ${usuarios}" th:data-id="${u.id}">
-<td th:text="${u.id}">1</td>
-<td th:text="${u.nombre}">Usuario</td>
-<td th:text="${u.username}">user</td>
-<td><span class="badge" th:class="${u.rol == 'ADMIN'} ? 'badge-info' : 'badge-warning'" th:text="${u.rol}">ROL</span></td>
-<td><span class="badge badge-success" th:if="${u.activo}">Activo</span><span class="badge badge-danger" th:unless="${u.activo}">Inactivo</span></td>
-<td><button class="btn btn-sm btn-warning" onclick="editarUsuario(this)">✏️</button><button class="btn btn-sm btn-danger" onclick="eliminarUsuario(this)">🗑️</button></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</div>
-<script>
-function mostrarFormulario(){document.getElementById('formularioUsuario').style.display='block';document.getElementById('formTitulo').textContent='Nuevo Usuario';document.getElementById('usuarioForm').reset();document.getElementById('usuarioId').value='';document.getElementById('passHint').textContent='*';document.getElementById('password').required=true;}
-function ocultarFormulario(){document.getElementById('formularioUsuario').style.display='none';}
-async function guardarUsuario(e){e.preventDefault();const id=document.getElementById('usuarioId').value;const data={nombre:document.getElementById('nombre').value,username:document.getElementById('username').value,password:document.getElementById('password').value,rol:document.getElementById('rol').value,activo:document.getElementById('activo').value==='true'};if(!id&&!data.password){alert('❌ La contraseña es obligatoria');return;}const url=id?`/api/usuarios/${id}`:'/api/usuarios';const method=id?'PUT':'POST';try{const response=await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await response.json();if(result.success){alert('✅ Usuario guardado');location.reload();}else{alert('❌ '+result.message);}}catch(error){alert('❌ Error: '+error.message);}}
-function editarUsuario(btn){const row=btn.closest('tr');document.getElementById('usuarioId').value=row.dataset.id;document.getElementById('nombre').value=row.cells[1].textContent;document.getElementById('username').value=row.cells[2].textContent;document.getElementById('rol').value=row.cells[3].textContent.trim();document.getElementById('activo').value=row.cells[4].querySelector('.badge-success')?'true':'false';document.getElementById('password').value='';document.getElementById('password').required=false;document.getElementById('passHint').textContent='(dejar vacío para no cambiar)';document.getElementById('formTitulo').textContent='Editar Usuario';document.getElementById('formularioUsuario').style.display='block';window.scrollTo(0,0);}
 
-// ===== ELIMINAR (BORRAR DEFINITIVAMENTE) =====
-async function eliminarUsuario(btn){
-    const row = btn.closest('tr');
-    const nombre = row.cells[1].textContent;
-    const username = row.cells[2].textContent;
-    
-    if(!confirm('⚠️ ¿ELIMINAR permanentemente al usuario "' + nombre + '" (' + username + ')?\n\nEsta acción NO se puede deshacer.')) return;
-    
-    const id = row.dataset.id;
-    try{
-        const response = await fetch(`/api/usuarios/${id}`, {method:'DELETE'});
-        const result = await response.json();
-        if(result.success){
-            alert('✅ Usuario eliminado permanentemente');
-            location.reload();
-        }else{
-            alert('❌ '+result.message);
-        }
-    }catch(error){
-        alert('❌ Error: '+error.message);
+<head th:replace="~{layout :: head('Usuarios')}">
+</head>
+
+<style>
+
+    /* ========================================================= */
+    /* CAMPOS DE CONTRASEÑA CON BOTÓN DE VISUALIZACIÓN           */
+    /* ========================================================= */
+
+    .password-container {
+        position: relative;
+        width: 100%;
     }
-}
+
+    .password-container .form-control {
+        padding-right: 3.2rem;
+    }
+
+    .password-eye {
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        transform: translateY(-50%);
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 1.15rem;
+        cursor: pointer;
+        padding: 0.25rem;
+        line-height: 1;
+    }
+
+    .password-eye:hover {
+        color: #4ade80;
+    }
+
+    .password-eye:focus {
+        outline: 2px solid #4ade80;
+        border-radius: 4px;
+    }
+
+    .acciones-usuario {
+        display: flex;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+
+</style>
+
+<body>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <!-- ===================================================== -->
+        <!-- ENCABEZADO                                            -->
+        <!-- ===================================================== -->
+
+        <div class="page-header">
+
+            <h1>
+                👥 Usuarios
+            </h1>
+
+            <div
+                    style="
+                        display: flex;
+                        gap: 0.75rem;
+                        flex-wrap: wrap;
+                    ">
+
+                <button
+                        type="button"
+                        class="btn btn-warning"
+                        onclick="mostrarCambioPassword()">
+                    🔐 Cambiar mi contraseña
+                </button>
+
+                <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="mostrarFormularioUsuario()">
+                    ➕ Nuevo Usuario
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- MENSAJES                                               -->
+        <!-- ===================================================== -->
+
+        <div
+                id="mensajeGeneral"
+                class="alert"
+                style="display: none;">
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- CAMBIO DE CONTRASEÑA PROPIA                            -->
+        <!-- ===================================================== -->
+
+        <section
+                class="card"
+                id="formularioCambioPassword"
+                style="display: none;">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    🔐 Cambiar mi contraseña
+                </span>
+
+                <button
+                        type="button"
+                        onclick="ocultarCambioPassword()"
+                        aria-label="Cerrar formulario"
+                        style="
+                            background: none;
+                            border: none;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            color: #94a3b8;
+                        ">
+                    ✕
+                </button>
+
+            </div>
+
+            <p
+                    style="
+                        color: #94a3b8;
+                        margin-bottom: 1.25rem;
+                    ">
+                Cambiarás la contraseña del usuario con el que actualmente
+                tienes iniciada la sesión.
+            </p>
+
+            <form
+                    id="cambioPasswordForm"
+                    onsubmit="cambiarPassword(event)">
+
+                <div class="form-row">
+
+                    <!-- CONTRASEÑA ACTUAL -->
+
+                    <div class="form-group">
+
+                        <label for="passwordActual">
+                            Contraseña actual *
+                        </label>
+
+                        <div class="password-container">
+
+                            <input
+                                    type="password"
+                                    class="form-control"
+                                    id="passwordActual"
+                                    name="passwordActual"
+                                    autocomplete="current-password"
+                                    minlength="4"
+                                    required>
+
+                            <button
+                                    type="button"
+                                    class="password-eye"
+                                    onclick="alternarPassword(
+                                        'passwordActual',
+                                        this
+                                    )"
+                                    aria-label="Mostrar contraseña actual"
+                                    title="Mostrar u ocultar contraseña">
+                                👁️
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <!-- NUEVA CONTRASEÑA -->
+
+                    <div class="form-group">
+
+                        <label for="passwordNueva">
+                            Nueva contraseña *
+                        </label>
+
+                        <div class="password-container">
+
+                            <input
+                                    type="password"
+                                    class="form-control"
+                                    id="passwordNueva"
+                                    name="passwordNueva"
+                                    autocomplete="new-password"
+                                    minlength="4"
+                                    required>
+
+                            <button
+                                    type="button"
+                                    class="password-eye"
+                                    onclick="alternarPassword(
+                                        'passwordNueva',
+                                        this
+                                    )"
+                                    aria-label="Mostrar nueva contraseña"
+                                    title="Mostrar u ocultar contraseña">
+                                👁️
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <!-- CONFIRMAR CONTRASEÑA -->
+
+                    <div class="form-group">
+
+                        <label for="confirmarPassword">
+                            Confirmar nueva contraseña *
+                        </label>
+
+                        <div class="password-container">
+
+                            <input
+                                    type="password"
+                                    class="form-control"
+                                    id="confirmarPassword"
+                                    name="confirmarPassword"
+                                    autocomplete="new-password"
+                                    minlength="4"
+                                    required>
+
+                            <button
+                                    type="button"
+                                    class="password-eye"
+                                    onclick="alternarPassword(
+                                        'confirmarPassword',
+                                        this
+                                    )"
+                                    aria-label="Mostrar confirmación de contraseña"
+                                    title="Mostrar u ocultar contraseña">
+                                👁️
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 1rem;">
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="btnCambiarPassword">
+                        🔐 Cambiar contraseña
+                    </button>
+
+                    <button
+                            type="button"
+                            class="btn btn-cancel"
+                            onclick="ocultarCambioPassword()"
+                            style="margin-left: 0.5rem;">
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- CAMBIO DE CONTRASEÑA DEL CAJERO                        -->
+        <!-- ===================================================== -->
+
+        <section
+                class="card"
+                id="formularioPasswordCajero"
+                style="display: none;">
+
+            <div class="card-header">
+
+                <span
+                        class="card-title"
+                        id="tituloPasswordCajero">
+                    🔑 Cambiar contraseña del cajero
+                </span>
+
+                <button
+                        type="button"
+                        onclick="ocultarPasswordCajero()"
+                        aria-label="Cerrar formulario"
+                        style="
+                            background: none;
+                            border: none;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            color: #94a3b8;
+                        ">
+                    ✕
+                </button>
+
+            </div>
+
+            <p
+                    style="
+                        color: #94a3b8;
+                        margin-bottom: 1.25rem;
+                    ">
+                Como administrador puedes asignar una contraseña nueva al
+                cajero. No es necesario conocer su contraseña anterior.
+            </p>
+
+            <form
+                    id="passwordCajeroForm"
+                    onsubmit="guardarPasswordCajero(event)">
+
+                <input
+                        type="hidden"
+                        id="passwordCajeroId">
+
+                <div class="form-row">
+
+                    <!-- NUEVA CONTRASEÑA DEL CAJERO -->
+
+                    <div class="form-group">
+
+                        <label for="passwordCajeroNueva">
+                            Nueva contraseña *
+                        </label>
+
+                        <div class="password-container">
+
+                            <input
+                                    type="password"
+                                    class="form-control"
+                                    id="passwordCajeroNueva"
+                                    autocomplete="new-password"
+                                    minlength="4"
+                                    required>
+
+                            <button
+                                    type="button"
+                                    class="password-eye"
+                                    onclick="alternarPassword(
+                                        'passwordCajeroNueva',
+                                        this
+                                    )"
+                                    aria-label="Mostrar nueva contraseña"
+                                    title="Mostrar u ocultar contraseña">
+                                👁️
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <!-- CONFIRMAR CONTRASEÑA DEL CAJERO -->
+
+                    <div class="form-group">
+
+                        <label for="passwordCajeroConfirmar">
+                            Confirmar contraseña *
+                        </label>
+
+                        <div class="password-container">
+
+                            <input
+                                    type="password"
+                                    class="form-control"
+                                    id="passwordCajeroConfirmar"
+                                    autocomplete="new-password"
+                                    minlength="4"
+                                    required>
+
+                            <button
+                                    type="button"
+                                    class="password-eye"
+                                    onclick="alternarPassword(
+                                        'passwordCajeroConfirmar',
+                                        this
+                                    )"
+                                    aria-label="Mostrar confirmación"
+                                    title="Mostrar u ocultar contraseña">
+                                👁️
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 1rem;">
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="btnGuardarPasswordCajero">
+                        🔑 Cambiar contraseña
+                    </button>
+
+                    <button
+                            type="button"
+                            class="btn btn-cancel"
+                            onclick="ocultarPasswordCajero()"
+                            style="margin-left: 0.5rem;">
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- CREAR O EDITAR USUARIO                                -->
+        <!-- ===================================================== -->
+
+        <section
+                class="card"
+                id="formularioUsuario"
+                style="display: none;">
+
+            <div class="card-header">
+
+                <span
+                        class="card-title"
+                        id="formTitulo">
+                    Nuevo Usuario
+                </span>
+
+                <button
+                        type="button"
+                        onclick="ocultarFormularioUsuario()"
+                        aria-label="Cerrar formulario"
+                        style="
+                            background: none;
+                            border: none;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            color: #94a3b8;
+                        ">
+                    ✕
+                </button>
+
+            </div>
+
+            <form
+                    id="usuarioForm"
+                    onsubmit="guardarUsuario(event)">
+
+                <input
+                        type="hidden"
+                        id="usuarioId">
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="nombre">
+                            Nombre *
+                        </label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="nombre"
+                                minlength="2"
+                                maxlength="100"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="username">
+                            Username *
+                        </label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="username"
+                                minlength="4"
+                                maxlength="20"
+                                autocomplete="off"
+                                required>
+
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="password">
+                            Contraseña
+                            <span id="passHint">*</span>
+                        </label>
+
+                        <div class="password-container">
+
+                            <input
+                                    type="password"
+                                    class="form-control"
+                                    id="password"
+                                    minlength="4"
+                                    autocomplete="new-password">
+
+                            <button
+                                    type="button"
+                                    class="password-eye"
+                                    onclick="alternarPassword(
+                                        'password',
+                                        this
+                                    )"
+                                    aria-label="Mostrar contraseña"
+                                    title="Mostrar u ocultar contraseña">
+                                👁️
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="rol">
+                            Rol *
+                        </label>
+
+                        <select
+                                class="form-control"
+                                id="rol"
+                                required>
+
+                            <option value="CAJERO">
+                                CAJERO
+                            </option>
+
+                            <option value="ADMIN">
+                                ADMIN
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="activo">
+                            Activo
+                        </label>
+
+                        <select
+                                class="form-control"
+                                id="activo">
+
+                            <option value="true">
+                                Sí
+                            </option>
+
+                            <option value="false">
+                                No
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                <div style="margin-top: 1rem;">
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary"
+                            id="btnGuardarUsuario">
+                        💾 Guardar
+                    </button>
+
+                    <button
+                            type="button"
+                            class="btn btn-cancel"
+                            onclick="ocultarFormularioUsuario()"
+                            style="margin-left: 0.5rem;">
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- LISTA DE USUARIOS                                     -->
+        <!-- ===================================================== -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    Lista de Usuarios
+                </span>
+
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Username</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr
+                            th:each="u : ${usuarios}"
+                            th:data-id="${u.id}">
+
+                        <td th:text="${u.id}">
+                            1
+                        </td>
+
+                        <td th:text="${u.nombre}">
+                            Usuario
+                        </td>
+
+                        <td th:text="${u.username}">
+                            usuario
+                        </td>
+
+                        <td>
+
+                            <span
+                                    class="badge"
+                                    th:classappend="${u.rol == 'ADMIN'}
+                                        ? 'badge-info'
+                                        : 'badge-warning'"
+                                    th:text="${u.rol}">
+                                ROL
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span
+                                    class="badge badge-success"
+                                    th:if="${u.activo}">
+                                Activo
+                            </span>
+
+                            <span
+                                    class="badge badge-danger"
+                                    th:unless="${u.activo}">
+                                Inactivo
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <div class="acciones-usuario">
+
+                                <button
+                                        type="button"
+                                        class="btn btn-sm btn-warning"
+                                        onclick="editarUsuario(this)"
+                                        title="Editar usuario">
+                                    ✏️
+                                </button>
+
+                                <!--
+                                    Este botón solamente aparece
+                                    cuando el usuario es CAJERO.
+                                -->
+
+                                <button
+                                        type="button"
+                                        class="btn btn-sm btn-primary"
+                                        th:if="${u.rol == 'CAJERO'}"
+                                        onclick="mostrarPasswordCajero(this)"
+                                        title="Cambiar contraseña del cajero">
+                                    🔑
+                                </button>
+
+                                <button
+                                        type="button"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="eliminarUsuario(this)"
+                                        title="Eliminar usuario">
+                                    🗑️
+                                </button>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(usuarios)}">
+
+                        <td
+                                colspan="6"
+                                style="
+                                    text-align: center;
+                                    color: #94a3b8;
+                                ">
+                            No existen usuarios registrados.
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+
+    // ============================================================
+    // MENSAJES
+    // ============================================================
+
+    function mostrarMensaje(tipo, texto) {
+
+        const mensaje =
+            document.getElementById('mensajeGeneral');
+
+        mensaje.className =
+            tipo === 'success'
+                ? 'alert alert-success'
+                : 'alert alert-danger';
+
+        mensaje.textContent = texto;
+        mensaje.style.display = 'block';
+
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+
+        setTimeout(function () {
+
+            mensaje.style.display = 'none';
+
+        }, 6000);
+    }
+
+
+    function obtenerMensajeError(
+        result,
+        mensajePorDefecto
+    ) {
+
+        if (!result) {
+            return mensajePorDefecto;
+        }
+
+        if (
+            result.data &&
+            typeof result.data === 'object'
+        ) {
+
+            const mensajes =
+                Object.values(result.data);
+
+            if (mensajes.length > 0) {
+                return mensajes.join('. ');
+            }
+        }
+
+        if (result.message) {
+            return result.message;
+        }
+
+        return mensajePorDefecto;
+    }
+
+
+    async function leerRespuestaJson(response) {
+
+        const texto = await response.text();
+
+        if (!texto) {
+            return null;
+        }
+
+        try {
+
+            return JSON.parse(texto);
+
+        } catch (error) {
+
+            return {
+                success: false,
+                message: texto
+            };
+        }
+    }
+
+
+    // ============================================================
+    // MOSTRAR U OCULTAR CONTRASEÑA
+    // ============================================================
+
+    function alternarPassword(
+        campoId,
+        boton
+    ) {
+
+        const campo =
+            document.getElementById(campoId);
+
+        if (!campo) {
+            return;
+        }
+
+        if (campo.type === 'password') {
+
+            campo.type = 'text';
+            boton.textContent = '🙈';
+
+            boton.setAttribute(
+                'aria-label',
+                'Ocultar contraseña'
+            );
+
+        } else {
+
+            campo.type = 'password';
+            boton.textContent = '👁️';
+
+            boton.setAttribute(
+                'aria-label',
+                'Mostrar contraseña'
+            );
+        }
+    }
+
+
+    function restaurarCamposPassword() {
+
+        const campos = document.querySelectorAll(
+            'input[type="text"][autocomplete="current-password"],' +
+            'input[type="text"][autocomplete="new-password"]'
+        );
+
+        campos.forEach(function (campo) {
+            campo.type = 'password';
+        });
+
+        const botones =
+            document.querySelectorAll('.password-eye');
+
+        botones.forEach(function (boton) {
+            boton.textContent = '👁️';
+        });
+    }
+
+
+    // ============================================================
+    // CONTROL DE FORMULARIOS
+    // ============================================================
+
+    function ocultarTodosLosFormularios() {
+
+        document
+            .getElementById('formularioCambioPassword')
+            .style.display = 'none';
+
+        document
+            .getElementById('formularioPasswordCajero')
+            .style.display = 'none';
+
+        document
+            .getElementById('formularioUsuario')
+            .style.display = 'none';
+
+        restaurarCamposPassword();
+    }
+
+
+    // ============================================================
+    // CAMBIO DE CONTRASEÑA PROPIA
+    // ============================================================
+
+    function mostrarCambioPassword() {
+
+        ocultarTodosLosFormularios();
+
+        document
+            .getElementById('cambioPasswordForm')
+            .reset();
+
+        const formulario =
+            document.getElementById(
+                'formularioCambioPassword'
+            );
+
+        formulario.style.display = 'block';
+
+        formulario.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        setTimeout(function () {
+
+            document
+                .getElementById('passwordActual')
+                .focus();
+
+        }, 300);
+    }
+
+
+    function ocultarCambioPassword() {
+
+        document
+            .getElementById('cambioPasswordForm')
+            .reset();
+
+        document
+            .getElementById('formularioCambioPassword')
+            .style.display = 'none';
+
+        restaurarCamposPassword();
+    }
+
+
+    async function cambiarPassword(event) {
+
+        event.preventDefault();
+
+        const passwordActual =
+            document
+                .getElementById('passwordActual')
+                .value;
+
+        const passwordNueva =
+            document
+                .getElementById('passwordNueva')
+                .value;
+
+        const confirmarPassword =
+            document
+                .getElementById('confirmarPassword')
+                .value;
+
+        if (passwordNueva.length < 4) {
+
+            mostrarMensaje(
+                'error',
+                '❌ La nueva contraseña debe tener al menos 4 caracteres.'
+            );
+
+            return;
+        }
+
+        if (passwordNueva !== confirmarPassword) {
+
+            mostrarMensaje(
+                'error',
+                '❌ La nueva contraseña y su confirmación no coinciden.'
+            );
+
+            return;
+        }
+
+        if (passwordActual === passwordNueva) {
+
+            mostrarMensaje(
+                'error',
+                '❌ La nueva contraseña debe ser diferente de la contraseña actual.'
+            );
+
+            return;
+        }
+
+        const boton =
+            document.getElementById(
+                'btnCambiarPassword'
+            );
+
+        const textoOriginal =
+            boton.textContent;
+
+        boton.disabled = true;
+        boton.textContent = '⏳ Cambiando...';
+
+        const data = {
+            passwordActual: passwordActual,
+            passwordNueva: passwordNueva,
+            confirmarPassword: confirmarPassword
+        };
+
+        try {
+
+            const response = await fetch(
+                '/api/usuarios/cambiar-password',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }
+            );
+
+            const result =
+                await leerRespuestaJson(response);
+
+            if (
+                !response.ok ||
+                !result ||
+                !result.success
+            ) {
+
+                const mensaje =
+                    obtenerMensajeError(
+                        result,
+                        'No fue posible cambiar la contraseña.'
+                    );
+
+                mostrarMensaje(
+                    'error',
+                    '❌ ' + mensaje
+                );
+
+                return;
+            }
+
+            ocultarCambioPassword();
+
+            mostrarMensaje(
+                'success',
+                '✅ Tu contraseña fue cambiada correctamente.'
+            );
+
+        } catch (error) {
+
+            mostrarMensaje(
+                'error',
+                '❌ Error de comunicación con el servidor: ' +
+                error.message
+            );
+
+        } finally {
+
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    }
+
+
+    // ============================================================
+    // CAMBIO DE CONTRASEÑA DEL CAJERO
+    // ============================================================
+
+    function mostrarPasswordCajero(boton) {
+
+        ocultarTodosLosFormularios();
+
+        const fila = boton.closest('tr');
+
+        const usuarioId =
+            fila.dataset.id;
+
+        const nombre =
+            fila.cells[1].textContent.trim();
+
+        const username =
+            fila.cells[2].textContent.trim();
+
+        const rol =
+            fila.cells[3].textContent.trim();
+
+        if (rol !== 'CAJERO') {
+
+            mostrarMensaje(
+                'error',
+                '❌ Solamente puedes utilizar esta opción para usuarios con rol CAJERO.'
+            );
+
+            return;
+        }
+
+        document
+            .getElementById('passwordCajeroForm')
+            .reset();
+
+        document
+            .getElementById('passwordCajeroId')
+            .value = usuarioId;
+
+        document
+            .getElementById('tituloPasswordCajero')
+            .textContent =
+                '🔑 Cambiar contraseña de ' +
+                nombre +
+                ' (' +
+                username +
+                ')';
+
+        const formulario =
+            document.getElementById(
+                'formularioPasswordCajero'
+            );
+
+        formulario.style.display = 'block';
+
+        formulario.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        setTimeout(function () {
+
+            document
+                .getElementById('passwordCajeroNueva')
+                .focus();
+
+        }, 300);
+    }
+
+
+    function ocultarPasswordCajero() {
+
+        document
+            .getElementById('passwordCajeroForm')
+            .reset();
+
+        document
+            .getElementById('passwordCajeroId')
+            .value = '';
+
+        document
+            .getElementById('formularioPasswordCajero')
+            .style.display = 'none';
+
+        restaurarCamposPassword();
+    }
+
+
+    async function guardarPasswordCajero(event) {
+
+        event.preventDefault();
+
+        const usuarioId =
+            document
+                .getElementById('passwordCajeroId')
+                .value;
+
+        const passwordNueva =
+            document
+                .getElementById('passwordCajeroNueva')
+                .value;
+
+        const confirmarPassword =
+            document
+                .getElementById('passwordCajeroConfirmar')
+                .value;
+
+        if (!usuarioId) {
+
+            mostrarMensaje(
+                'error',
+                '❌ No se seleccionó ningún cajero.'
+            );
+
+            return;
+        }
+
+        if (passwordNueva.length < 4) {
+
+            mostrarMensaje(
+                'error',
+                '❌ La nueva contraseña debe tener al menos 4 caracteres.'
+            );
+
+            return;
+        }
+
+        if (passwordNueva !== confirmarPassword) {
+
+            mostrarMensaje(
+                'error',
+                '❌ La nueva contraseña y su confirmación no coinciden.'
+            );
+
+            return;
+        }
+
+        const confirmado = window.confirm(
+            '¿Confirmas que deseas cambiar la contraseña del cajero seleccionado?'
+        );
+
+        if (!confirmado) {
+            return;
+        }
+
+        const boton =
+            document.getElementById(
+                'btnGuardarPasswordCajero'
+            );
+
+        const textoOriginal =
+            boton.textContent;
+
+        boton.disabled = true;
+        boton.textContent = '⏳ Cambiando...';
+
+        const data = {
+            passwordNueva: passwordNueva,
+            confirmarPassword: confirmarPassword
+        };
+
+        try {
+
+            const response = await fetch(
+                `/api/usuarios/${usuarioId}/cambiar-password`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }
+            );
+
+            const result =
+                await leerRespuestaJson(response);
+
+            if (
+                !response.ok ||
+                !result ||
+                !result.success
+            ) {
+
+                const mensaje =
+                    obtenerMensajeError(
+                        result,
+                        'No fue posible cambiar la contraseña del cajero.'
+                    );
+
+                mostrarMensaje(
+                    'error',
+                    '❌ ' + mensaje
+                );
+
+                return;
+            }
+
+            ocultarPasswordCajero();
+
+            mostrarMensaje(
+                'success',
+                '✅ Contraseña del cajero cambiada correctamente.'
+            );
+
+        } catch (error) {
+
+            mostrarMensaje(
+                'error',
+                '❌ Error de comunicación con el servidor: ' +
+                error.message
+            );
+
+        } finally {
+
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    }
+
+
+    // ============================================================
+    // CREAR Y EDITAR USUARIO
+    // ============================================================
+
+    function mostrarFormularioUsuario() {
+
+        ocultarTodosLosFormularios();
+
+        document
+            .getElementById('usuarioForm')
+            .reset();
+
+        document
+            .getElementById('usuarioId')
+            .value = '';
+
+        document
+            .getElementById('formTitulo')
+            .textContent = 'Nuevo Usuario';
+
+        document
+            .getElementById('passHint')
+            .textContent = '*';
+
+        const password =
+            document.getElementById('password');
+
+        password.required = true;
+
+        document
+            .getElementById('activo')
+            .value = 'true';
+
+        document
+            .getElementById('rol')
+            .value = 'CAJERO';
+
+        const formulario =
+            document.getElementById(
+                'formularioUsuario'
+            );
+
+        formulario.style.display = 'block';
+
+        formulario.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+
+        setTimeout(function () {
+
+            document
+                .getElementById('nombre')
+                .focus();
+
+        }, 300);
+    }
+
+
+    function ocultarFormularioUsuario() {
+
+        document
+            .getElementById('usuarioForm')
+            .reset();
+
+        document
+            .getElementById('usuarioId')
+            .value = '';
+
+        document
+            .getElementById('formularioUsuario')
+            .style.display = 'none';
+
+        restaurarCamposPassword();
+    }
+
+
+    async function guardarUsuario(event) {
+
+        event.preventDefault();
+
+        const id =
+            document
+                .getElementById('usuarioId')
+                .value;
+
+        const password =
+            document
+                .getElementById('password')
+                .value;
+
+        if (!id && !password) {
+
+            mostrarMensaje(
+                'error',
+                '❌ La contraseña es obligatoria para crear un usuario.'
+            );
+
+            return;
+        }
+
+        const data = {
+
+            nombre:
+                document
+                    .getElementById('nombre')
+                    .value
+                    .trim(),
+
+            username:
+                document
+                    .getElementById('username')
+                    .value
+                    .trim(),
+
+            password: password,
+
+            rol:
+                document
+                    .getElementById('rol')
+                    .value,
+
+            activo:
+                document
+                    .getElementById('activo')
+                    .value === 'true'
+        };
+
+        const url =
+            id
+                ? `/api/usuarios/${id}`
+                : '/api/usuarios';
+
+        const method =
+            id
+                ? 'PUT'
+                : 'POST';
+
+        const boton =
+            document.getElementById(
+                'btnGuardarUsuario'
+            );
+
+        const textoOriginal =
+            boton.textContent;
+
+        boton.disabled = true;
+        boton.textContent = '⏳ Guardando...';
+
+        try {
+
+            const response = await fetch(
+                url,
+                {
+                    method: method,
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }
+            );
+
+            const result =
+                await leerRespuestaJson(response);
+
+            if (
+                !response.ok ||
+                !result ||
+                !result.success
+            ) {
+
+                const mensaje =
+                    obtenerMensajeError(
+                        result,
+                        'No fue posible guardar el usuario.'
+                    );
+
+                mostrarMensaje(
+                    'error',
+                    '❌ ' + mensaje
+                );
+
+                return;
+            }
+
+            mostrarMensaje(
+                'success',
+                id
+                    ? '✅ Usuario actualizado correctamente.'
+                    : '✅ Usuario creado correctamente.'
+            );
+
+            setTimeout(function () {
+                window.location.reload();
+            }, 800);
+
+        } catch (error) {
+
+            mostrarMensaje(
+                'error',
+                '❌ Error de comunicación con el servidor: ' +
+                error.message
+            );
+
+        } finally {
+
+            boton.disabled = false;
+            boton.textContent = textoOriginal;
+        }
+    }
+
+
+    function editarUsuario(boton) {
+
+        ocultarTodosLosFormularios();
+
+        const fila = boton.closest('tr');
+
+        const id =
+            fila.dataset.id;
+
+        const nombre =
+            fila.cells[1].textContent.trim();
+
+        const username =
+            fila.cells[2].textContent.trim();
+
+        const rol =
+            fila.cells[3].textContent.trim();
+
+        const estaActivo =
+            fila
+                .cells[4]
+                .querySelector('.badge-success') !== null;
+
+        document
+            .getElementById('usuarioId')
+            .value = id;
+
+        document
+            .getElementById('nombre')
+            .value = nombre;
+
+        document
+            .getElementById('username')
+            .value = username;
+
+        document
+            .getElementById('rol')
+            .value = rol;
+
+        document
+            .getElementById('activo')
+            .value =
+                estaActivo
+                    ? 'true'
+                    : 'false';
+
+        const password =
+            document.getElementById('password');
+
+        password.value = '';
+        password.required = false;
+
+        document
+            .getElementById('passHint')
+            .textContent =
+                '(dejar vacío para conservarla)';
+
+        document
+            .getElementById('formTitulo')
+            .textContent =
+                'Editar Usuario';
+
+        const formulario =
+            document.getElementById(
+                'formularioUsuario'
+            );
+
+        formulario.style.display = 'block';
+
+        formulario.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+
+
+    // ============================================================
+    // ELIMINAR USUARIO
+    // ============================================================
+
+    async function eliminarUsuario(boton) {
+
+        const fila =
+            boton.closest('tr');
+
+        const id =
+            fila.dataset.id;
+
+        const nombre =
+            fila.cells[1].textContent.trim();
+
+        const username =
+            fila.cells[2].textContent.trim();
+
+        const confirmado = window.confirm(
+            '⚠️ ¿Eliminar permanentemente al usuario "' +
+            nombre +
+            '" (' +
+            username +
+            ')?\n\nEsta acción no se puede deshacer.'
+        );
+
+        if (!confirmado) {
+            return;
+        }
+
+        boton.disabled = true;
+
+        try {
+
+            const response = await fetch(
+                `/api/usuarios/${id}`,
+                {
+                    method: 'DELETE'
+                }
+            );
+
+            const result =
+                await leerRespuestaJson(response);
+
+            if (
+                !response.ok ||
+                !result ||
+                !result.success
+            ) {
+
+                const mensaje =
+                    obtenerMensajeError(
+                        result,
+                        'No fue posible eliminar el usuario.'
+                    );
+
+                mostrarMensaje(
+                    'error',
+                    '❌ ' + mensaje
+                );
+
+                return;
+            }
+
+            mostrarMensaje(
+                'success',
+                '✅ Usuario eliminado permanentemente.'
+            );
+
+            setTimeout(function () {
+                window.location.reload();
+            }, 800);
+
+        } catch (error) {
+
+            mostrarMensaje(
+                'error',
+                '❌ Error de comunicación con el servidor: ' +
+                error.message
+            );
+
+        } finally {
+
+            boton.disabled = false;
+        }
+    }
+
+
+    // ============================================================
+    // ABRIR CAMBIO DE CONTRASEÑA DESDE EL MENÚ LATERAL
+    // ============================================================
+
+    function verificarAccionDesdeUrl() {
+
+        if (
+            window.location.hash ===
+            '#cambiar-password'
+        ) {
+
+            mostrarCambioPassword();
+
+            history.replaceState(
+                null,
+                document.title,
+                window.location.pathname
+            );
+        }
+    }
+
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        verificarAccionDesdeUrl
+    );
+
+
+    window.addEventListener(
+        'hashchange',
+        verificarAccionDesdeUrl
+    );
+
 </script>
+
 </body>
 </html>

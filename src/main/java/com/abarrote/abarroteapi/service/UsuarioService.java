@@ -22,12 +22,18 @@ public interface UsuarioService {
 
     void eliminar(Long id);
 
-    void cambiarPassword(String username,
-                         String passwordActual,
-                         String passwordNueva);
+    void cambiarPassword(
+            String username,
+            String passwordActual,
+            String passwordNueva
+    );
+
+    void cambiarPasswordPorAdministrador(
+            Long usuarioId,
+            String passwordNueva
+    );
 
     Usuario obtenerEntityPorId(Long id);
 
     Usuario obtenerEntityPorUsername(String username);
-
 }
