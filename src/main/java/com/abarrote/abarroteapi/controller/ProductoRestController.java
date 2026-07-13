@@ -16,51 +16,128 @@ public class ProductoRestController {
 
     private final ProductoService productoService;
 
-    public ProductoRestController(ProductoService productoService) {
+    public ProductoRestController(
+            ProductoService productoService) {
+
         this.productoService = productoService;
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ProductoResponse>> crear(@Valid @RequestBody ProductoRequest request) {
-        ProductoResponse creado = productoService.crear(request);
-        return ResponseEntity.ok(ApiResponse.ok("Producto creado exitosamente", creado));
+    public ResponseEntity<ApiResponse<ProductoResponse>> crear(
+            @Valid @RequestBody ProductoRequest request) {
+
+        ProductoResponse creado =
+                productoService.crear(request);
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "Producto creado exitosamente",
+                        creado
+                )
+        );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductoResponse>> actualizar(@PathVariable Long id, 
-                                                                   @Valid @RequestBody ProductoRequest request) {
-        ProductoResponse actualizado = productoService.actualizar(id, request);
-        return ResponseEntity.ok(ApiResponse.ok("Producto actualizado exitosamente", actualizado));
+    public ResponseEntity<ApiResponse<ProductoResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductoRequest request) {
+
+        ProductoResponse actualizado =
+                productoService.actualizar(
+                        id,
+                        request
+                );
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "Producto actualizado exitosamente",
+                        actualizado
+                )
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ProductoResponse>> obtenerPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(productoService.obtenerPorId(id)));
+    public ResponseEntity<ApiResponse<ProductoResponse>> obtenerPorId(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        productoService.obtenerPorId(id)
+                )
+        );
     }
 
     @GetMapping("/codigo/{codigoBarras}")
-    public ResponseEntity<ApiResponse<ProductoResponse>> obtenerPorCodigoBarras(@PathVariable String codigoBarras) {
-        return ResponseEntity.ok(ApiResponse.ok(productoService.obtenerPorCodigoBarras(codigoBarras)));
+    public ResponseEntity<ApiResponse<ProductoResponse>>
+    obtenerPorCodigoBarras(
+            @PathVariable String codigoBarras) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        productoService
+                                .obtenerPorCodigoBarras(
+                                        codigoBarras
+                                )
+                )
+        );
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProductoResponse>>> listarTodos() {
-        return ResponseEntity.ok(ApiResponse.ok(productoService.listarTodos()));
+    public ResponseEntity<ApiResponse<List<ProductoResponse>>>
+    listarTodos() {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        productoService.listarTodos()
+                )
+        );
     }
 
     @GetMapping("/buscar")
-    public ResponseEntity<ApiResponse<List<ProductoResponse>>> buscarPorNombre(@RequestParam String q) {
-        return ResponseEntity.ok(ApiResponse.ok(productoService.buscarPorNombre(q)));
+    public ResponseEntity<ApiResponse<List<ProductoResponse>>>
+    buscarPorNombre(
+            @RequestParam String q) {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        productoService.buscarPorNombre(q)
+                )
+        );
     }
 
     @GetMapping("/stock-bajo")
-    public ResponseEntity<ApiResponse<List<ProductoResponse>>> listarStockBajo() {
-        return ResponseEntity.ok(ApiResponse.ok(productoService.listarStockBajo()));
+    public ResponseEntity<ApiResponse<List<ProductoResponse>>>
+    listarStockBajo() {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        productoService.listarStockBajo()
+                )
+        );
+    }
+
+    @GetMapping("/agotados")
+    public ResponseEntity<ApiResponse<List<ProductoResponse>>>
+    listarAgotados() {
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        productoService.listarAgotados()
+                )
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> eliminar(
+            @PathVariable Long id) {
+
         productoService.eliminar(id);
-        return ResponseEntity.ok(ApiResponse.ok("Producto eliminado exitosamente", null));
+
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        "Producto eliminado exitosamente",
+                        null
+                )
+        );
     }
 }
