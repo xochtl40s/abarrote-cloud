@@ -1,94 +1,569 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: head('Reportes')}"><style th:replace="~{layout :: styles}"></style></head>
+
+<head th:replace="~{layout :: head('Reportes')}">
+</head>
+
+<style>
+
+    .acciones-reporte {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .boton-pdf {
+        background: #ef4444;
+        color: white;
+    }
+
+    .boton-pdf:hover {
+        background: #dc2626;
+    }
+
+    .reporte-periodo {
+        color: #94a3b8;
+        margin-top: 0.4rem;
+    }
+
+    .cajero-resumen {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #0f3460;
+        border-radius: 8px;
+    }
+
+    .cajero-encabezado {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #333;
+    }
+
+    .productos-cajero {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(210px, 1fr)
+        );
+        gap: 0.5rem;
+    }
+
+    .producto-cajero {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.5rem 0.8rem;
+        background: #16213e;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .reporte-columnas {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        gap: 1.5rem;
+    }
+
+    .top-producto {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.7rem;
+        border-bottom: 1px solid #333;
+    }
+
+    .top-posicion {
+        width: 28px;
+        height: 28px;
+        background: #4ade80;
+        color: #1a1a2e;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 1000px) {
+
+        .reporte-columnas {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>
+
 <body>
+
 <div class="wrapper">
-<div th:replace="~{layout :: admin-sidebar}"></div>
-<div class="main-content">
-<div class="page-header"><h1>📈 Reportes de Ventas</h1></div>
 
-<!-- ===== FORMULARIO CON TH:ACTION CORRECTO ===== -->
-<div class="card">
-<div class="card-header"><span class="card-title">🔍 Filtros</span></div>
-<form th:action="@{/admin/reportes}" method="post" class="form-row">
-<div class="form-group">
-    <label>Fecha Inicio</label>
-    <input type="date" class="form-control" name="fechaInicio" id="fechaInicio" required>
-</div>
-<div class="form-group">
-    <label>Fecha Fin</label>
-    <input type="date" class="form-control" name="fechaFin" id="fechaFin" required>
-</div>
-<div class="form-group" style="display: flex; align-items: flex-end;">
-    <button type="submit" class="btn btn-primary">📊 Generar Reporte</button>
-</div>
-</form>
-</div>
+    <div th:replace="~{layout :: admin-sidebar}"></div>
 
-<!-- Script para poner fechas por defecto (hoy) -->
-<script>
-    document.getElementById('fechaInicio').valueAsDate = new Date();
-    document.getElementById('fechaFin').valueAsDate = new Date();
-</script>
+    <main class="main-content">
 
-<div th:if="${reporte != null}">
-<div class="stats-grid">
-<div class="stat-card"><div class="stat-icon green">🛒</div><div class="stat-info"><h3 th:text="${reporte.totalVentas}">0</h3><p>Total Ventas</p></div></div>
-<div class="stat-card"><div class="stat-icon blue">💰</div><div class="stat-info"><h3 th:text="'₲ ' + ${#numbers.formatDecimal(reporte.montoTotal, 1, 'COMMA', 2, 'POINT')}">0</h3><p>Monto Total</p></div></div>
-</div>
+        <div class="page-header">
 
-<!-- ===== RESUMEN POR CAJERO CON PRODUCTOS ===== -->
-<div class="card">
-<div class="card-header"><span class="card-title">👤 Resumen por Cajero</span></div>
-<div th:each="c : ${reporte.resumenPorCajero}" style="margin-bottom: 1.5rem; padding: 1rem; background: #0f3460; border-radius: 8px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 1px solid #333;">
-        <div>
-            <strong style="color: #4ade80; font-size: 1.1rem;" th:text="${c.cajero}">Cajero</strong>
-            <span style="color: #94a3b8; font-size: 0.85rem; margin-left: 0.5rem;" th:text="'(' + ${c.cantidadVentas} + ' ventas)'">(0 ventas)</span>
+            <div>
+
+                <h1>
+                    📈 Reportes de Ventas
+                </h1>
+
+                <p class="reporte-periodo">
+                    Consulta las ventas y genera una copia PDF local.
+                </p>
+
+            </div>
+
         </div>
-        <div style="color: #4ade80; font-weight: 700; font-size: 1.1rem;" th:text="'₲ ' + ${#numbers.formatDecimal(c.montoTotal, 1, 'COMMA', 2, 'POINT')}">₲ 0</div>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
-        <div th:each="p : ${c.productosVendidos}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.8rem; background: #16213e; border-radius: 6px; font-size: 0.9rem;">
-            <span th:text="${p.nombreProducto}">Producto</span>
-            <span style="color: #4ade80; font-weight: 600;" th:text="${p.cantidad} + ' uds'">0 uds</span>
+
+        <!-- ===================================================== -->
+        <!-- FILTROS                                                -->
+        <!-- ===================================================== -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    🔍 Filtros
+                </span>
+
+            </div>
+
+            <form
+                    th:action="@{/admin/reportes}"
+                    method="post"
+                    class="form-row">
+
+                <div class="form-group">
+
+                    <label for="fechaInicio">
+                        Fecha inicial
+                    </label>
+
+                    <input
+                            type="date"
+                            class="form-control"
+                            name="fechaInicio"
+                            id="fechaInicio"
+                            th:value="${fechaInicio}"
+                            required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="fechaFin">
+                        Fecha final
+                    </label>
+
+                    <input
+                            type="date"
+                            class="form-control"
+                            name="fechaFin"
+                            id="fechaFin"
+                            th:value="${fechaFin}"
+                            required>
+
+                </div>
+
+                <div class="form-group acciones-reporte">
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary">
+                        📊 Generar reporte
+                    </button>
+
+                    <button
+                            type="submit"
+                            class="btn boton-pdf"
+                            th:formaction="@{/admin/reportes/pdf}"
+                            formtarget="_blank">
+                        📄 Descargar PDF
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- RESULTADO                                              -->
+        <!-- ===================================================== -->
+
+        <div th:if="${reporte != null}">
+
+            <section class="stats-grid">
+
+                <article class="stat-card">
+
+                    <div class="stat-icon green">
+                        🛒
+                    </div>
+
+                    <div class="stat-info">
+
+                        <h3 th:text="${reporte.totalVentas}">
+                            0
+                        </h3>
+
+                        <p>
+                            Total de ventas
+                        </p>
+
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-icon blue">
+                        💰
+                    </div>
+
+                    <div class="stat-info">
+
+                        <h3
+                                th:text="'$ ' +
+                                    ${#numbers.formatDecimal(
+                                        reporte.montoTotal,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )}">
+                            $ 0.00
+                        </h3>
+
+                        <p>
+                            Monto total
+                        </p>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- RESUMEN POR CAJERO -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        👤 Resumen por cajero
+                    </span>
+
+                </div>
+
+                <article
+                        class="cajero-resumen"
+                        th:each="c : ${reporte.resumenPorCajero}">
+
+                    <div class="cajero-encabezado">
+
+                        <div>
+
+                            <strong
+                                    style="
+                                        color: #4ade80;
+                                        font-size: 1.1rem;
+                                    "
+                                    th:text="${c.cajero}">
+                                Cajero
+                            </strong>
+
+                            <span
+                                    style="
+                                        color: #94a3b8;
+                                        font-size: 0.85rem;
+                                        margin-left: 0.5rem;
+                                    "
+                                    th:text="'(' +
+                                        ${c.cantidadVentas} +
+                                        ' ventas)'">
+                                (0 ventas)
+                            </span>
+
+                        </div>
+
+                        <div
+                                style="
+                                    color: #4ade80;
+                                    font-weight: 700;
+                                    font-size: 1.1rem;
+                                "
+                                th:text="'$ ' +
+                                    ${#numbers.formatDecimal(
+                                        c.montoTotal,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )}">
+                            $ 0.00
+                        </div>
+
+                    </div>
+
+                    <div class="productos-cajero">
+
+                        <div
+                                class="producto-cajero"
+                                th:each="p : ${c.productosVendidos}">
+
+                            <span th:text="${p.nombreProducto}">
+                                Producto
+                            </span>
+
+                            <span
+                                    style="
+                                        color: #4ade80;
+                                        font-weight: 600;
+                                    "
+                                    th:text="${p.cantidad} + ' piezas'">
+                                0 piezas
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+                <div
+                        th:if="${reporte.resumenPorCajero == null
+                            or reporte.resumenPorCajero.isEmpty()}"
+                        style="
+                            text-align: center;
+                            color: #94a3b8;
+                            padding: 2rem;
+                        ">
+                    No hay datos por cajero.
+                </div>
+
+            </section>
+
+            <div class="reporte-columnas">
+
+                <!-- DETALLE DE VENTAS -->
+
+                <section class="card">
+
+                    <div class="card-header">
+
+                        <span class="card-title">
+                            📋 Detalle de ventas
+                        </span>
+
+                    </div>
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Cajero</th>
+                                <th>Productos</th>
+                                <th>Total</th>
+                            </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                            <tr th:each="v : ${reporte.ventas}">
+
+                                <td th:text="'#' + ${v.ventaId}">
+                                    #1
+                                </td>
+
+                                <td th:text="${v.fecha}">
+                                    -
+                                </td>
+
+                                <td th:text="${v.cajero}">
+                                    -
+                                </td>
+
+                                <td th:text="${v.cantidadProductos}">
+                                    0
+                                </td>
+
+                                <td
+                                        th:text="'$ ' +
+                                            ${#numbers.formatDecimal(
+                                                v.total,
+                                                1,
+                                                'COMMA',
+                                                2,
+                                                'POINT'
+                                            )}">
+                                    $ 0.00
+                                </td>
+
+                            </tr>
+
+                            <tr th:if="${reporte.ventas.isEmpty()}">
+
+                                <td
+                                        colspan="5"
+                                        style="
+                                            text-align: center;
+                                            color: #94a3b8;
+                                        ">
+                                    No hay ventas en este periodo.
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+                <!-- TOP PRODUCTOS -->
+
+                <section class="card">
+
+                    <div class="card-header">
+
+                        <span class="card-title">
+                            🏆 Productos más vendidos
+                        </span>
+
+                    </div>
+
+                    <div>
+
+                        <article
+                                class="top-producto"
+                                th:each="
+                                    p, iter :
+                                    ${reporte.productosMasVendidos}
+                                ">
+
+                            <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        min-width: 0;
+                                    ">
+
+                                <span
+                                        class="top-posicion"
+                                        th:text="${iter.count}">
+                                    1
+                                </span>
+
+                                <div
+                                        style="
+                                            margin-left: 0.8rem;
+                                            min-width: 0;
+                                        ">
+
+                                    <div th:text="${p.nombre}">
+                                        Producto
+                                    </div>
+
+                                    <div
+                                            style="
+                                                color: #94a3b8;
+                                                font-size: 0.85rem;
+                                            "
+                                            th:text="${p.cantidadVendida}
+                                                + ' piezas'">
+                                        0 piezas
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <strong
+                                    style="
+                                        color: #4ade80;
+                                        white-space: nowrap;
+                                    "
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            p.montoTotal,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </strong>
+
+                        </article>
+
+                        <div
+                                th:if="${reporte.productosMasVendidos.isEmpty()}"
+                                style="
+                                    color: #94a3b8;
+                                    text-align: center;
+                                    padding: 2rem;
+                                ">
+                            No hay datos.
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
         </div>
-    </div>
-</div>
-<div th:if="${reporte.resumenPorCajero == null or reporte.resumenPorCajero.isEmpty()}" style="text-align:center; color:#94a3b8; padding: 2rem;">
-    No hay datos por cajero
-</div>
+
+        <!-- SIN REPORTE -->
+
+        <section
+                th:unless="${reporte != null}"
+                class="card"
+                style="
+                    text-align: center;
+                    padding: 3rem;
+                    color: #94a3b8;
+                ">
+
+            <div
+                    style="
+                        font-size: 3rem;
+                        margin-bottom: 1rem;
+                    ">
+                📊
+            </div>
+
+            <p>
+                Selecciona un rango de fechas para consultar las ventas
+                o descargar el reporte PDF.
+            </p>
+
+        </section>
+
+    </main>
+
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-<div class="card">
-<div class="card-header"><span class="card-title">📋 Detalle de Ventas</span></div>
-<div class="table-container">
-<table>
-<thead><tr><th>ID</th><th>Fecha</th><th>Cajero</th><th>Productos</th><th>Total</th></tr></thead>
-<tbody>
-<tr th:each="v : ${reporte.ventas}"><td th:text="'#' + ${v.ventaId}">#1</td><td th:text="${v.fecha}">-</td><td th:text="${v.cajero}">-</td><td th:text="${v.cantidadProductos}">0</td><td th:text="'₲ ' + ${#numbers.formatDecimal(v.total, 1, 'COMMA', 2, 'POINT')}">0</td></tr>
-<tr th:if="${reporte.ventas.isEmpty()}"><td colspan="5" style="text-align:center; color:#94a3b8;">No hay ventas en este período</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="card">
-<div class="card-header"><span class="card-title">🏆 Productos Más Vendidos</span></div>
-<ul style="list-style: none;">
-<li th:each="p, iter : ${reporte.productosMasVendidos}" style="display: flex; justify-content: space-between; padding: 0.7rem; border-bottom: 1px solid #333;">
-<div style="display:flex; align-items:center;"><span style="width: 28px; height: 28px; background: #4ade80; color: #1a1a2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;" th:text="${iter.count}">1</span><div style="flex: 1; margin-left: 0.8rem;"><div th:text="${p.nombre}">Producto</div><div style="color: #94a3b8; font-size: 0.85rem;" th:text="${p.cantidadVendida} + ' unidades'">0</div></div></div>
-<span style="font-weight: 700; color: #4ade80;" th:text="'₲ ' + ${#numbers.formatDecimal(p.montoTotal, 1, 'COMMA', 2, 'POINT')}">0</span>
-</li>
-<li th:if="${reporte.productosMasVendidos.isEmpty()}" style="justify-content:center; color:#94a3b8; text-align:center;">No hay datos</li>
-</ul>
-</div>
-</div>
-</div>
-<div th:unless="${reporte != null}" class="card" style="text-align:center; padding: 3rem; color: #94a3b8;">
-<div style="font-size: 3rem; margin-bottom: 1rem;">📊</div><p>Selecciona un rango de fechas y haz clic en <strong>Generar Reporte</strong></p>
-</div>
-</div>
-</div>
 </body>
 </html>
