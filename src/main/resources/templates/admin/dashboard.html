@@ -363,6 +363,10 @@
 
 <body>
 
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
 <div class="wrapper">
 
     <div th:replace="~{layout :: admin-sidebar}"></div>
@@ -834,6 +838,8 @@
     </main>
 
 </div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
 
 </body>
 </html>
