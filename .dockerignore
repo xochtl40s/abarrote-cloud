@@ -1,0 +1,12 @@
+target
+.git
+.github
+.idea
+.vscode
+*.log
+*.tmp
+*.swp
+.env
+application-local.properties
+tools
+README.md
