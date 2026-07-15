@@ -11,12 +11,68 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface VentaRepository extends JpaRepository<Venta, Long> {
+public interface VentaRepository
+        extends JpaRepository<Venta, Long> {
 
-    List<Venta> findByFechaHoraBetweenOrderByFechaHoraDesc(LocalDateTime inicio, LocalDateTime fin);
+    List<Venta>
+    findByFechaHoraBetweenOrderByFechaHoraDesc(
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
 
-    List<Venta> findByUsuarioIdAndFechaHoraBetweenOrderByFechaHoraDesc(Long usuarioId, LocalDateTime inicio, LocalDateTime fin);
+    List<Venta>
+    findByUsuarioIdAndFechaHoraBetweenOrderByFechaHoraDesc(
+            Long usuarioId,
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
 
-    @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fechaHora BETWEEN :inicio AND :fin AND v.estado = 'COMPLETADA'")
-    BigDecimal sumTotalVentasPorFechaHora(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+    List<Venta>
+    findBySucursalIdAndFechaHoraBetweenOrderByFechaHoraDesc(
+            Long sucursalId,
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
+
+    List<Venta>
+    findBySucursalIdAndUsuarioIdAndFechaHoraBetweenOrderByFechaHoraDesc(
+            Long sucursalId,
+            Long usuarioId,
+            LocalDateTime inicio,
+            LocalDateTime fin
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(venta.total), 0)
+            FROM Venta venta
+            WHERE venta.fechaHora BETWEEN :inicio AND :fin
+              AND venta.estado =
+                  com.abarrote.abarroteapi.entity.Venta.EstadoVenta.COMPLETADA
+            """)
+    BigDecimal sumTotalVentasPorFechaHora(
+            @Param("inicio")
+            LocalDateTime inicio,
+
+            @Param("fin")
+            LocalDateTime fin
+    );
+
+    @Query("""
+            SELECT COALESCE(SUM(venta.total), 0)
+            FROM Venta venta
+            WHERE venta.sucursal.id = :sucursalId
+              AND venta.fechaHora BETWEEN :inicio AND :fin
+              AND venta.estado =
+                  com.abarrote.abarroteapi.entity.Venta.EstadoVenta.COMPLETADA
+            """)
+    BigDecimal sumTotalVentasPorSucursalYFechaHora(
+            @Param("sucursalId")
+            Long sucursalId,
+
+            @Param("inicio")
+            LocalDateTime inicio,
+
+            @Param("fin")
+            LocalDateTime fin
+    );
 }

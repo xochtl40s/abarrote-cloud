@@ -11,6 +11,7 @@ import com.abarrote.abarroteapi.repository.VentaRepository;
 import com.abarrote.abarroteapi.service.CategoriaService;
 import com.abarrote.abarroteapi.service.ProductoService;
 import com.abarrote.abarroteapi.service.ReporteService;
+import com.abarrote.abarroteapi.service.SucursalService;
 import com.abarrote.abarroteapi.service.UsuarioService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -39,26 +40,43 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final ProductoService productoService;
+
     private final UsuarioService usuarioService;
+
     private final CategoriaService categoriaService;
+
     private final ReporteService reporteService;
+
+    private final SucursalService sucursalService;
+
     private final VentaRepository ventaRepository;
-    private final DetalleVentaRepository detalleVentaRepository;
+
+    private final DetalleVentaRepository
+            detalleVentaRepository;
 
     public AdminController(
             ProductoService productoService,
             UsuarioService usuarioService,
             CategoriaService categoriaService,
             ReporteService reporteService,
+            SucursalService sucursalService,
             VentaRepository ventaRepository,
             DetalleVentaRepository detalleVentaRepository) {
 
         this.productoService = productoService;
+
         this.usuarioService = usuarioService;
+
         this.categoriaService = categoriaService;
+
         this.reporteService = reporteService;
+
+        this.sucursalService = sucursalService;
+
         this.ventaRepository = ventaRepository;
-        this.detalleVentaRepository = detalleVentaRepository;
+
+        this.detalleVentaRepository =
+                detalleVentaRepository;
     }
 
     // ============================================================
@@ -66,14 +84,18 @@ public class AdminController {
     // ============================================================
 
     @GetMapping
-    public String dashboard(Model model) {
+    public String dashboard(
+            Model model) {
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy =
+                LocalDate.now();
 
         BigDecimal totalVentasHoy =
                 valorSeguro(
                         reporteService
-                                .obtenerTotalVentasDelDia(hoy)
+                                .obtenerTotalVentasDelDia(
+                                        hoy
+                                )
                 );
 
         List<ProductoResponse> productosActivos =
@@ -89,25 +111,39 @@ public class AdminController {
                 ventaRepository
                         .findByFechaHoraBetweenOrderByFechaHoraDesc(
                                 hoy.atStartOfDay(),
-                                hoy.atTime(LocalTime.MAX)
+                                hoy.atTime(
+                                        LocalTime.MAX
+                                )
                         )
                         .stream()
-                        .filter(venta ->
-                                venta.getEstado()
-                                        == Venta.EstadoVenta.COMPLETADA
+                        .filter(
+                                venta ->
+                                        venta.getEstado()
+                                                == Venta
+                                                .EstadoVenta
+                                                .COMPLETADA
                         )
                         .toList();
 
-        List<DashboardVentaDiaResponse> ventasUltimosSieteDias =
-                construirVentasUltimosSieteDias(hoy);
+        List<DashboardVentaDiaResponse>
+                ventasUltimosSieteDias =
+                construirVentasUltimosSieteDias(
+                        hoy
+                );
 
-        List<DashboardProductoTopResponse> productosMasVendidos =
-                obtenerProductosMasVendidos(hoy);
+        List<DashboardProductoTopResponse>
+                productosMasVendidos =
+                obtenerProductosMasVendidos(
+                        hoy
+                );
 
         BigDecimal totalUltimosSieteDias =
                 ventasUltimosSieteDias
                         .stream()
-                        .map(DashboardVentaDiaResponse::getTotal)
+                        .map(
+                                DashboardVentaDiaResponse
+                                        ::getTotal
+                        )
                         .reduce(
                                 BigDecimal.ZERO,
                                 BigDecimal::add
@@ -117,7 +153,8 @@ public class AdminController {
                 ventasUltimosSieteDias
                         .stream()
                         .mapToInt(
-                                DashboardVentaDiaResponse::getNumeroVentas
+                                DashboardVentaDiaResponse
+                                        ::getNumeroVentas
                         )
                         .sum();
 
@@ -148,7 +185,9 @@ public class AdminController {
 
         model.addAttribute(
                 "totalUsuarios",
-                usuarioService.listarActivos().size()
+                usuarioService
+                        .listarActivos()
+                        .size()
         );
 
         model.addAttribute(
@@ -194,7 +233,8 @@ public class AdminController {
     // ============================================================
 
     @GetMapping("/productos")
-    public String listarProductos(Model model) {
+    public String listarProductos(
+            Model model) {
 
         model.addAttribute(
                 "productos",
@@ -219,11 +259,24 @@ public class AdminController {
     // ============================================================
 
     @GetMapping("/usuarios")
-    public String listarUsuarios(Model model) {
+    public String listarUsuarios(
+            Model model) {
 
         model.addAttribute(
                 "usuarios",
                 usuarioService.listarTodos()
+        );
+
+        /*
+         * Se envían las sucursales activas para el selector
+         * del formulario de alta y edición de usuarios.
+         *
+         * Si únicamente existe una, el formulario la muestra
+         * bloqueada y el servicio la asigna automáticamente.
+         */
+        model.addAttribute(
+                "sucursalesActivas",
+                sucursalService.listarActivas()
         );
 
         model.addAttribute(
@@ -239,21 +292,27 @@ public class AdminController {
     // ============================================================
 
     @GetMapping("/categorias")
-    public String listarCategorias(Model model) {
+    public String listarCategorias(
+            Model model) {
 
         model.addAttribute(
                 "categorias",
-                categoriaService.listarTodasConProductos()
+                categoriaService
+                        .listarTodasConProductos()
         );
 
         model.addAttribute(
                 "totalProductos",
-                productoService.listarTodos().size()
+                productoService
+                        .listarTodos()
+                        .size()
         );
 
         model.addAttribute(
                 "productosStockBajo",
-                productoService.listarStockBajo().size()
+                productoService
+                        .listarStockBajo()
+                        .size()
         );
 
         model.addAttribute(
@@ -269,11 +328,13 @@ public class AdminController {
     // ============================================================
 
     @GetMapping("/reportes")
-    public String reportes(Model model) {
+    public String reportes(
+            Model model) {
 
         model.addAttribute(
                 "fechaInicio",
-                LocalDate.now().minusDays(7)
+                LocalDate.now()
+                        .minusDays(7)
         );
 
         model.addAttribute(
@@ -292,11 +353,15 @@ public class AdminController {
     @PostMapping("/reportes")
     public String generarReporte(
             @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE
+            )
             LocalDate fechaInicio,
 
             @RequestParam
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE
+            )
             LocalDate fechaFin,
 
             Model model) {
@@ -304,11 +369,19 @@ public class AdminController {
         ReporteVentasRequest request =
                 new ReporteVentasRequest();
 
-        request.setFechaInicio(fechaInicio);
-        request.setFechaFin(fechaFin);
+        request.setFechaInicio(
+                fechaInicio
+        );
+
+        request.setFechaFin(
+                fechaFin
+        );
 
         ReporteVentasResponse reporte =
-                reporteService.generarReporteVentas(request);
+                reporteService
+                        .generarReporteVentas(
+                                request
+                        );
 
         model.addAttribute(
                 "reporte",
@@ -338,21 +411,27 @@ public class AdminController {
     // ============================================================
 
     @GetMapping("/corte")
-    public String corteCaja(Model model) {
+    public String corteCaja(
+            Model model) {
 
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy =
+                LocalDate.now();
 
         BigDecimal totalHoy =
                 valorSeguro(
                         reporteService
-                                .obtenerTotalVentasDelDia(hoy)
+                                .obtenerTotalVentasDelDia(
+                                        hoy
+                                )
                 );
 
         List<Venta> ventasHoy =
                 ventaRepository
                         .findByFechaHoraBetweenOrderByFechaHoraDesc(
                                 hoy.atStartOfDay(),
-                                hoy.atTime(LocalTime.MAX)
+                                hoy.atTime(
+                                        LocalTime.MAX
+                                )
                         );
 
         model.addAttribute(
@@ -388,7 +467,8 @@ public class AdminController {
     // ============================================================
 
     private List<DashboardVentaDiaResponse>
-    construirVentasUltimosSieteDias(LocalDate hoy) {
+    construirVentasUltimosSieteDias(
+            LocalDate hoy) {
 
         LocalDate fechaInicial =
                 hoy.minusDays(6);
@@ -397,7 +477,9 @@ public class AdminController {
                 fechaInicial.atStartOfDay();
 
         LocalDateTime fin =
-                hoy.atTime(LocalTime.MAX);
+                hoy.atTime(
+                        LocalTime.MAX
+                );
 
         List<Venta> ventas =
                 ventaRepository
@@ -406,13 +488,17 @@ public class AdminController {
                                 fin
                         )
                         .stream()
-                        .filter(venta ->
-                                venta.getEstado()
-                                        == Venta.EstadoVenta.COMPLETADA
+                        .filter(
+                                venta ->
+                                        venta.getEstado()
+                                                == Venta
+                                                .EstadoVenta
+                                                .COMPLETADA
                         )
                         .toList();
 
-        Map<LocalDate, List<Venta>> ventasPorFecha =
+        Map<LocalDate, List<Venta>>
+                ventasPorFecha =
                 ventas.stream()
                         .collect(
                                 Collectors.groupingBy(
@@ -441,7 +527,10 @@ public class AdminController {
                     ventasDelDia
                             .stream()
                             .map(Venta::getTotal)
-                            .filter(total -> total != null)
+                            .filter(
+                                    total ->
+                                            total != null
+                            )
                             .reduce(
                                     BigDecimal.ZERO,
                                     BigDecimal::add
@@ -452,11 +541,16 @@ public class AdminController {
                             .getDayOfWeek()
                             .getDisplayName(
                                     TextStyle.SHORT,
-                                    new Locale("es", "MX")
+                                    new Locale(
+                                            "es",
+                                            "MX"
+                                    )
                             );
 
             String etiqueta =
-                    nombreDia.substring(0, 1).toUpperCase()
+                    nombreDia
+                            .substring(0, 1)
+                            .toUpperCase()
                             + nombreDia.substring(1)
                             + " "
                             + fecha.getDayOfMonth();
@@ -464,27 +558,51 @@ public class AdminController {
             DashboardVentaDiaResponse dato =
                     new DashboardVentaDiaResponse();
 
-            dato.setFecha(fecha);
-            dato.setEtiqueta(etiqueta);
-            dato.setTotal(totalDelDia);
-            dato.setNumeroVentas(ventasDelDia.size());
+            dato.setFecha(
+                    fecha
+            );
+
+            dato.setEtiqueta(
+                    etiqueta
+            );
+
+            dato.setTotal(
+                    totalDelDia
+            );
+
+            dato.setNumeroVentas(
+                    ventasDelDia.size()
+            );
+
             dato.setPorcentaje(0);
 
-            resultado.add(dato);
+            resultado.add(
+                    dato
+            );
         }
 
         BigDecimal mayorVenta =
                 resultado
                         .stream()
-                        .map(DashboardVentaDiaResponse::getTotal)
-                        .max(Comparator.naturalOrder())
-                        .orElse(BigDecimal.ZERO);
+                        .map(
+                                DashboardVentaDiaResponse
+                                        ::getTotal
+                        )
+                        .max(
+                                Comparator.naturalOrder()
+                        )
+                        .orElse(
+                                BigDecimal.ZERO
+                        );
 
-        for (DashboardVentaDiaResponse dato : resultado) {
+        for (DashboardVentaDiaResponse dato
+                : resultado) {
 
             int porcentaje;
 
-            if (mayorVenta.compareTo(BigDecimal.ZERO) == 0) {
+            if (mayorVenta.compareTo(
+                    BigDecimal.ZERO
+            ) == 0) {
 
                 porcentaje = 0;
 
@@ -493,7 +611,8 @@ public class AdminController {
                 porcentaje =
                         dato.getTotal()
                                 .multiply(
-                                        BigDecimal.valueOf(100)
+                                        BigDecimal
+                                                .valueOf(100)
                                 )
                                 .divide(
                                         mayorVenta,
@@ -503,30 +622,40 @@ public class AdminController {
                                 .intValue();
             }
 
-            dato.setPorcentaje(porcentaje);
+            dato.setPorcentaje(
+                    porcentaje
+            );
         }
 
         return resultado;
     }
 
     private List<DashboardProductoTopResponse>
-    obtenerProductosMasVendidos(LocalDate hoy) {
+    obtenerProductosMasVendidos(
+            LocalDate hoy) {
 
         LocalDateTime inicio =
-                hoy.minusDays(29).atStartOfDay();
+                hoy.minusDays(29)
+                        .atStartOfDay();
 
         LocalDateTime fin =
-                hoy.atTime(LocalTime.MAX);
+                hoy.atTime(
+                        LocalTime.MAX
+                );
 
         List<Object[]> resultados =
                 detalleVentaRepository
                         .buscarProductosMasVendidos(
                                 inicio,
                                 fin,
-                                PageRequest.of(0, 5)
+                                PageRequest.of(
+                                        0,
+                                        5
+                                )
                         );
 
-        List<DashboardProductoTopResponse> productos =
+        List<DashboardProductoTopResponse>
+                productos =
                 new ArrayList<>();
 
         int posicion = 1;
@@ -534,13 +663,17 @@ public class AdminController {
         for (Object[] fila : resultados) {
 
             Long productoId =
-                    ((Number) fila[0]).longValue();
+                    ((Number) fila[0])
+                            .longValue();
 
             String nombre =
-                    String.valueOf(fila[1]);
+                    String.valueOf(
+                            fila[1]
+                    );
 
             Long cantidad =
-                    ((Number) fila[2]).longValue();
+                    ((Number) fila[2])
+                            .longValue();
 
             BigDecimal importe =
                     fila[3] instanceof BigDecimal

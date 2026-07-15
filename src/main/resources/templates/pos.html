@@ -229,6 +229,31 @@
     </style>
 </head>
 <body>
+<div
+        th:if="${param.accesoDenegado}"
+        style="
+            position:fixed;
+            top:20px;
+            left:50%;
+            transform:translateX(-50%);
+            z-index:99999;
+            max-width:620px;
+            width:calc(100% - 40px);
+            padding:1rem 1.25rem;
+            border:1px solid #f59e0b;
+            border-radius:10px;
+            background:#451a03;
+            color:#fbbf24;
+            font-family:'Segoe UI',system-ui,sans-serif;
+            font-weight:600;
+            text-align:center;
+            box-shadow:0 15px 35px rgba(0,0,0,0.45);
+        ">
+
+    ⚠️ Tu sesión actual pertenece a un cajero.
+    No tienes permisos para abrir el panel administrativo.
+
+</div>
     <div class="pos-container">
         <div class="products-panel">
             <div class="pos-header">
@@ -239,7 +264,16 @@
                         <span id="connectionText">Online</span>
                         <span class="pending-badge" id="pendingBadge" style="display:none;">0</span>
                     </div>
-                    <span class="cajero" th:text="'Cajero: ' + ${cajero}">Cajero</span>
+                    <span
+                            class="cajero"
+                            th:text="'Cajero: '
+                                + ${cajero}
+                                + ' · '
+                                + ${sucursalCodigo}
+                                + ' - '
+                                + ${sucursal}">
+                        Cajero · Sucursal
+                    </span>
                     <form th:action="@{/logout}" method="post" style="margin:0;">
                         <button type="submit" class="logout-btn">🚪 Cerrar Sesión</button>
                     </form>
@@ -299,7 +333,7 @@
         // ============================================================
         
         const DB_NAME = 'AbarrotePOS';
-        const DB_VERSION = 1;
+        const DB_VERSION = 2;
         let db;
         let categoriasCache = [];
         let categoriaActiva = null;
@@ -325,8 +359,30 @@
         }
         
         async function cacheProductos(productos) {
-            const tx = db.transaction('productos', 'readwrite');
-            const store = tx.objectStore('productos');
+            const tx = db.transaction(
+                'productos',
+                'readwrite'
+            );
+
+            const store =
+                tx.objectStore('productos');
+
+            await new Promise(
+                (resolve, reject) => {
+
+                    const clearRequest =
+                        store.clear();
+
+                    clearRequest.onsuccess =
+                        () => resolve();
+
+                    clearRequest.onerror =
+                        () => reject(
+                            clearRequest.error
+                        );
+                }
+            );
+
             for (const p of productos) {
                 await new Promise((resolve, reject) => {
                     const req = store.put(p);
@@ -443,64 +499,159 @@
         let isSyncing = false;
         
         async function sincronizarVentasPendientes() {
-            if (isSyncing || !isOnline) return;
+
+            if (
+                isSyncing
+                || !navigator.onLine
+            ) {
+                return;
+            }
+
             isSyncing = true;
-            
-            const status = document.getElementById('connectionStatus');
-            const text = document.getElementById('connectionText');
-            status.className = 'connection-status syncing';
-            text.textContent = 'Sincronizando...';
-            
+
+            const status =
+                document.getElementById(
+                    'connectionStatus'
+                );
+
+            const text =
+                document.getElementById(
+                    'connectionText'
+                );
+
+            status.className =
+                'connection-status syncing';
+
+            text.textContent =
+                'Sincronizando...';
+
             try {
-                const pendientes = await getVentasPendientes();
+
+                const pendientes =
+                    await getVentasPendientes();
+
                 if (pendientes.length === 0) {
-                    status.className = 'connection-status online';
-                    text.textContent = 'Online';
-                    isSyncing = false;
+
+                    status.className =
+                        'connection-status online';
+
+                    text.textContent =
+                        'Online';
+
                     return;
                 }
-                
-                mostrarToast(`🔄 Sincronizando ${pendientes.length} venta(s)...`, false, 5000);
-                
+
                 for (const item of pendientes) {
+
                     try {
-                        const response = await fetch('/api/ventas/registrar', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(item.venta)
-                        });
-                        
+
+                        const response =
+                            await fetch(
+                                '/api/ventas/registrar',
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type':
+                                            'application/json'
+                                    },
+                                    body:
+                                        JSON.stringify(
+                                            item.venta
+                                        )
+                                }
+                            );
+
                         if (response.ok) {
-                            await eliminarVentaPendiente(item.id);
-                        } else {
-                            console.error(`Error sincronizando venta ${item.id}:`, await response.text());
+
+                            await eliminarVentaPendiente(
+                                item.id
+                            );
+
+                            continue;
                         }
-                    } catch (error) {
-                        console.error(`Error de red sincronizando venta ${item.id}:`, error);
+
+                        /*
+                         * El servidor respondió.
+                         * Por tanto, no es un error offline.
+                         *
+                         * Una venta rechazada por inventario,
+                         * sucursal o validación se elimina de
+                         * la cola para evitar reintentos eternos.
+                         */
+                        const mensaje =
+                            await leerErrorServidor(
+                                response
+                            );
+
+                        console.error(
+                            `Venta pendiente ${item.id} rechazada:`,
+                            mensaje
+                        );
+
+                        await eliminarVentaPendiente(
+                            item.id
+                        );
+
+                        mostrarToast(
+                            '⚠️ Venta pendiente descartada: '
+                            + mensaje,
+                            true,
+                            7000
+                        );
+
+                    } catch (errorRed) {
+
+                        console.error(
+                            'No existe comunicación con el servidor:',
+                            errorRed
+                        );
+
+                        break;
                     }
                 }
-                
+
                 await actualizarBadgePendientes();
-                const restantes = await getVentasPendientes();
-                
+
+                const restantes =
+                    await getVentasPendientes();
+
                 if (restantes.length === 0) {
-                    mostrarToast('✅ Todas las ventas sincronizadas', false);
-                    status.className = 'connection-status online';
-                    text.textContent = 'Online';
+
+                    status.className =
+                        'connection-status online';
+
+                    text.textContent =
+                        'Online';
+
                 } else {
-                    mostrarToast(`⚠️ ${restantes.length} venta(s) pendiente(s)`, true);
-                    status.className = 'connection-status offline';
-                    text.textContent = `Offline (${restantes.length} pendientes)`;
+
+                    status.className =
+                        'connection-status offline';
+
+                    text.textContent =
+                        `${restantes.length} pendiente(s)`;
                 }
+
             } catch (error) {
-                console.error('Error en sincronización:', error);
-                status.className = 'connection-status offline';
-                text.textContent = 'Error sync';
+
+                console.error(
+                    'Error en sincronización:',
+                    error
+                );
+
+                status.className =
+                    'connection-status offline';
+
+                text.textContent =
+                    'Error de conexión';
+
             } finally {
+
                 isSyncing = false;
             }
         }
-        
+
+
         setInterval(async () => {
             const pendientes = await getVentasPendientes();
             if (pendientes.length > 0 && isOnline && !isSyncing) {
@@ -519,7 +670,7 @@
                 return;
             }
             try {
-                const response = await fetch('/api/productos');
+                const response = await fetch('/api/ventas/productos');
                 if (response.ok) {
                     const result = await response.json();
                     let productos = [];
@@ -624,7 +775,7 @@
             // Primero intentar online
             if (isOnline) {
                 try {
-                    const response = await fetch(`/api/productos/buscar?q=${encodeURIComponent(query)}`);
+                    const response = await fetch(`/api/ventas/buscar?q=${encodeURIComponent(query)}`);
                     if (response.ok) {
                         const result = await response.json();
                         let productos = [];
@@ -753,39 +904,221 @@
             document.getElementById('cambio').textContent = '₲ ' + formatearPrecio(Math.max(0, pago - total));
         });
         
-        async function confirmarCobro() {
-            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            const pago = parseFloat(document.getElementById('inputPago').value) || 0;
-            if (pago < total) { mostrarToast('El pago es insuficiente', true); return; }
-            
-            const items = carrito.map(item => ({ productoId: item.id, cantidad: item.cantidad }));
-            const ventaData = { items: items };
-            
-            if (isOnline) {
+        async function leerErrorServidor(response) {
+
+            try {
+
+                const texto =
+                    await response.text();
+
+                if (!texto) {
+                    return 'El servidor rechazó la operación.';
+                }
+
                 try {
-                    const response = await fetch('/api/ventas/registrar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(ventaData)
-                    });
-                    if (response.ok) {
-                        const result = await response.json();
-                        if (result.success) {
-                            mostrarToast(`✅ Venta #${result.data.idVenta} registrada`);
-                            carrito = []; actualizarTicket(); cerrarCobro();
-                            contadorTicket++; document.getElementById('ticketNum').textContent = '#' + String(contadorTicket).padStart(4, '0');
-                            return;
+
+                    const json =
+                        JSON.parse(texto);
+
+                    if (json.message) {
+                        return json.message;
+                    }
+
+                    if (
+                        json.data
+                        && typeof json.data === 'object'
+                    ) {
+
+                        const mensajes =
+                            Object.values(json.data);
+
+                        if (mensajes.length > 0) {
+                            return mensajes.join('. ');
                         }
                     }
-                    await guardarVentaOffline(ventaData);
-                } catch (error) {
-                    await guardarVentaOffline(ventaData);
+
+                    return texto;
+
+                } catch (errorJson) {
+
+                    return texto;
                 }
-            } else {
-                await guardarVentaOffline(ventaData);
+
+            } catch (errorLectura) {
+
+                return 'No fue posible leer la respuesta del servidor.';
             }
         }
-        
+
+
+        async function confirmarCobro() {
+
+            const total =
+                carrito.reduce(
+                    (sum, item) =>
+                        sum
+                        + (
+                            item.precio
+                            * item.cantidad
+                        ),
+                    0
+                );
+
+            const pago =
+                parseFloat(
+                    document
+                        .getElementById('inputPago')
+                        .value
+                ) || 0;
+
+            if (pago < total) {
+
+                mostrarToast(
+                    'El pago es insuficiente',
+                    true
+                );
+
+                return;
+            }
+
+            const items =
+                carrito.map(
+                    item => ({
+                        productoId: item.id,
+                        cantidad: item.cantidad
+                    })
+                );
+
+            const ventaData = {
+                items: items
+            };
+
+            if (!navigator.onLine) {
+
+                await guardarVentaOffline(
+                    ventaData
+                );
+
+                return;
+            }
+
+            try {
+
+                const response =
+                    await fetch(
+                        '/api/ventas/registrar',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type':
+                                    'application/json'
+                            },
+                            body:
+                                JSON.stringify(
+                                    ventaData
+                                )
+                        }
+                    );
+
+                /*
+                 * Los errores 400, 401, 403, 404 y 500
+                 * significan que el servidor sí respondió.
+                 *
+                 * No son modo offline.
+                 */
+                if (!response.ok) {
+
+                    const mensaje =
+                        await leerErrorServidor(
+                            response
+                        );
+
+                    mostrarToast(
+                        '❌ ' + mensaje,
+                        true,
+                        6000
+                    );
+
+                    return;
+                }
+
+                const result =
+                    await response.json();
+
+                if (!result || !result.success) {
+
+                    mostrarToast(
+                        '❌ '
+                        + (
+                            result
+                            && result.message
+                                ? result.message
+                                : 'La venta fue rechazada.'
+                        ),
+                        true,
+                        6000
+                    );
+
+                    return;
+                }
+
+                const ventaId =
+                    result.data
+                        ? (
+                            result.data.id
+                            || result.data.idVenta
+                            || ''
+                        )
+                        : '';
+
+                mostrarToast(
+                    ventaId
+                        ? `✅ Venta #${ventaId} registrada`
+                        : '✅ Venta registrada'
+                );
+
+                carrito = [];
+
+                actualizarTicket();
+                cerrarCobro();
+
+                contadorTicket++;
+
+                document
+                    .getElementById('ticketNum')
+                    .textContent =
+                        '#'
+                        + String(contadorTicket)
+                            .padStart(4, '0');
+
+                /*
+                 * Recargar catálogo para reflejar
+                 * inmediatamente el nuevo inventario.
+                 */
+                await cargarTodosLosProductos();
+
+                await filtrarPorCategoria(
+                    categoriaActiva
+                );
+
+            } catch (error) {
+
+                /*
+                 * Solamente una excepción de red real
+                 * se guarda como venta offline.
+                 */
+                console.error(
+                    'Error real de comunicación:',
+                    error
+                );
+
+                await guardarVentaOffline(
+                    ventaData
+                );
+            }
+        }
+
+
         async function guardarVentaOffline(ventaData) {
             await guardarVentaPendiente(ventaData);
             await actualizarBadgePendientes();

@@ -561,6 +561,69 @@
 
                     <div class="form-group">
 
+                        <label for="sucursalId">
+                            Sucursal *
+                        </label>
+
+                        <select
+                                class="form-control"
+                                id="sucursalId"
+                                th:disabled="${#lists.size(
+                                    sucursalesActivas
+                                ) == 1}"
+                                required>
+
+                            <option
+                                    value=""
+                                    th:if="${#lists.size(
+                                        sucursalesActivas
+                                    ) > 1}">
+                                Selecciona una sucursal
+                            </option>
+
+                            <option
+                                    th:each="sucursal :
+                                        ${sucursalesActivas}"
+                                    th:value="${sucursal.id}"
+                                    th:text="${sucursal.codigo
+                                        + ' - '
+                                        + sucursal.nombre}">
+                                Sucursal
+                            </option>
+
+                        </select>
+
+                        <small
+                                th:if="${#lists.size(
+                                    sucursalesActivas
+                                ) == 1}"
+                                style="
+                                    display:block;
+                                    color:#94a3b8;
+                                    margin-top:0.4rem;
+                                ">
+                            El usuario se asignará automáticamente
+                            a la única sucursal activa.
+                        </small>
+
+                        <small
+                                th:if="${#lists.size(
+                                    sucursalesActivas
+                                ) > 1}"
+                                style="
+                                    display:block;
+                                    color:#94a3b8;
+                                    margin-top:0.4rem;
+                                ">
+                            Selecciona la tienda donde operará
+                            este usuario.
+                        </small>
+
+                    </div>
+
+
+                    <div class="form-group">
+
                         <label for="activo">
                             Activo
                         </label>
@@ -631,6 +694,7 @@
                         <th>Nombre</th>
                         <th>Username</th>
                         <th>Rol</th>
+                        <th>Sucursal</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -641,7 +705,8 @@
 
                     <tr
                             th:each="u : ${usuarios}"
-                            th:data-id="${u.id}">
+                            th:data-id="${u.id}"
+                            th:data-sucursal-id="${u.sucursalId}">
 
                         <td th:text="${u.id}">
                             1
@@ -664,6 +729,25 @@
                                         : 'badge-warning'"
                                     th:text="${u.rol}">
                                 ROL
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <span
+                                    class="badge badge-info"
+                                    th:if="${u.sucursalId != null}"
+                                    th:text="${u.sucursalCodigo
+                                        + ' - '
+                                        + u.sucursalNombre}">
+                                Sucursal
+                            </span>
+
+                            <span
+                                    class="badge badge-danger"
+                                    th:unless="${u.sucursalId != null}">
+                                Sin asignar
                             </span>
 
                         </td>
@@ -727,7 +811,7 @@
                     <tr th:if="${#lists.isEmpty(usuarios)}">
 
                         <td
-                                colspan="6"
+                                colspan="7"
                                 style="
                                     text-align: center;
                                     color: #94a3b8;
@@ -1347,6 +1431,19 @@
             .getElementById('rol')
             .value = 'CAJERO';
 
+        const sucursalSelect =
+            document.getElementById(
+                'sucursalId'
+            );
+
+        if (
+            sucursalSelect
+            && sucursalSelect.options.length === 1
+        ) {
+
+            sucursalSelect.selectedIndex = 0;
+        }
+
         const formulario =
             document.getElementById(
                 'formularioUsuario'
@@ -1435,7 +1532,18 @@
             activo:
                 document
                     .getElementById('activo')
-                    .value === 'true'
+                    .value === 'true',
+
+            sucursalId:
+                document
+                    .getElementById('sucursalId')
+                    .value
+                    ? Number(
+                        document
+                            .getElementById('sucursalId')
+                            .value
+                    )
+                    : null
         };
 
         const url =
@@ -1541,9 +1649,12 @@
         const rol =
             fila.cells[3].textContent.trim();
 
+        const sucursalId =
+            fila.dataset.sucursalId || '';
+
         const estaActivo =
             fila
-                .cells[4]
+                .cells[5]
                 .querySelector('.badge-success') !== null;
 
         document
@@ -1568,6 +1679,17 @@
                 estaActivo
                     ? 'true'
                     : 'false';
+
+        const sucursalSelect =
+            document.getElementById(
+                'sucursalId'
+            );
+
+        if (sucursalSelect) {
+
+            sucursalSelect.value =
+                sucursalId;
+        }
 
         const password =
             document.getElementById('password');

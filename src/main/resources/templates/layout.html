@@ -968,6 +968,18 @@
         </a>
 
         <a
+                th:href="@{/admin/inventario/transferencias}"
+                class="nav-item"
+                th:classappend="${activePage == 'inventario'}
+                    ? 'active'
+                    : ''"
+                onclick="cerrarMenuMovil()">
+            <i>🚚</i>
+            Mover Inventario
+        </a>
+
+
+        <a
                 th:href="@{/admin/reportes}"
                 class="nav-item"
                 th:classappend="${activePage == 'reportes'}
@@ -990,6 +1002,18 @@
         </a>
 
         <hr class="sidebar-separator">
+
+        <a
+                th:href="@{/admin/sucursales}"
+                class="nav-item"
+                th:classappend="${activePage == 'sucursales'}
+                    ? 'active'
+                    : ''"
+                onclick="cerrarMenuMovil()">
+            <i>🏪</i>
+            Sucursales
+        </a>
+
 
         <a
                 th:href="@{/admin/usuarios} + '#cambiar-password'"
