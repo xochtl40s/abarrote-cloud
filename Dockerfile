@@ -1,12 +1,16 @@
 # ============================================================
-# ETAPA 1: COMPILACIÓN
+# ABARROTE CLOUD - DOCKERFILE OPTIMIZADO PARA RENDER FREE
+# Java 17 / Spring Boot / 512 MB RAM
 # ============================================================
+
+# ------------------------------------------------------------
+# ETAPA 1: COMPILACIÓN
+# ------------------------------------------------------------
 
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
-# Primero se copia el POM para aprovechar la caché de Docker.
 COPY pom.xml .
 
 RUN mvn \
@@ -14,7 +18,6 @@ RUN mvn \
     -DskipTests \
     dependency:go-offline
 
-# Después se copia el código fuente.
 COPY src ./src
 
 RUN mvn \
@@ -22,15 +25,14 @@ RUN mvn \
     -DskipTests \
     clean package
 
-# ============================================================
+# ------------------------------------------------------------
 # ETAPA 2: EJECUCIÓN
-# ============================================================
+# ------------------------------------------------------------
 
 FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
-# Usuario sin privilegios para ejecutar la aplicación.
 RUN groupadd \
         --system \
         abarrote \
@@ -38,6 +40,7 @@ RUN groupadd \
         --system \
         --gid abarrote \
         --home-dir /app \
+        --shell /usr/sbin/nologin \
         abarrote
 
 COPY --from=build \
@@ -52,17 +55,19 @@ USER abarrote
 
 ENV SPRING_PROFILES_ACTIVE=render
 
-ENV JAVA_TOOL_OPTIONS="\
--XX:MaxRAMPercentage=75.0 \
--XX:InitialRAMPercentage=25.0 \
--XX:+UseSerialGC \
--Djava.security.egd=file:/dev/./urandom"
+# Render Free proporciona 512 MB.
+# Se limita el heap para dejar memoria a:
+# - Metaspace
+# - buffers nativos
+# - Tomcat
+# - Hibernate
+# - librerías PDF
+ENV JAVA_TOOL_OPTIONS="-Xms64m -Xmx256m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=48m -Xss256k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom"
 
 EXPOSE 8080
 
-ENTRYPOINT [\
-    "java",\
-    "-jar",\
-    "/app/abarrote-cloud.jar"\
+ENTRYPOINT [
+    "java",
+    "-jar",
+    "/app/abarrote-cloud.jar"
 ]
-
