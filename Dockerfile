@@ -1,5 +1,5 @@
 # ============================================================
-# ABARROTE CLOUD - DOCKERFILE OPTIMIZADO PARA RENDER FREE
+# ABARROTE CLOUD - RENDER FREE
 # Java 17 / Spring Boot / 512 MB RAM
 # ============================================================
 
@@ -13,17 +13,11 @@ WORKDIR /app
 
 COPY pom.xml .
 
-RUN mvn \
-    -B \
-    -DskipTests \
-    dependency:go-offline
+RUN mvn -B -DskipTests dependency:go-offline
 
 COPY src ./src
 
-RUN mvn \
-    -B \
-    -DskipTests \
-    clean package
+RUN mvn -B -DskipTests clean package
 
 # ------------------------------------------------------------
 # ETAPA 2: EJECUCIÓN
@@ -33,9 +27,7 @@ FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
-RUN groupadd \
-        --system \
-        abarrote \
+RUN groupadd --system abarrote \
     && useradd \
         --system \
         --gid abarrote \
@@ -43,31 +35,16 @@ RUN groupadd \
         --shell /usr/sbin/nologin \
         abarrote
 
-COPY --from=build \
-    /app/target/*.jar \
-    /app/abarrote-cloud.jar
+COPY --from=build /app/target/*.jar /app/abarrote-cloud.jar
 
-RUN chown \
-    abarrote:abarrote \
-    /app/abarrote-cloud.jar
+RUN chown abarrote:abarrote /app/abarrote-cloud.jar
 
 USER abarrote
 
 ENV SPRING_PROFILES_ACTIVE=render
 
-# Render Free proporciona 512 MB.
-# Se limita el heap para dejar memoria a:
-# - Metaspace
-# - buffers nativos
-# - Tomcat
-# - Hibernate
-# - librerías PDF
 ENV JAVA_TOOL_OPTIONS="-Xms64m -Xmx256m -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=48m -Xss256k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom"
 
 EXPOSE 8080
 
-ENTRYPOINT [
-    "java",
-    "-jar",
-    "/app/abarrote-cloud.jar"
-]
+ENTRYPOINT ["java", "-jar", "/app/abarrote-cloud.jar"]
