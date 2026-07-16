@@ -2,36 +2,45 @@
 
     'use strict';
 
-    const MOBILE_MAX_WIDTH = 768;
-    const BUTTON_ID = 'mobileLogoutButton';
-    const FORM_ID = 'mobileLogoutForm';
+    const MOBILE_MAX_WIDTH = 900;
 
-    function esPantallaMovil() {
+    const BUTTON_ID =
+        'mobileLogoutButton';
 
-        return window.innerWidth <= MOBILE_MAX_WIDTH;
+    const FORM_ID =
+        'mobileLogoutForm';
+
+    const STYLE_ID =
+        'mobileLogoutStyles';
+
+    function esDispositivoMovil() {
+
+        return window.matchMedia(
+            `(max-width: ${MOBILE_MAX_WIDTH}px)`
+        ).matches;
     }
 
     function obtenerTokenCsrf() {
 
-        const metaToken =
+        const meta =
             document.querySelector(
                 'meta[name="_csrf"]'
             );
 
-        return metaToken
-            ? metaToken.getAttribute('content')
+        return meta
+            ? meta.getAttribute('content')
             : null;
     }
 
-    function obtenerNombreCsrf() {
+    function obtenerParametroCsrf() {
 
-        const metaParameter =
+        const meta =
             document.querySelector(
                 'meta[name="_csrf_parameter"]'
             );
 
-        return metaParameter
-            ? metaParameter.getAttribute('content')
+        return meta
+            ? meta.getAttribute('content')
             : '_csrf';
     }
 
@@ -39,241 +48,272 @@
 
         if (
             document.getElementById(
-                'mobileLogoutStyles'
+                STYLE_ID
             )
         ) {
             return;
         }
 
-        const style =
+        const estilos =
             document.createElement('style');
 
-        style.id =
-            'mobileLogoutStyles';
+        estilos.id =
+            STYLE_ID;
 
-        style.textContent = `
+        estilos.textContent = `
+
             #${FORM_ID} {
-                display: none;
+                display: none !important;
             }
 
             #${BUTTON_ID} {
-                display: none;
+                display: none !important;
             }
 
-            @media (max-width: ${MOBILE_MAX_WIDTH}px) {
+            @media screen and (max-width: ${MOBILE_MAX_WIDTH}px) {
 
                 #${BUTTON_ID} {
-                    position: fixed;
-                    right: 16px;
-                    bottom: 18px;
-                    z-index: 99999;
+                    position: fixed !important;
 
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
+                    right: 16px !important;
+                    bottom: calc(
+                        18px
+                        + env(
+                            safe-area-inset-bottom,
+                            0px
+                        )
+                    ) !important;
 
-                    min-width: 145px;
-                    min-height: 48px;
-                    padding: 12px 18px;
+                    z-index: 2147483647 !important;
 
-                    border: 1px solid rgba(
-                        248,
-                        113,
-                        113,
-                        0.85
-                    );
-                    border-radius: 999px;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 8px !important;
 
-                    background: #7f1d1d;
-                    color: #ffffff;
+                    min-width: 150px !important;
+                    min-height: 50px !important;
+
+                    padding: 12px 18px !important;
+
+                    border: 1px solid #f87171 !important;
+                    border-radius: 999px !important;
+
+                    background: #991b1b !important;
+                    color: #ffffff !important;
 
                     font-family:
                         "Segoe UI",
                         Arial,
-                        sans-serif;
-                    font-size: 15px;
-                    font-weight: 700;
+                        sans-serif !important;
 
-                    cursor: pointer;
+                    font-size: 15px !important;
+                    font-weight: 700 !important;
+
+                    line-height: 1 !important;
+
+                    cursor: pointer !important;
+
+                    opacity: 1 !important;
+                    visibility: visible !important;
 
                     box-shadow:
-                        0 10px 25px
-                        rgba(0, 0, 0, 0.40);
+                        0 10px 28px
+                        rgba(0, 0, 0, 0.55) !important;
 
-                    transition:
-                        transform 0.18s ease,
-                        background 0.18s ease;
+                    -webkit-tap-highlight-color:
+                        transparent !important;
                 }
 
                 #${BUTTON_ID}:active {
                     transform: scale(0.96);
                 }
 
-                #${BUTTON_ID}:hover {
-                    background: #991b1b;
-                }
-
                 body {
-                    padding-bottom: 86px;
+                    padding-bottom: 90px !important;
                 }
             }
         `;
 
         document.head.appendChild(
-            style
+            estilos
         );
     }
 
-    function confirmarCierreSesion() {
+    function crearFormulario() {
 
-        return window.confirm(
-            '¿Deseas cerrar tu sesión en Abarrote Cloud?'
-        );
-    }
-
-    function crearFormularioLogout() {
-
-        if (
+        let formulario =
             document.getElementById(
                 FORM_ID
-            )
-        ) {
-            return document.getElementById(
-                FORM_ID
             );
+
+        if (formulario) {
+            return formulario;
         }
 
-        const form =
+        formulario =
             document.createElement('form');
 
-        form.id =
+        formulario.id =
             FORM_ID;
 
-        form.method =
+        formulario.method =
             'post';
 
-        form.action =
+        formulario.action =
             '/logout';
+
+        formulario.style.display =
+            'none';
 
         const csrfToken =
             obtenerTokenCsrf();
 
         if (csrfToken) {
 
-            const inputCsrf =
+            const csrfInput =
                 document.createElement(
                     'input'
                 );
 
-            inputCsrf.type =
+            csrfInput.type =
                 'hidden';
 
-            inputCsrf.name =
-                obtenerNombreCsrf();
+            csrfInput.name =
+                obtenerParametroCsrf();
 
-            inputCsrf.value =
+            csrfInput.value =
                 csrfToken;
 
-            form.appendChild(
-                inputCsrf
+            formulario.appendChild(
+                csrfInput
             );
         }
 
         document.body.appendChild(
-            form
+            formulario
         );
 
-        return form;
+        return formulario;
     }
 
-    function crearBotonLogout() {
+    function crearBoton() {
 
-        if (
+        let boton =
             document.getElementById(
                 BUTTON_ID
-            )
-        ) {
-            return;
+            );
+
+        if (boton) {
+            return boton;
         }
 
-        const button =
+        boton =
             document.createElement(
                 'button'
             );
 
-        button.id =
+        boton.id =
             BUTTON_ID;
 
-        button.type =
+        boton.type =
             'button';
 
-        button.setAttribute(
+        boton.setAttribute(
             'aria-label',
             'Cerrar sesión'
         );
 
-        button.innerHTML =
+        boton.innerHTML =
             '<span aria-hidden="true">🚪</span>'
             + '<span>Cerrar sesión</span>';
 
-        button.addEventListener(
+        boton.addEventListener(
             'click',
             function () {
 
-                if (
-                    !confirmarCierreSesion()
-                ) {
+                const confirmar =
+                    window.confirm(
+                        '¿Deseas cerrar tu sesión?'
+                    );
+
+                if (!confirmar) {
                     return;
                 }
 
-                const form =
-                    crearFormularioLogout();
-
-                button.disabled =
+                boton.disabled =
                     true;
 
-                button.innerHTML =
-                    '<span>⏳</span>'
+                boton.innerHTML =
+                    '<span aria-hidden="true">⏳</span>'
                     + '<span>Cerrando...</span>';
 
-                form.submit();
+                crearFormulario().submit();
             }
         );
 
         document.body.appendChild(
-            button
+            boton
         );
+
+        return boton;
     }
 
     function actualizarVisibilidad() {
 
-        const button =
+        const boton =
             document.getElementById(
                 BUTTON_ID
             );
 
-        if (!button) {
+        if (!boton) {
             return;
         }
 
-        button.style.display =
-            esPantallaMovil()
-                ? 'inline-flex'
-                : 'none';
+        if (esDispositivoMovil()) {
+
+            boton.style.setProperty(
+                'display',
+                'inline-flex',
+                'important'
+            );
+
+            boton.style.setProperty(
+                'visibility',
+                'visible',
+                'important'
+            );
+
+            boton.style.setProperty(
+                'opacity',
+                '1',
+                'important'
+            );
+
+        } else {
+
+            boton.style.setProperty(
+                'display',
+                'none',
+                'important'
+            );
+        }
     }
 
     function inicializar() {
 
+        if (!document.body) {
+            return;
+        }
+
         crearEstilos();
-        crearFormularioLogout();
-        crearBotonLogout();
+        crearFormulario();
+        crearBoton();
         actualizarVisibilidad();
     }
 
     if (
-        document.readyState
-        === 'loading'
+        document.readyState === 'loading'
     ) {
 
         document.addEventListener(
@@ -289,6 +329,17 @@
     window.addEventListener(
         'resize',
         actualizarVisibilidad
+    );
+
+    window.addEventListener(
+        'orientationchange',
+        function () {
+
+            window.setTimeout(
+                actualizarVisibilidad,
+                250
+            );
+        }
     );
 
 })();
