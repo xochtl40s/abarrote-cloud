@@ -1,5 +1,6 @@
 package com.abarrote.abarroteapi.controller;
 
+import com.abarrote.abarroteapi.entity.Sucursal;
 import com.abarrote.abarroteapi.entity.Usuario;
 import com.abarrote.abarroteapi.service.UsuarioService;
 import org.springframework.security.core.Authentication;
@@ -26,9 +27,14 @@ public class PosController {
             Authentication authentication) {
 
         if (authentication == null
-                || !authentication.isAuthenticated()) {
+                || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || authentication.getName().isBlank()
+                || "anonymousUser".equalsIgnoreCase(
+                        authentication.getName()
+                )) {
 
-            return "redirect:/login";
+            return "redirect:/login?sesionRequerida";
         }
 
         Usuario usuario =
@@ -37,7 +43,18 @@ public class PosController {
                                 authentication.getName()
                         );
 
-        if (usuario.getSucursal() == null) {
+        if (!Boolean.TRUE.equals(
+                usuario.getActivo())) {
+
+            throw new IllegalStateException(
+                    "El usuario se encuentra inactivo"
+            );
+        }
+
+        Sucursal sucursal =
+                usuario.getSucursal();
+
+        if (sucursal == null) {
 
             throw new IllegalStateException(
                     "El usuario no tiene una sucursal asignada"
@@ -45,10 +62,10 @@ public class PosController {
         }
 
         if (!Boolean.TRUE.equals(
-                usuario.getSucursal().getActiva())) {
+                sucursal.getActiva())) {
 
             throw new IllegalStateException(
-                    "La sucursal del usuario está inactiva"
+                    "La sucursal asignada al usuario está inactiva"
             );
         }
 
@@ -63,13 +80,18 @@ public class PosController {
         );
 
         model.addAttribute(
+                "sucursalId",
+                sucursal.getId()
+        );
+
+        model.addAttribute(
                 "sucursal",
-                usuario.getSucursal().getNombre()
+                sucursal.getNombre()
         );
 
         model.addAttribute(
                 "sucursalCodigo",
-                usuario.getSucursal().getCodigo()
+                sucursal.getCodigo()
         );
 
         return "pos";

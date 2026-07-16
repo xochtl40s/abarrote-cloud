@@ -310,10 +310,9 @@ public class UsuarioServiceImpl
                     "El identificador del usuario es obligatorio"
             );
         }
-
-        return usuarioRepository
-                .findById(id)
-                .orElseThrow(
+	return usuarioRepository
+        .findConSucursalById(id)
+        .orElseThrow(
                         () -> new IllegalArgumentException(
                                 "Usuario no encontrado"
                         )
