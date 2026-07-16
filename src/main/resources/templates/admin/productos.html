@@ -57,5 +57,11 @@ function editarProducto(btn){const row=btn.closest('tr');document.getElementById
 async function eliminarProducto(btn){if(!confirm('¿Eliminar este producto?'))return;const id=btn.closest('tr').dataset.id;try{const response=await fetch(`/api/productos/${id}`,{method:'DELETE'});const result=await response.json();if(result.success){alert('✅ Producto eliminado');location.reload();}else{alert('❌ '+result.message);}}catch(error){alert('Error: '+error.message);}}
 function filtrarProductos(query){const rows=document.querySelectorAll('#tablaProductos tbody tr');rows.forEach(row=>{const nombre=row.cells[1].textContent.toLowerCase();const codigo=row.cells[2].textContent.toLowerCase();row.style.display=(nombre.includes(query.toLowerCase())||codigo.includes(query.toLowerCase()))?'':'none';});}
 </script>
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
 </body>
 </html>

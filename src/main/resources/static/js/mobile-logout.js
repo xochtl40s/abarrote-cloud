@@ -2,222 +2,221 @@
 
     'use strict';
 
-    const MOBILE_MAX_WIDTH = 900;
-
-    const BUTTON_ID =
-        'mobileLogoutButton';
-
-    const FORM_ID =
-        'mobileLogoutForm';
-
-    const STYLE_ID =
-        'mobileLogoutStyles';
+    const BUTTON_ID = 'abarroteMobileLogoutButton';
+    const FORM_ID = 'abarroteMobileLogoutForm';
+    const STYLE_ID = 'abarroteMobileLogoutStyle';
 
     function esDispositivoMovil() {
 
-        return window.matchMedia(
-            `(max-width: ${MOBILE_MAX_WIDTH}px)`
-        ).matches;
-    }
+        const anchoMovil =
+            window.innerWidth <= 1200;
 
-    function obtenerTokenCsrf() {
+        const punteroTactil =
+            window.matchMedia(
+                '(pointer: coarse)'
+            ).matches;
 
-        const meta =
-            document.querySelector(
-                'meta[name="_csrf"]'
-            );
+        const agenteMovil =
+            /Android|iPhone|iPad|iPod|Mobile/i
+                .test(navigator.userAgent);
 
-        return meta
-            ? meta.getAttribute('content')
-            : null;
-    }
-
-    function obtenerParametroCsrf() {
-
-        const meta =
-            document.querySelector(
-                'meta[name="_csrf_parameter"]'
-            );
-
-        return meta
-            ? meta.getAttribute('content')
-            : '_csrf';
+        return anchoMovil
+                || punteroTactil
+                || agenteMovil;
     }
 
     function crearEstilos() {
 
-        if (
-            document.getElementById(
-                STYLE_ID
-            )
-        ) {
+        if (document.getElementById(STYLE_ID)) {
             return;
         }
 
-        const estilos =
+        const style =
             document.createElement('style');
 
-        estilos.id =
-            STYLE_ID;
+        style.id = STYLE_ID;
 
-        estilos.textContent = `
+        style.textContent = `
 
             #${FORM_ID} {
                 display: none !important;
             }
 
             #${BUTTON_ID} {
-                display: none !important;
+                display: none;
             }
 
-            @media screen and (max-width: ${MOBILE_MAX_WIDTH}px) {
+            body.abarrote-mobile-device
+            #${BUTTON_ID} {
 
-                #${BUTTON_ID} {
-                    position: fixed !important;
+                position: fixed !important;
 
-                    right: 16px !important;
-                    bottom: calc(
-                        18px
-                        + env(
-                            safe-area-inset-bottom,
-                            0px
-                        )
-                    ) !important;
+                right: 14px !important;
 
-                    z-index: 2147483647 !important;
+                bottom: calc(
+                    16px
+                    + env(
+                        safe-area-inset-bottom,
+                        0px
+                    )
+                ) !important;
 
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    gap: 8px !important;
+                z-index: 2147483647 !important;
 
-                    min-width: 150px !important;
-                    min-height: 50px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 8px !important;
 
-                    padding: 12px 18px !important;
+                min-width: 158px !important;
+                min-height: 52px !important;
 
-                    border: 1px solid #f87171 !important;
-                    border-radius: 999px !important;
+                padding: 12px 18px !important;
 
-                    background: #991b1b !important;
-                    color: #ffffff !important;
+                margin: 0 !important;
 
-                    font-family:
-                        "Segoe UI",
-                        Arial,
-                        sans-serif !important;
+                border: 2px solid #f87171 !important;
+                border-radius: 999px !important;
 
-                    font-size: 15px !important;
-                    font-weight: 700 !important;
+                background: #991b1b !important;
+                color: #ffffff !important;
 
-                    line-height: 1 !important;
+                font-family:
+                    Arial,
+                    "Segoe UI",
+                    sans-serif !important;
 
-                    cursor: pointer !important;
+                font-size: 15px !important;
+                font-weight: 700 !important;
+                line-height: 1 !important;
 
-                    opacity: 1 !important;
-                    visibility: visible !important;
+                opacity: 1 !important;
+                visibility: visible !important;
 
-                    box-shadow:
-                        0 10px 28px
-                        rgba(0, 0, 0, 0.55) !important;
+                cursor: pointer !important;
 
-                    -webkit-tap-highlight-color:
-                        transparent !important;
-                }
+                box-shadow:
+                    0 10px 30px
+                    rgba(0, 0, 0, 0.60) !important;
 
-                #${BUTTON_ID}:active {
-                    transform: scale(0.96);
-                }
+                transform: none !important;
 
-                body {
-                    padding-bottom: 90px !important;
-                }
+                -webkit-appearance: none !important;
+                appearance: none !important;
+
+                -webkit-tap-highlight-color:
+                    transparent !important;
+            }
+
+            body.abarrote-mobile-device
+            #${BUTTON_ID}:active {
+
+                transform:
+                    scale(0.96) !important;
+            }
+
+            body.abarrote-mobile-device {
+
+                padding-bottom:
+                    90px !important;
             }
         `;
 
-        document.head.appendChild(
-            estilos
-        );
+        document.head.appendChild(style);
     }
 
-    function crearFormulario() {
+    function obtenerMeta(nombre) {
 
-        let formulario =
-            document.getElementById(
-                FORM_ID
+        const elemento =
+            document.querySelector(
+                `meta[name="${nombre}"]`
             );
 
-        if (formulario) {
-            return formulario;
+        return elemento
+            ? elemento.getAttribute('content')
+            : null;
+    }
+
+    function crearFormularioLogout() {
+
+        let form =
+            document.getElementById(FORM_ID);
+
+        if (form) {
+            return form;
         }
 
-        formulario =
+        form =
             document.createElement('form');
 
-        formulario.id =
-            FORM_ID;
+        form.id = FORM_ID;
+        form.method = 'post';
+        form.action = '/logout';
 
-        formulario.method =
-            'post';
+        const token =
+            obtenerMeta('_csrf');
 
-        formulario.action =
-            '/logout';
+        const parametro =
+            obtenerMeta('_csrf_parameter')
+            || '_csrf';
 
-        formulario.style.display =
-            'none';
+        if (token) {
 
-        const csrfToken =
-            obtenerTokenCsrf();
+            const input =
+                document.createElement('input');
 
-        if (csrfToken) {
+            input.type = 'hidden';
+            input.name = parametro;
+            input.value = token;
 
-            const csrfInput =
-                document.createElement(
-                    'input'
-                );
-
-            csrfInput.type =
-                'hidden';
-
-            csrfInput.name =
-                obtenerParametroCsrf();
-
-            csrfInput.value =
-                csrfToken;
-
-            formulario.appendChild(
-                csrfInput
-            );
+            form.appendChild(input);
         }
 
-        document.body.appendChild(
-            formulario
-        );
+        document.body.appendChild(form);
 
-        return formulario;
+        return form;
+    }
+
+    function cerrarSesion() {
+
+        const confirmado =
+            window.confirm(
+                '¿Deseas cerrar tu sesión?'
+            );
+
+        if (!confirmado) {
+            return;
+        }
+
+        const boton =
+            document.getElementById(BUTTON_ID);
+
+        if (boton) {
+
+            boton.disabled = true;
+
+            boton.innerHTML =
+                '<span>⏳</span>'
+                + '<span>Cerrando...</span>';
+        }
+
+        crearFormularioLogout().submit();
     }
 
     function crearBoton() {
 
         let boton =
-            document.getElementById(
-                BUTTON_ID
-            );
+            document.getElementById(BUTTON_ID);
 
         if (boton) {
             return boton;
         }
 
         boton =
-            document.createElement(
-                'button'
-            );
+            document.createElement('button');
 
-        boton.id =
-            BUTTON_ID;
-
-        boton.type =
-            'button';
+        boton.id = BUTTON_ID;
+        boton.type = 'button';
 
         boton.setAttribute(
             'aria-label',
@@ -230,72 +229,26 @@
 
         boton.addEventListener(
             'click',
-            function () {
-
-                const confirmar =
-                    window.confirm(
-                        '¿Deseas cerrar tu sesión?'
-                    );
-
-                if (!confirmar) {
-                    return;
-                }
-
-                boton.disabled =
-                    true;
-
-                boton.innerHTML =
-                    '<span aria-hidden="true">⏳</span>'
-                    + '<span>Cerrando...</span>';
-
-                crearFormulario().submit();
-            }
+            cerrarSesion
         );
 
-        document.body.appendChild(
-            boton
-        );
+        document.body.appendChild(boton);
 
         return boton;
     }
 
-    function actualizarVisibilidad() {
-
-        const boton =
-            document.getElementById(
-                BUTTON_ID
-            );
-
-        if (!boton) {
-            return;
-        }
+    function aplicarModoMovil() {
 
         if (esDispositivoMovil()) {
 
-            boton.style.setProperty(
-                'display',
-                'inline-flex',
-                'important'
-            );
-
-            boton.style.setProperty(
-                'visibility',
-                'visible',
-                'important'
-            );
-
-            boton.style.setProperty(
-                'opacity',
-                '1',
-                'important'
+            document.body.classList.add(
+                'abarrote-mobile-device'
             );
 
         } else {
 
-            boton.style.setProperty(
-                'display',
-                'none',
-                'important'
+            document.body.classList.remove(
+                'abarrote-mobile-device'
             );
         }
     }
@@ -307,14 +260,21 @@
         }
 
         crearEstilos();
-        crearFormulario();
+        crearFormularioLogout();
         crearBoton();
-        actualizarVisibilidad();
+        aplicarModoMovil();
+
+        console.log(
+            '[Abarrote Cloud] Botón móvil de cierre cargado.',
+            {
+                ancho: window.innerWidth,
+                usuarioAgente: navigator.userAgent,
+                movil: esDispositivoMovil()
+            }
+        );
     }
 
-    if (
-        document.readyState === 'loading'
-    ) {
+    if (document.readyState === 'loading') {
 
         document.addEventListener(
             'DOMContentLoaded',
@@ -328,7 +288,7 @@
 
     window.addEventListener(
         'resize',
-        actualizarVisibilidad
+        aplicarModoMovil
     );
 
     window.addEventListener(
@@ -336,8 +296,8 @@
         function () {
 
             window.setTimeout(
-                actualizarVisibilidad,
-                250
+                aplicarModoMovil,
+                300
             );
         }
     );
