@@ -1,5 +1,6 @@
 package com.abarrote.abarroteapi.controller;
 
+import com.abarrote.abarroteapi.dto.CorteCajaResponse;
 import com.abarrote.abarroteapi.dto.DashboardProductoTopResponse;
 import com.abarrote.abarroteapi.dto.DashboardVentaDiaResponse;
 import com.abarrote.abarroteapi.dto.ProductoResponse;
@@ -9,6 +10,7 @@ import com.abarrote.abarroteapi.entity.Venta;
 import com.abarrote.abarroteapi.repository.DetalleVentaRepository;
 import com.abarrote.abarroteapi.repository.VentaRepository;
 import com.abarrote.abarroteapi.service.CategoriaService;
+import com.abarrote.abarroteapi.service.CorteCajaService;
 import com.abarrote.abarroteapi.service.ProductoService;
 import com.abarrote.abarroteapi.service.ReporteService;
 import com.abarrote.abarroteapi.service.SucursalService;
@@ -47,6 +49,8 @@ public class AdminController {
 
     private final ReporteService reporteService;
 
+    private final CorteCajaService corteCajaService;
+
     private final SucursalService sucursalService;
 
     private final VentaRepository ventaRepository;
@@ -59,6 +63,7 @@ public class AdminController {
             UsuarioService usuarioService,
             CategoriaService categoriaService,
             ReporteService reporteService,
+            CorteCajaService corteCajaService,
             SucursalService sucursalService,
             VentaRepository ventaRepository,
             DetalleVentaRepository detalleVentaRepository) {
@@ -70,6 +75,8 @@ public class AdminController {
         this.categoriaService = categoriaService;
 
         this.reporteService = reporteService;
+
+        this.corteCajaService = corteCajaService;
 
         this.sucursalService = sucursalService;
 
@@ -412,46 +419,50 @@ public class AdminController {
 
     @GetMapping("/corte")
     public String corteCaja(
+            @RequestParam(
+                    required = false
+            )
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE
+            )
+            LocalDate fecha,
+
             Model model) {
 
-        LocalDate hoy =
-                LocalDate.now();
+        LocalDate fechaConsulta =
+                fecha != null
+                        ? fecha
+                        : LocalDate.now();
 
-        BigDecimal totalHoy =
-                valorSeguro(
-                        reporteService
-                                .obtenerTotalVentasDelDia(
-                                        hoy
-                                )
-                );
-
-        List<Venta> ventasHoy =
-                ventaRepository
-                        .findByFechaHoraBetweenOrderByFechaHoraDesc(
-                                hoy.atStartOfDay(),
-                                hoy.atTime(
-                                        LocalTime.MAX
-                                )
+        CorteCajaResponse corte =
+                corteCajaService
+                        .generarCorte(
+                                fechaConsulta
                         );
 
         model.addAttribute(
+                "corte",
+                corte
+        );
+
+        model.addAttribute(
                 "fecha",
-                hoy
+                corte.getFecha()
         );
 
         model.addAttribute(
                 "totalVentas",
-                totalHoy
+                corte.getTotalVentas()
         );
 
         model.addAttribute(
                 "numeroVentas",
-                ventasHoy.size()
+                corte.getNumeroVentas()
         );
 
         model.addAttribute(
                 "ventas",
-                ventasHoy
+                corte.getTickets()
         );
 
         model.addAttribute(
@@ -461,6 +472,7 @@ public class AdminController {
 
         return "admin/corte";
     }
+
 
     // ============================================================
     // MÉTODOS PRIVADOS DEL DASHBOARD

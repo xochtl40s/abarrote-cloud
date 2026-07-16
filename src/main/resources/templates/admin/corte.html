@@ -1,45 +1,811 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: head('Corte de Caja')}"><style th:replace="~{layout :: styles}"></style></head>
+
+<head th:replace="~{layout :: head('Corte de Caja')}">
+</head>
+
 <style>
-.corte-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-.corte-card { background: linear-gradient(135deg, #1a5f2a, #2d8a3e); color: white; border-radius: 16px; padding: 2rem; text-align: center; }
-.corte-card h2 { font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0; }
-.corte-card p { opacity: 0.9; font-size: 1rem; }
-.corte-card.secondary { background: linear-gradient(135deg, #0f3460, #1e4d8c); }
-.corte-card.warning { background: linear-gradient(135deg, #92400e, #d97706); }
-@media print { .sidebar, .page-header button, .btn { display: none !important; } .main-content { margin-left: 0 !important; } body { background: white !important; } }
+
+    .corte-resumen {
+        display: grid;
+        grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(210px, 1fr)
+            );
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .corte-kpi {
+        padding: 1.35rem;
+        border: 1px solid #334155;
+        border-radius: 14px;
+        background: #16213e;
+    }
+
+    .corte-kpi span {
+        color: #94a3b8;
+        font-size: 0.82rem;
+    }
+
+    .corte-kpi strong {
+        display: block;
+        margin-top: 0.45rem;
+        color: #f8fafc;
+        font-size: 1.65rem;
+    }
+
+    .corte-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(0, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .ticket {
+        margin-bottom: 1rem;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #111827;
+        break-inside: avoid;
+    }
+
+    .ticket-cabecera {
+        display: grid;
+        grid-template-columns:
+            minmax(85px, 0.6fr)
+            minmax(180px, 1.3fr)
+            minmax(150px, 1fr)
+            minmax(130px, 0.9fr)
+            minmax(100px, 0.7fr)
+            auto;
+        gap: 0.8rem;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    .ticket-cabecera small {
+        display: block;
+        margin-top: 0.2rem;
+        color: #94a3b8;
+    }
+
+    .ticket-total {
+        color: #4ade80;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .ticket-detalle {
+        padding: 0 1rem 1rem;
+        border-top: 1px solid #334155;
+    }
+
+    .ticket-detalle summary {
+        padding: 0.8rem 0;
+        color: #60a5fa;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    .ticket-detalle table {
+        width: 100%;
+    }
+
+    .firma-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        margin-top: 5rem;
+    }
+
+    .firma {
+        padding-top: 0.7rem;
+        text-align: center;
+        border-top: 1px solid #94a3b8;
+    }
+
+    .filtro-corte {
+        display: flex;
+        gap: 0.75rem;
+        align-items: end;
+        flex-wrap: wrap;
+    }
+
+    .filtro-corte label {
+        display: block;
+        margin-bottom: 0.35rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 1050px) {
+
+        .corte-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ticket-cabecera {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media print {
+
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            color: black !important;
+            background: white !important;
+        }
+
+        .sidebar,
+        .mobile-header,
+        .sidebar-overlay,
+        .no-print,
+        .btn {
+            display: none !important;
+        }
+
+        .main-content {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .card,
+        .ticket,
+        .corte-kpi {
+            color: black !important;
+            border: 1px solid #777 !important;
+            background: white !important;
+            box-shadow: none !important;
+        }
+
+        .card-title,
+        .ticket-total,
+        .corte-kpi strong,
+        .ticket-cabecera strong {
+            color: black !important;
+        }
+
+        .corte-kpi span,
+        .ticket-cabecera small {
+            color: #333 !important;
+        }
+
+        .ticket-detalle {
+            display: block !important;
+        }
+
+        details {
+            display: block !important;
+        }
+
+        details > summary {
+            display: none !important;
+        }
+
+        details > * {
+            display: block !important;
+        }
+
+        table,
+        th,
+        td {
+            color: black !important;
+            border-color: #aaa !important;
+        }
+
+        .badge {
+            color: black !important;
+            border: 1px solid #555 !important;
+            background: white !important;
+        }
+    }
+
 </style>
+
 <body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
 <div class="wrapper">
-<div th:replace="~{layout :: admin-sidebar}"></div>
-<div class="main-content">
-<div class="page-header"><h1>💰 Corte de Caja</h1><button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button></div>
-<div class="corte-resumen">
-<div class="corte-card"><p>Fecha</p><h2 th:text="${#temporals.format(fecha, 'dd/MM/yyyy')}">01/01/2024</h2></div>
-<div class="corte-card secondary"><p>Total Ventas</p><h2 th:text="'₲ ' + ${#numbers.formatDecimal(totalVentas, 1, 'COMMA', 2, 'POINT')}">₲ 0.00</h2></div>
-<div class="corte-card warning"><p>Número de Ventas</p><h2 th:text="${numeroVentas}">0</h2></div>
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>💰 Corte de Caja Ejecutivo</h1>
+
+                <p style="color:#94a3b8; margin-top:0.35rem;">
+                    Tickets, cajeros, sucursales y detalle
+                    completo de las ventas.
+                </p>
+
+            </div>
+
+            <div
+                    class="filtro-corte no-print">
+
+                <div>
+
+                    <label for="fechaCorte">
+                        Fecha del corte
+                    </label>
+
+                    <input
+                            id="fechaCorte"
+                            type="date"
+                            class="form-control"
+                            th:value="${#temporals.format(corte.fecha, 'yyyy-MM-dd')}">
+
+                </div>
+
+                <button
+                        id="consultarCorte"
+                        type="button"
+                        class="btn btn-cancel">
+                    Consultar
+                </button>
+
+                <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="window.print()">
+                    🖨️ Imprimir reporte
+                </button>
+
+            </div>
+
+        </div>
+
+        <section class="corte-resumen">
+
+            <article class="corte-kpi">
+
+                <span>Fecha</span>
+
+                <strong
+                        th:text="${#temporals.format(
+                            corte.fecha,
+                            'dd/MM/yyyy'
+                        )}">
+                    16/07/2026
+                </strong>
+
+            </article>
+
+            <article class="corte-kpi">
+
+                <span>Total vendido</span>
+
+                <strong
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                corte.totalVentas,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </strong>
+
+            </article>
+
+            <article class="corte-kpi">
+
+                <span>Tickets completados</span>
+
+                <strong th:text="${corte.numeroVentas}">
+                    0
+                </strong>
+
+            </article>
+
+            <article class="corte-kpi">
+
+                <span>Unidades vendidas</span>
+
+                <strong th:text="${corte.unidadesVendidas}">
+                    0
+                </strong>
+
+            </article>
+
+            <article class="corte-kpi">
+
+                <span>Ticket promedio</span>
+
+                <strong
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                corte.ticketPromedio,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </strong>
+
+            </article>
+
+        </section>
+
+        <section class="corte-grid">
+
+            <article class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        👤 Resumen por cajero
+                    </span>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Cajero</th>
+                            <th>Sucursal</th>
+                            <th>Tickets</th>
+                            <th>Unidades</th>
+                            <th>Total</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                                th:each="cajero :
+                                    ${corte.cajeros}">
+
+                            <td>
+
+                                <strong
+                                        th:text="${cajero.cajero}">
+                                    Cajero
+                                </strong>
+
+                                <small
+                                        style="
+                                            display:block;
+                                            color:#94a3b8;
+                                        "
+                                        th:text="'@' +
+                                            ${cajero.username}">
+                                    @usuario
+                                </small>
+
+                            </td>
+
+                            <td th:text="${cajero.sucursal}">
+                                Matriz
+                            </td>
+
+                            <td th:text="${cajero.tickets}">
+                                0
+                            </td>
+
+                            <td th:text="${cajero.unidades}">
+                                0
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            cajero.total,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(corte.cajeros)}">
+
+                            <td colspan="5">
+                                No existen ventas completadas.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+            <article class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        🏪 Resumen por sucursal
+                    </span>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Sucursal</th>
+                            <th>Tickets</th>
+                            <th>Unidades</th>
+                            <th>Total</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                                th:each="sucursal :
+                                    ${corte.sucursales}">
+
+                            <td>
+
+                                <strong
+                                        th:text="${sucursal.sucursal}">
+                                    Sucursal
+                                </strong>
+
+                                <small
+                                        style="
+                                            display:block;
+                                            color:#60a5fa;
+                                        "
+                                        th:text="${sucursal.codigo}">
+                                    MAT
+                                </small>
+
+                            </td>
+
+                            <td th:text="${sucursal.tickets}">
+                                0
+                            </td>
+
+                            <td th:text="${sucursal.unidades}">
+                                0
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            sucursal.total,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(corte.sucursales)}">
+
+                            <td colspan="4">
+                                No existen ventas completadas.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+        </section>
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    🧾 Tickets del día
+                </span>
+
+                <span
+                        class="badge badge-info"
+                        th:text="${#lists.size(corte.tickets)}
+                            + ' registrados'">
+                    0 registrados
+                </span>
+
+            </div>
+
+            <div th:if="${!#lists.isEmpty(corte.tickets)}">
+
+                <article
+                        class="ticket"
+                        th:each="ticket :
+                            ${corte.tickets}">
+
+                    <div class="ticket-cabecera">
+
+                        <div>
+
+                            <strong
+                                    th:text="'#' + ${ticket.id}">
+                                #1
+                            </strong>
+
+                            <small>Ticket</small>
+
+                        </div>
+
+                        <div>
+
+                            <strong
+                                    th:text="${#temporals.format(
+                                        ticket.fechaHora,
+                                        'dd/MM/yyyy HH:mm:ss'
+                                    )}">
+                                16/07/2026 12:00:00
+                            </strong>
+
+                            <small>Timestamp</small>
+
+                        </div>
+
+                        <div>
+
+                            <strong th:text="${ticket.cajero}">
+                                Cajero
+                            </strong>
+
+                            <small
+                                    th:text="'@' +
+                                        ${ticket.username}">
+                                @usuario
+                            </small>
+
+                        </div>
+
+                        <div>
+
+                            <strong th:text="${ticket.sucursal}">
+                                Sucursal
+                            </strong>
+
+                            <small
+                                    th:text="${ticket.sucursalCodigo}">
+                                MAT
+                            </small>
+
+                        </div>
+
+                        <div>
+
+                            <strong
+                                    th:text="${ticket.unidades}
+                                        + ' unidades'">
+                                0 unidades
+                            </strong>
+
+                            <small
+                                    th:text="${ticket.partidas}
+                                        + ' partidas'">
+                                0 partidas
+                            </small>
+
+                        </div>
+
+                        <div>
+
+                            <div
+                                    class="ticket-total"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            ticket.total,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </div>
+
+                            <span
+                                    class="badge badge-success"
+                                    th:if="${ticket.estado
+                                        == 'COMPLETADA'}">
+                                Completada
+                            </span>
+
+                            <span
+                                    class="badge badge-danger"
+                                    th:if="${ticket.estado
+                                        == 'CANCELADA'}">
+                                Cancelada
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <details
+                            class="ticket-detalle">
+
+                        <summary>
+                            Ver productos del ticket
+                        </summary>
+
+                        <div class="table-container">
+
+                            <table>
+
+                                <thead>
+
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio unitario</th>
+                                    <th>Subtotal</th>
+                                </tr>
+
+                                </thead>
+
+                                <tbody>
+
+                                <tr
+                                        th:each="detalle :
+                                            ${ticket.detalles}">
+
+                                    <td th:text="${detalle.producto}">
+                                        Producto
+                                    </td>
+
+                                    <td th:text="${detalle.cantidad}">
+                                        0
+                                    </td>
+
+                                    <td
+                                            th:text="'$ ' +
+                                                ${#numbers.formatDecimal(
+                                                    detalle.precioUnitario,
+                                                    1,
+                                                    'COMMA',
+                                                    2,
+                                                    'POINT'
+                                                )}">
+                                        $ 0.00
+                                    </td>
+
+                                    <td
+                                            th:text="'$ ' +
+                                                ${#numbers.formatDecimal(
+                                                    detalle.subtotal,
+                                                    1,
+                                                    'COMMA',
+                                                    2,
+                                                    'POINT'
+                                                )}">
+                                        $ 0.00
+                                    </td>
+
+                                </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                    </details>
+
+                </article>
+
+            </div>
+
+            <div
+                    th:if="${#lists.isEmpty(corte.tickets)}"
+                    style="
+                        padding:2rem;
+                        color:#94a3b8;
+                        text-align:center;
+                    ">
+
+                No existen tickets registrados para esta fecha.
+
+            </div>
+
+        </section>
+
+        <section class="card">
+
+            <div class="firma-grid">
+
+                <div class="firma">
+                    Firma del cajero
+                </div>
+
+                <div class="firma">
+                    Firma del administrador
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
 </div>
-<div class="card">
-<div class="card-header"><span class="card-title">📋 Detalle de Ventas del Día</span></div>
-<div class="table-container">
-<table>
-<thead><tr><th># Venta</th><th>Hora</th><th>Cajero</th><th>Productos</th><th>Total</th><th>Estado</th></tr></thead>
-<tbody>
-<tr th:each="v : ${ventas}"><td th:text="'#' + ${v.id}">#1</td><td th:text="${#temporals.format(v.fecha, 'HH:mm')}">12:00</td><td th:text="${v.usuario != null} ? ${v.usuario.nombre} : 'N/A'">Cajero</td><td th:text="${v.detalles.size()}">0</td><td th:text="'₲ ' + ${#numbers.formatDecimal(v.total, 1, 'COMMA', 2, 'POINT')}">0</td><td><span class="badge badge-success" th:if="${v.estado.name() == 'COMPLETADA'}">Completada</span><span class="badge badge-danger" th:if="${v.estado.name() == 'CANCELADA'}">Cancelada</span></td></tr>
-<tr th:if="${ventas.isEmpty()}"><td colspan="6" style="text-align:center; color:#888;">No hay ventas registradas hoy</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="card" style="margin-top: 2rem; page-break-inside: avoid;">
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem;">
-<div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 0.5rem; margin-top: 4rem;">Firma del Cajero</div></div>
-<div style="text-align: center;"><div style="border-top: 1px solid #333; padding-top: 0.5rem; margin-top: 4rem;">Firma del Administrador</div></div>
-</div>
-</div>
-</div>
-</div>
+
+<script>
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            const fecha =
+                document.getElementById(
+                    'fechaCorte'
+                );
+
+            const consultar =
+                document.getElementById(
+                    'consultarCorte'
+                );
+
+            if (consultar && fecha) {
+
+                consultar.addEventListener(
+                    'click',
+                    function () {
+
+                        if (!fecha.value) {
+                            return;
+                        }
+
+                        window.location.href =
+                            '/admin/corte?fecha='
+                            + encodeURIComponent(
+                                fecha.value
+                            );
+                    }
+                );
+            }
+        }
+    );
+
+</script>
+
+<div th:replace="~{layout :: responsive-script}"></div>
 
 <script
         defer

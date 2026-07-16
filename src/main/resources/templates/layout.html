@@ -967,9 +967,20 @@
         </a>
 
         <a
-                th:href="@{/admin/inventario/transferencias}"
+                th:href="@{/admin/inventario}"
                 class="nav-item"
                 th:classappend="${activePage == 'inventario'}
+                    ? 'active'
+                    : ''"
+                onclick="cerrarMenuMovil()">
+            <i>📦</i>
+            Inventario
+        </a>
+
+        <a
+                th:href="@{/admin/inventario/transferencias}"
+                class="nav-item"
+                th:classappend="${activePage == 'inventario-transferencias'}
                     ? 'active'
                     : ''"
                 onclick="cerrarMenuMovil()">
@@ -978,7 +989,19 @@
         </a>
 
 
+
         <a
+                th:href="@{/admin/asistente}"
+                class="nav-item"
+                th:classappend="${activePage == 'asistente'}
+                    ? 'active'
+                    : ''"
+                onclick="cerrarMenuMovil()">
+            <i>🤖</i>
+            Asistente IA
+        </a>
+
+<a
                 th:href="@{/admin/reportes}"
                 class="nav-item"
                 th:classappend="${activePage == 'reportes'}

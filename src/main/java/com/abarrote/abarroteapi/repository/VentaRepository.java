@@ -75,4 +75,23 @@ public interface VentaRepository
             @Param("fin")
             LocalDateTime fin
     );
+
+    @Query("""
+            SELECT DISTINCT venta
+            FROM Venta venta
+            LEFT JOIN FETCH venta.usuario usuario
+            LEFT JOIN FETCH venta.sucursal sucursal
+            LEFT JOIN FETCH venta.detalles detalle
+            LEFT JOIN FETCH detalle.producto producto
+            WHERE venta.fechaHora BETWEEN :inicio AND :fin
+            ORDER BY venta.fechaHora DESC
+            """)
+    List<Venta> buscarCorteConDetalle(
+            @Param("inicio")
+            LocalDateTime inicio,
+
+            @Param("fin")
+            LocalDateTime fin
+    );
+
 }
