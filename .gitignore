@@ -67,3 +67,4 @@ reportes/
 *.swp
 *.swo
 *~
+.backups/
