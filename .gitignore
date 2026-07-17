@@ -1,10 +1,70 @@
-target/
-*.class
-*.log
+# ============================================================
+# ABARROTE CLOUD III
+# Archivos excluidos del repositorio
+# ============================================================
 
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# IDE
 .idea/
 .vscode/
-
 *.iml
+.classpath
+.project
+.settings/
 
+# Sistema operativo
 .DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# PostgreSQL y respaldos
+backups/
+*.dump
+*.backup
+*.sql.gz
+*.dump.sha256
+*.dump.list
+
+# Variables y credenciales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# Reportes generados
+reportes/
+*.pdf
+*.csv
+*.xlsx
+
+# Archivos temporales
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.backups/

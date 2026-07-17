@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Detalle de sucursal')}">
+</head>
+
+<style>
+
+    .detalle-encabezado {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .detalle-datos {
+        color: #94a3b8;
+        margin-top: 0.45rem;
+        line-height: 1.55;
+    }
+
+    .detalle-acciones {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .detalle-acciones form {
+        margin: 0;
+    }
+
+    .detalle-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(190px, 1fr)
+        );
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detalle-kpi {
+        padding: 1.15rem;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        background: #16213e;
+    }
+
+    .detalle-kpi-label {
+        color: #94a3b8;
+        font-size: 0.8rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .detalle-kpi-valor {
+        color: #e2e8f0;
+        font-size: 1.45rem;
+        font-weight: 700;
+    }
+
+    .detalle-kpi-valor.positivo {
+        color: #4ade80;
+    }
+
+    .detalle-columnas {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1.2fr)
+            minmax(320px, 0.8fr);
+        gap: 1.5rem;
+    }
+
+    .cajero-fila {
+        display: grid;
+        grid-template-columns:
+            minmax(180px, 1fr)
+            repeat(3, minmax(100px, auto));
+        gap: 1rem;
+        align-items: center;
+        padding: 0.9rem;
+        border-bottom: 1px solid #334155;
+    }
+
+    .cajero-fila:last-child {
+        border-bottom: none;
+    }
+
+    .cajero-nombre strong {
+        display: block;
+        color: #e2e8f0;
+    }
+
+    .cajero-nombre small {
+        color: #94a3b8;
+    }
+
+    .cajero-metrica span {
+        display: block;
+        color: #64748b;
+        font-size: 0.72rem;
+    }
+
+    .cajero-metrica strong {
+        color: #4ade80;
+    }
+
+    .estado-vacio {
+        padding: 2rem;
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .alerta-cierre {
+        margin-bottom: 1.5rem;
+        padding: 1rem 1.15rem;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.08);
+        color: #fca5a5;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 1050px) {
+
+        .detalle-columnas {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 700px) {
+
+        .detalle-acciones {
+            width: 100%;
+        }
+
+        .detalle-acciones a,
+        .detalle-acciones form,
+        .detalle-acciones button {
+            width: 100%;
+        }
+
+        .cajero-fila {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .cajero-nombre {
+            grid-column: 1 / -1;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header detalle-encabezado">
+
+            <div>
+
+                <h1
+                        th:text="'🏪 ' + ${detalle.nombre}">
+                    Sucursal
+                </h1>
+
+                <div class="detalle-datos">
+
+                    <div>
+                        Código:
+
+                        <strong th:text="${detalle.codigo}">
+                            MAT
+                        </strong>
+                    </div>
+
+                    <div
+                            th:text="${detalle.direccion != null
+                                ? detalle.direccion
+                                : 'Sin dirección registrada'}">
+                        Dirección
+                    </div>
+
+                    <div
+                            th:text="${detalle.telefono != null
+                                ? detalle.telefono
+                                : 'Sin teléfono registrado'}">
+                        Teléfono
+                    </div>
+
+                    <div>
+
+                        Estado:
+
+                        <span
+                                class="badge"
+                                th:classappend="${detalle.activa}
+                                    ? ' badge-success'
+                                    : ' badge-danger'"
+                                th:text="${detalle.activa}
+                                    ? 'Activa'
+                                    : 'Inactiva'">
+                            Activa
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="detalle-acciones">
+
+                <a
+                        th:href="@{/admin/sucursales}"
+                        class="btn btn-cancel">
+                    ← Regresar
+                </a>
+
+                <a
+                        th:if="${detalle.activa}"
+                        th:href="@{/admin/inventario/transferencias}"
+                        class="btn btn-primary">
+                    🚚 Mover inventario
+                </a>
+
+                <form
+                        th:if="${detalle.activa
+                            and detalle.codigo != 'MAT'}"
+                        th:action="@{/admin/sucursales/cerrar/{id}
+                            (id=${detalle.sucursalId})}"
+                        method="post"
+                        onsubmit="return confirmarCierreSucursal();">
+
+                    <button
+                            type="submit"
+                            class="btn btn-danger">
+                        🗑️ Cerrar sucursal
+                    </button>
+
+                </form>
+
+                <span
+                        th:if="${detalle.codigo == 'MAT'}"
+                        class="badge badge-info">
+                    🏪 Sucursal principal
+                </span>
+
+            </div>
+
+        </div>
+
+        <div
+                class="alerta-cierre"
+                th:if="${detalle.activa
+                    and detalle.codigo != 'MAT'}">
+
+            <strong>Cierre de sucursal:</strong>
+
+            al cerrar esta tienda, todo su inventario será trasladado
+            automáticamente a Sucursal Matriz, sus usuarios serán
+            reasignados y se conservará la evidencia histórica.
+
+        </div>
+
+        <section class="detalle-grid">
+
+            <article class="detalle-kpi">
+
+                <div class="detalle-kpi-label">
+                    Productos diferentes
+                </div>
+
+                <div
+                        class="detalle-kpi-valor"
+                        th:text="${detalle.productosDiferentes}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="detalle-kpi">
+
+                <div class="detalle-kpi-label">
+                    Unidades en existencia
+                </div>
+
+                <div
+                        class="detalle-kpi-valor"
+                        th:text="${detalle.unidadesTotales}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="detalle-kpi">
+
+                <div class="detalle-kpi-label">
+                    Valor de venta del inventario
+                </div>
+
+                <div
+                        class="detalle-kpi-valor positivo"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                detalle.valorInventario,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+            <article class="detalle-kpi">
+
+                <div class="detalle-kpi-label">
+                    Ventas · últimos 30 días
+                </div>
+
+                <div
+                        class="detalle-kpi-valor"
+                        th:text="${detalle.numeroVentas}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="detalle-kpi">
+
+                <div class="detalle-kpi-label">
+                    Ingreso · últimos 30 días
+                </div>
+
+                <div
+                        class="detalle-kpi-valor positivo"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                detalle.totalVentas,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+            <article class="detalle-kpi">
+
+                <div class="detalle-kpi-label">
+                    Venta promedio
+                </div>
+
+                <div
+                        class="detalle-kpi-valor"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                detalle.ventaPromedio,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+        </section>
+
+        <section class="detalle-columnas">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        📦 Inventario actual
+                    </span>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Producto</th>
+                            <th>Código</th>
+                            <th>Existencia</th>
+                            <th>Stock mínimo</th>
+                            <th>Precio</th>
+                            <th>Valor</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                                th:each="producto :
+                                    ${detalle.productos}">
+
+                            <td th:text="${producto.producto}">
+                                Producto
+                            </td>
+
+                            <td
+                                    th:text="${producto.codigoBarras != null
+                                        ? producto.codigoBarras
+                                        : 'Sin código'}">
+                                Código
+                            </td>
+
+                            <td>
+
+                                <span
+                                        class="badge"
+                                        th:classappend="${producto.existencia <= 0}
+                                            ? ' badge-danger'
+                                            : (${producto.existencia
+                                                <= producto.stockMinimo}
+                                                ? ' badge-warning'
+                                                : ' badge-success')"
+                                        th:text="${producto.existencia}">
+                                    0
+                                </span>
+
+                            </td>
+
+                            <td th:text="${producto.stockMinimo}">
+                                0
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            producto.precioVenta,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    style="color:#4ade80;"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            producto.valorInventario,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                        </tr>
+
+                        <tr
+                                th:if="${#lists.isEmpty(
+                                    detalle.productos
+                                )}">
+
+                            <td
+                                    colspan="6"
+                                    class="estado-vacio">
+
+                                Esta sucursal todavía no tiene mercancía.
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <aside class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        👥 Cajeros y ventas
+                    </span>
+
+                </div>
+
+                <div
+                        th:each="cajero :
+                            ${detalle.cajeros}"
+                        class="cajero-fila">
+
+                    <div class="cajero-nombre">
+
+                        <strong th:text="${cajero.nombre}">
+                            Cajero
+                        </strong>
+
+                        <small
+                                th:text="'@'
+                                    + ${cajero.username}
+                                    + ' · '
+                                    + ${cajero.rol}">
+                            Usuario
+                        </small>
+
+                    </div>
+
+                    <div class="cajero-metrica">
+
+                        <span>Ventas</span>
+
+                        <strong th:text="${cajero.numeroVentas}">
+                            0
+                        </strong>
+
+                    </div>
+
+                    <div class="cajero-metrica">
+
+                        <span>Total vendido</span>
+
+                        <strong
+                                th:text="'$ ' +
+                                    ${#numbers.formatDecimal(
+                                        cajero.totalVentas,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )}">
+                            $ 0.00
+                        </strong>
+
+                    </div>
+
+                    <div class="cajero-metrica">
+
+                        <span>Venta promedio</span>
+
+                        <strong
+                                th:text="'$ ' +
+                                    ${#numbers.formatDecimal(
+                                        cajero.ventaPromedio,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )}">
+                            $ 0.00
+                        </strong>
+
+                    </div>
+
+                </div>
+
+                <div
+                        class="estado-vacio"
+                        th:if="${#lists.isEmpty(
+                            detalle.cajeros
+                        )}">
+
+                    Esta sucursal todavía no tiene
+                    cajeros asignados.
+
+                </div>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script>
+
+    function confirmarCierreSucursal() {
+
+        return window.confirm(
+            'ADVERTENCIA: cierre definitivo de sucursal.\n\n'
+            + 'Todo el inventario será enviado a Sucursal Matriz.\n'
+            + 'Los usuarios serán reasignados a Matriz.\n'
+            + 'La sucursal dejará de aparecer en operaciones nuevas.\n'
+            + 'Las ventas y movimientos históricos se conservarán.\n\n'
+            + '¿Confirmas el cierre de esta sucursal?'
+        );
+    }
+
+</script>
+
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

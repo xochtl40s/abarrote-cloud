@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Sucursales')}">
+</head>
+
+<style>
+
+    .sucursales-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(300px, 0.75fr)
+            minmax(0, 1.25fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .form-sucursal {
+        position: sticky;
+        top: 1rem;
+    }
+
+    .codigo-sucursal {
+        color: #60a5fa;
+        font-family: monospace;
+        font-weight: 700;
+    }
+
+    .acciones-sucursal {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .descripcion-sucursal {
+        color: #94a3b8;
+        margin-top: 0.35rem;
+    }
+
+    .advertencia-baja {
+        margin-top: 1rem;
+        padding: 0.85rem;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        border-radius: 8px;
+        background: rgba(245, 158, 11, 0.08);
+        color: #fbbf24;
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    /* ========================================================= */
+    /* COMPARATIVO                                               */
+    /* ========================================================= */
+
+    .comparativo-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(310px, 1fr)
+        );
+        gap: 1rem;
+    }
+
+    .comparativo-sucursal {
+        padding: 1.1rem;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        background: #111827;
+        transition:
+            transform 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .comparativo-sucursal:hover {
+        transform: translateY(-2px);
+        border-color: #4ade80;
+    }
+
+    .comparativo-encabezado {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .comparativo-nombre {
+        color: #e2e8f0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .comparativo-nombre:hover {
+        color: #4ade80;
+    }
+
+    .comparativo-codigo {
+        display: block;
+        margin-top: 0.25rem;
+        color: #60a5fa;
+        font-family: monospace;
+        font-size: 0.78rem;
+    }
+
+    .comparativo-posicion {
+        min-width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(74, 222, 128, 0.15);
+        color: #4ade80;
+        font-weight: 700;
+    }
+
+    .comparativo-metrica {
+        margin-bottom: 1rem;
+    }
+
+    .comparativo-metrica:last-child {
+        margin-bottom: 0;
+    }
+
+    .comparativo-metrica-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 1rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .comparativo-metrica-label {
+        color: #94a3b8;
+        font-size: 0.78rem;
+    }
+
+    .comparativo-metrica-valor {
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-align: right;
+    }
+
+    .comparativo-metrica-valor.positivo {
+        color: #4ade80;
+    }
+
+    .barra-fondo {
+        width: 100%;
+        height: 12px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #1e293b;
+    }
+
+    .barra-valor {
+        height: 100%;
+        min-width: 0;
+        border-radius: 999px;
+        transition: width 0.5s ease;
+    }
+
+    .barra-ventas {
+        background: linear-gradient(
+            90deg,
+            #22c55e,
+            #4ade80
+        );
+    }
+
+    .barra-inventario {
+        background: linear-gradient(
+            90deg,
+            #2563eb,
+            #60a5fa
+        );
+    }
+
+    .barra-unidades {
+        background: linear-gradient(
+            90deg,
+            #d97706,
+            #fbbf24
+        );
+    }
+
+    .comparativo-pie {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid #334155;
+        color: #94a3b8;
+        font-size: 0.76rem;
+    }
+
+    .comparativo-vacio {
+        padding: 2rem;
+        border: 1px dashed #475569;
+        border-radius: 10px;
+        color: #94a3b8;
+        text-align: center;
+    }
+
+    @media (max-width: 1000px) {
+
+        .sucursales-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-sucursal {
+            position: static;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    🏪 Administración de sucursales
+                </h1>
+
+                <p class="descripcion-sucursal">
+                    Registra, consulta y compara el desempeño
+                    de las tiendas de la empresa.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div
+                class="alert alert-success"
+                th:if="${mensajeExito}"
+                th:text="${mensajeExito}">
+        </div>
+
+        <div
+                class="alert alert-danger"
+                th:if="${mensajeError}"
+                th:text="${mensajeError}">
+        </div>
+
+        <!-- COMPARATIVO -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <div>
+
+                    <span class="card-title">
+                        📊 Comparativo de sucursales
+                    </span>
+
+                    <p
+                            style="
+                                color:#94a3b8;
+                                margin-top:0.35rem;
+                                font-size:0.82rem;
+                            ">
+                        Ventas de los últimos 30 días
+                        e inventario actual.
+                    </p>
+
+                </div>
+
+                <span
+                        class="badge badge-info"
+                        th:text="${#lists.size(
+                            comparativoSucursales
+                        )} + ' sucursales activas'">
+                    0 sucursales activas
+                </span>
+
+            </div>
+
+            <div
+                    class="comparativo-grid"
+                    th:if="${!#lists.isEmpty(
+                        comparativoSucursales
+                    )}">
+
+                <article
+                        class="comparativo-sucursal"
+                        th:each="item, iterador :
+                            ${comparativoSucursales}">
+
+                    <div class="comparativo-encabezado">
+
+                        <div>
+
+                            <a
+                                    class="comparativo-nombre"
+                                    th:href="@{/admin/sucursales/{id}
+                                        (id=${item.sucursalId})}"
+                                    th:text="${item.nombre}">
+                                Sucursal
+                            </a>
+
+                            <span
+                                    class="comparativo-codigo"
+                                    th:text="${item.codigo}">
+                                MAT
+                            </span>
+
+                        </div>
+
+                        <span
+                                class="comparativo-posicion"
+                                th:text="${iterador.count}">
+                            1
+                        </span>
+
+                    </div>
+
+                    <!-- VENTAS -->
+
+                    <div class="comparativo-metrica">
+
+                        <div class="comparativo-metrica-header">
+
+                            <span class="comparativo-metrica-label">
+                                Ventas · 30 días
+                            </span>
+
+                            <span
+                                    class="comparativo-metrica-valor positivo"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.totalVentas,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </span>
+
+                        </div>
+
+                        <div class="barra-fondo">
+
+                            <div
+                                    class="barra-valor barra-ventas"
+                                    th:style="'width:' +
+                                        ${item.porcentajeVentas}
+                                        + '%'">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- INVENTARIO VALORIZADO -->
+
+                    <div class="comparativo-metrica">
+
+                        <div class="comparativo-metrica-header">
+
+                            <span class="comparativo-metrica-label">
+                                Valor del inventario
+                            </span>
+
+                            <span
+                                    class="comparativo-metrica-valor"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.valorInventario,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </span>
+
+                        </div>
+
+                        <div class="barra-fondo">
+
+                            <div
+                                    class="barra-valor barra-inventario"
+                                    th:style="'width:' +
+                                        ${item.porcentajeInventario}
+                                        + '%'">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- UNIDADES -->
+
+                    <div class="comparativo-metrica">
+
+                        <div class="comparativo-metrica-header">
+
+                            <span class="comparativo-metrica-label">
+                                Unidades en existencia
+                            </span>
+
+                            <span
+                                    class="comparativo-metrica-valor"
+                                    th:text="${item.unidadesInventario}">
+                                0
+                            </span>
+
+                        </div>
+
+                        <div class="barra-fondo">
+
+                            <div
+                                    class="barra-valor barra-unidades"
+                                    th:style="'width:' +
+                                        ${item.porcentajeUnidades}
+                                        + '%'">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="comparativo-pie">
+
+                        <span
+                                th:text="${item.numeroVentas}
+                                    + ' operaciones'">
+                            0 operaciones
+                        </span>
+
+                        <span
+                                th:text="${item.productosDiferentes}
+                                    + ' productos'">
+                            0 productos
+                        </span>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+            <div
+                    class="comparativo-vacio"
+                    th:if="${#lists.isEmpty(
+                        comparativoSucursales
+                    )}">
+
+                No existen sucursales activas para comparar.
+
+            </div>
+
+        </section>
+
+        <!-- FORMULARIO Y LISTADO -->
+
+        <section class="sucursales-grid">
+
+            <div class="card form-sucursal">
+
+                <div class="card-header">
+
+                    <span
+                            class="card-title"
+                            th:text="${modoEdicion}
+                                ? '✏️ Editar sucursal'
+                                : '➕ Nueva sucursal'">
+                        Nueva sucursal
+                    </span>
+
+                </div>
+
+                <form
+                        th:action="${modoEdicion}
+                            ? @{/admin/sucursales/actualizar/{id}
+                                (id=${sucursal.id})}
+                            : @{/admin/sucursales}"
+                        th:object="${sucursal}"
+                        method="post">
+
+                    <div class="form-group">
+
+                        <label for="codigo">
+                            Código
+                        </label>
+
+                        <input
+                                type="text"
+                                id="codigo"
+                                th:field="*{codigo}"
+                                class="form-control"
+                                maxlength="20"
+                                placeholder="Ejemplo: ECA01"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="nombre">
+                            Nombre comercial
+                        </label>
+
+                        <input
+                                type="text"
+                                id="nombre"
+                                th:field="*{nombre}"
+                                class="form-control"
+                                maxlength="120"
+                                placeholder="Sucursal Ecatepec Centro"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="direccion">
+                            Dirección
+                        </label>
+
+                        <textarea
+                                id="direccion"
+                                th:field="*{direccion}"
+                                class="form-control"
+                                maxlength="250"
+                                placeholder="Dirección de la sucursal">
+                        </textarea>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="telefono">
+                            Teléfono
+                        </label>
+
+                        <input
+                                type="text"
+                                id="telefono"
+                                th:field="*{telefono}"
+                                class="form-control"
+                                maxlength="20"
+                                placeholder="55 0000 0000">
+
+                    </div>
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary"
+                            style="width:100%;"
+                            th:text="${modoEdicion}
+                                ? '💾 Guardar cambios'
+                                : '➕ Crear sucursal'">
+                        Crear sucursal
+                    </button>
+
+                    <a
+                            th:if="${modoEdicion}"
+                            th:href="@{/admin/sucursales}"
+                            class="btn btn-cancel"
+                            style="
+                                width:100%;
+                                margin-top:0.65rem;
+                            ">
+                        Cancelar edición
+                    </a>
+
+                </form>
+
+                <div class="advertencia-baja">
+
+                    Una sucursal nueva inicia sin mercancía.
+                    El inventario se asigna mediante transferencias.
+
+                </div>
+
+            </div>
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        📋 Sucursales registradas
+                    </span>
+
+                    <span
+                            class="badge badge-info"
+                            th:text="${#lists.size(sucursales)}
+                                + ' registradas'">
+                        0 registradas
+                    </span>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Código</th>
+                            <th>Sucursal</th>
+                            <th>Dirección</th>
+                            <th>Teléfono</th>
+                            <th>Acciones</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="item : ${sucursales}">
+
+                            <td
+                                    class="codigo-sucursal"
+                                    th:text="${item.codigo}">
+                                COD
+                            </td>
+
+                            <td>
+
+                                <a
+                                        th:href="@{/admin/sucursales/{id}
+                                            (id=${item.id})}"
+                                        style="
+                                            color:#e2e8f0;
+                                            font-weight:700;
+                                            text-decoration:none;
+                                        ">
+
+                                    <span th:text="${item.nombre}">
+                                        Sucursal
+                                    </span>
+
+                                    <span
+                                            style="
+                                                margin-left:0.35rem;
+                                                color:#4ade80;
+                                            ">
+                                        →
+                                    </span>
+
+                                </a>
+
+                            </td>
+
+                            <td
+                                    th:text="${item.direccion != null
+                                        ? item.direccion
+                                        : 'Sin dirección'}">
+                                Dirección
+                            </td>
+
+                            <td
+                                    th:text="${item.telefono != null
+                                        ? item.telefono
+                                        : 'Sin teléfono'}">
+                                Teléfono
+                            </td>
+
+                            <td>
+
+                                <div class="acciones-sucursal">
+
+                                    <a
+                                            th:href="@{/admin/sucursales/editar/{id}
+                                                (id=${item.id})}"
+                                            class="btn btn-sm btn-warning">
+                                        ✏️ Editar
+                                    </a>
+
+                                    <form
+                                            th:if="${item.codigo != 'MAT'}"
+                                            th:action="@{/admin/sucursales/cerrar/{id}
+                                                (id=${item.id})}"
+                                            method="post"
+                                            onsubmit="return confirmarCierreSucursal();">
+
+                                        <button
+                                                type="submit"
+                                                class="btn btn-sm btn-danger">
+                                            🗑️ Cerrar
+                                        </button>
+
+                                    </form>
+
+                                    <span
+                                            th:if="${item.codigo == 'MAT'}"
+                                            class="badge badge-info">
+                                        Principal
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(sucursales)}">
+
+                            <td
+                                    colspan="5"
+                                    style="
+                                        text-align:center;
+                                        color:#94a3b8;
+                                        padding:2rem;
+                                    ">
+                                No existen sucursales registradas.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script>
+
+    function confirmarCierreSucursal() {
+
+        return window.confirm(
+            'ADVERTENCIA: cierre definitivo de sucursal.\n\n'
+            + 'Todo el inventario será enviado a Matriz.\n'
+            + 'Los usuarios serán reasignados a Matriz.\n'
+            + 'La evidencia histórica se conservará.\n\n'
+            + '¿Confirmas el cierre?'
+        );
+    }
+
+</script>
+
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

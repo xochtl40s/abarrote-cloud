@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Productos')}">
+    <style th:replace="~{layout :: styles}"></style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <div class="main-content">
+
+        <div class="page-header">
+
+            <h1>📦 Productos</h1>
+
+            <div style="
+                display:flex;
+                gap:10px;
+                flex-wrap:wrap;
+                align-items:center;
+            ">
+
+                <a
+                        class="btn btn-success"
+                        href="/api/productos/plantilla-excel">
+                    📥 Descargar plantilla
+                </a>
+
+                <button
+                        type="button"
+                        class="btn btn-warning"
+                        onclick="mostrarImportacion()">
+                    📤 Importar Excel
+                </button>
+
+                <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="mostrarFormulario()">
+                    ➕ Nuevo Producto
+                </button>
+
+            </div>
+
+        </div>
+
+        <div
+                class="card"
+                id="panelImportacion"
+                style="display:none;">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    📤 Importación masiva de productos
+                </span>
+
+                <button
+                        type="button"
+                        onclick="ocultarImportacion()"
+                        style="
+                            background:none;
+                            border:none;
+                            font-size:1.5rem;
+                            cursor:pointer;
+                        ">
+                    ✕
+                </button>
+
+            </div>
+
+            <div style="padding:20px;">
+
+                <p style="margin-bottom:15px;">
+
+                    Selecciona un archivo Excel generado con la
+                    plantilla de Abarrote Cloud.
+
+                </p>
+
+                <div
+                        id="zonaCarga"
+                        style="
+                            border:2px dashed #9ca3af;
+                            border-radius:12px;
+                            padding:30px;
+                            text-align:center;
+                            margin-bottom:20px;
+                            cursor:pointer;
+                        "
+                        onclick="document.getElementById('archivoExcel').click()"
+                        ondragover="permitirDrop(event)"
+                        ondrop="recibirArchivo(event)">
+
+                    <div style="font-size:2.5rem;">
+                        📊
+                    </div>
+
+                    <strong>
+                        Selecciona o arrastra tu Excel aquí
+                    </strong>
+
+                    <p style="margin-top:8px;">
+                        Formatos permitidos: .xlsx y .xls
+                    </p>
+
+                    <input
+                            type="file"
+                            id="archivoExcel"
+                            accept=".xlsx,.xls"
+                            style="display:none;"
+                            onchange="mostrarArchivoSeleccionado()">
+
+                </div>
+
+                <div
+                        id="archivoSeleccionado"
+                        style="
+                            display:none;
+                            margin-bottom:15px;
+                            padding:12px;
+                            border-radius:8px;
+                            background:#eef2ff;
+                        ">
+                </div>
+
+                <div style="
+                    display:flex;
+                    gap:10px;
+                    flex-wrap:wrap;
+                ">
+
+                    <button
+                            type="button"
+                            id="btnImportarExcel"
+                            class="btn btn-primary"
+                            onclick="importarExcel()">
+                        ✅ Importar inventario
+                    </button>
+
+                    <button
+                            type="button"
+                            class="btn btn-secondary"
+                            onclick="limpiarArchivoExcel()">
+                        Limpiar
+                    </button>
+
+                </div>
+
+                <div
+                        id="estadoImportacion"
+                        style="
+                            display:none;
+                            margin-top:20px;
+                            padding:15px;
+                            border-radius:8px;
+                            background:#eff6ff;
+                        ">
+                </div>
+
+                <div
+                        id="resultadoImportacion"
+                        style="
+                            display:none;
+                            margin-top:20px;
+                            padding:15px;
+                            border-radius:8px;
+                        ">
+                </div>
+
+            </div>
+
+        </div>
+
+        <div
+                class="card"
+                id="formularioProducto"
+                style="display:none;">
+
+            <div class="card-header">
+
+                <span
+                        class="card-title"
+                        id="formTitulo">
+                    Nuevo Producto
+                </span>
+
+                <button
+                        type="button"
+                        onclick="ocultarFormulario()"
+                        style="
+                            background:none;
+                            border:none;
+                            font-size:1.5rem;
+                            cursor:pointer;
+                        ">
+                    ✕
+                </button>
+
+            </div>
+
+            <form
+                    id="productoForm"
+                    onsubmit="guardarProducto(event)">
+
+                <input
+                        type="hidden"
+                        id="productoId">
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label>
+                            Nombre *
+                        </label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="nombre"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Código de Barras
+                        </label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="codigoBarras">
+
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label>
+                            Precio Compra *
+                        </label>
+
+                        <input
+                                type="number"
+                                class="form-control"
+                                id="precioCompra"
+                                step="0.01"
+                                min="0.01"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Precio Venta *
+                        </label>
+
+                        <input
+                                type="number"
+                                class="form-control"
+                                id="precioVenta"
+                                step="0.01"
+                                min="0.01"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Stock *
+                        </label>
+
+                        <input
+                                type="number"
+                                class="form-control"
+                                id="stock"
+                                min="0"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Stock Mínimo
+                        </label>
+
+                        <input
+                                type="number"
+                                class="form-control"
+                                id="stockMinimo"
+                                min="0"
+                                value="5">
+
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label>
+                            Categoría
+                        </label>
+
+                        <select
+                                class="form-control"
+                                id="categoriaId">
+
+                            <option value="">
+                                Sin categoría
+                            </option>
+
+                            <option
+                                    th:each="cat : ${categorias}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.nombre}">
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>
+                            Descripción
+                        </label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="descripcion">
+
+                    </div>
+
+                </div>
+
+                <button
+                        type="submit"
+                        class="btn btn-primary">
+                    💾 Guardar
+                </button>
+
+            </form>
+
+        </div>
+
+        <div class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    Lista de Productos
+                </span>
+
+                <input
+                        type="text"
+                        class="form-control"
+                        style="width:250px;"
+                        placeholder="🔍 Buscar..."
+                        onkeyup="filtrarProductos(this.value)">
+
+            </div>
+
+            <div class="table-container">
+
+                <table id="tablaProductos">
+
+                    <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Código</th>
+                        <th>Precio Venta</th>
+                        <th>Stock</th>
+                        <th>Categoría</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr
+                            th:each="prod : ${productos}"
+                            th:data-id="${prod.id}">
+
+                        <td th:text="${prod.id}">
+                            1
+                        </td>
+
+                        <td th:text="${prod.nombre}">
+                            Producto
+                        </td>
+
+                        <td th:text="${prod.codigoBarras}">
+                            -
+                        </td>
+
+                        <td
+                                th:text="'$ ' + ${#numbers.formatDecimal(prod.precioVenta, 1, 'COMMA', 2, 'POINT')}">
+                            0
+                        </td>
+
+                        <td>
+
+                            <span
+                                    th:class="${prod.stockBajo} ? 'badge badge-danger' : 'badge badge-success'"
+                                    th:text="${prod.stock}">
+                                0
+                            </span>
+
+                        </td>
+
+                        <td
+                                th:text="${prod.categoriaNombre} ?: '-'">
+                            -
+                        </td>
+
+                        <td>
+
+                            <span
+                                    class="badge badge-success"
+                                    th:if="${prod.activo}">
+                                Activo
+                            </span>
+
+                            <span
+                                    class="badge badge-danger"
+                                    th:unless="${prod.activo}">
+                                Inactivo
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <button
+                                    type="button"
+                                    class="btn btn-sm btn-warning"
+                                    onclick="editarProducto(this)">
+                                ✏️
+                            </button>
+
+                            <button
+                                    type="button"
+                                    class="btn btn-sm btn-danger"
+                                    onclick="eliminarProducto(this)">
+                                🗑️
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function obtenerCsrfHeaders() {
+
+    const tokenMeta =
+        document.querySelector(
+            'meta[name="_csrf"]'
+        );
+
+    const headerMeta =
+        document.querySelector(
+            'meta[name="_csrf_header"]'
+        );
+
+    if (!tokenMeta || !headerMeta) {
+        return {};
+    }
+
+    return {
+        [headerMeta.content]: tokenMeta.content
+    };
+}
+
+function mostrarFormulario() {
+
+    document.getElementById(
+        'formularioProducto'
+    ).style.display = 'block';
+
+    document.getElementById(
+        'formTitulo'
+    ).textContent = 'Nuevo Producto';
+
+    document.getElementById(
+        'productoForm'
+    ).reset();
+
+    document.getElementById(
+        'productoId'
+    ).value = '';
+
+    ocultarImportacion();
+}
+
+function ocultarFormulario() {
+
+    document.getElementById(
+        'formularioProducto'
+    ).style.display = 'none';
+}
+
+function mostrarImportacion() {
+
+    document.getElementById(
+        'panelImportacion'
+    ).style.display = 'block';
+
+    ocultarFormulario();
+
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+}
+
+function ocultarImportacion() {
+
+    document.getElementById(
+        'panelImportacion'
+    ).style.display = 'none';
+}
+
+function permitirDrop(event) {
+
+    event.preventDefault();
+}
+
+function recibirArchivo(event) {
+
+    event.preventDefault();
+
+    const archivos =
+        event.dataTransfer.files;
+
+    if (!archivos || archivos.length === 0) {
+        return;
+    }
+
+    const input =
+        document.getElementById(
+            'archivoExcel'
+        );
+
+    const transferencia =
+        new DataTransfer();
+
+    transferencia.items.add(
+        archivos[0]
+    );
+
+    input.files =
+        transferencia.files;
+
+    mostrarArchivoSeleccionado();
+}
+
+function mostrarArchivoSeleccionado() {
+
+    const input =
+        document.getElementById(
+            'archivoExcel'
+        );
+
+    const contenedor =
+        document.getElementById(
+            'archivoSeleccionado'
+        );
+
+    if (!input.files
+        || input.files.length === 0) {
+
+        contenedor.style.display =
+            'none';
+
+        contenedor.innerHTML =
+            '';
+
+        return;
+    }
+
+    const archivo =
+        input.files[0];
+
+    const tamanoMb =
+        (
+            archivo.size
+            / 1024
+            / 1024
+        ).toFixed(2);
+
+    contenedor.style.display =
+        'block';
+
+    contenedor.innerHTML =
+        '<strong>Archivo seleccionado:</strong> '
+        + escaparHtml(
+            archivo.name
+        )
+        + ' — '
+        + tamanoMb
+        + ' MB';
+}
+
+function limpiarArchivoExcel() {
+
+    document.getElementById(
+        'archivoExcel'
+    ).value = '';
+
+    document.getElementById(
+        'archivoSeleccionado'
+    ).style.display = 'none';
+
+    document.getElementById(
+        'resultadoImportacion'
+    ).style.display = 'none';
+
+    document.getElementById(
+        'estadoImportacion'
+    ).style.display = 'none';
+}
+
+async function importarExcel() {
+
+    const input =
+        document.getElementById(
+            'archivoExcel'
+        );
+
+    if (!input.files
+        || input.files.length === 0) {
+
+        alert(
+            'Selecciona un archivo Excel'
+        );
+
+        return;
+    }
+
+    const archivo =
+        input.files[0];
+
+    const extension =
+        archivo.name
+            .toLowerCase();
+
+    if (!extension.endsWith('.xlsx')
+        && !extension.endsWith('.xls')) {
+
+        alert(
+            'El archivo debe ser .xlsx o .xls'
+        );
+
+        return;
+    }
+
+    if (!confirm(
+        'La existencia del Excel reemplazará la existencia actual de cada producto en la sucursal indicada. ¿Deseas continuar?'
+    )) {
+        return;
+    }
+
+    const boton =
+        document.getElementById(
+            'btnImportarExcel'
+        );
+
+    const estado =
+        document.getElementById(
+            'estadoImportacion'
+        );
+
+    const resultado =
+        document.getElementById(
+            'resultadoImportacion'
+        );
+
+    boton.disabled = true;
+
+    boton.textContent =
+        '⏳ Importando...';
+
+    estado.style.display =
+        'block';
+
+    estado.innerHTML =
+        'Leyendo y validando el archivo...';
+
+    resultado.style.display =
+        'none';
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        'archivo',
+        archivo
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                '/api/productos/importar-excel',
+                {
+                    method: 'POST',
+                    headers: obtenerCsrfHeaders(),
+                    body: formData
+                }
+            );
+
+        let data;
+
+        try {
+
+            data =
+                await response.json();
+
+        } catch (errorJson) {
+
+            throw new Error(
+                'El servidor no devolvió una respuesta válida'
+            );
+        }
+
+        if (!response.ok
+            || !data.success) {
+
+            throw new Error(
+                data.message
+                || 'La importación no pudo realizarse'
+            );
+        }
+
+        estado.style.display =
+            'none';
+
+        resultado.style.display =
+            'block';
+
+        resultado.style.background =
+            '#ecfdf5';
+
+        resultado.style.border =
+            '1px solid #86efac';
+
+        const r =
+            data.data;
+
+        resultado.innerHTML =
+            '<h3 style="margin-bottom:12px;">✅ Importación terminada</h3>'
+            + '<p><strong>Filas leídas:</strong> '
+            + r.filasLeidas
+            + '</p>'
+            + '<p><strong>Productos nuevos:</strong> '
+            + r.productosNuevos
+            + '</p>'
+            + '<p><strong>Productos actualizados:</strong> '
+            + r.productosActualizados
+            + '</p>'
+            + '<p><strong>Categorías creadas:</strong> '
+            + r.categoriasCreadas
+            + '</p>'
+            + '<p><strong>Inventarios creados:</strong> '
+            + r.inventariosCreados
+            + '</p>'
+            + '<p><strong>Inventarios actualizados:</strong> '
+            + r.inventariosActualizados
+            + '</p>'
+            + '<p style="margin-top:15px;">La página se actualizará para mostrar los productos.</p>';
+
+        setTimeout(
+            () => location.reload(),
+            2500
+        );
+
+    } catch (error) {
+
+        estado.style.display =
+            'none';
+
+        resultado.style.display =
+            'block';
+
+        resultado.style.background =
+            '#fef2f2';
+
+        resultado.style.border =
+            '1px solid #fca5a5';
+
+        resultado.innerHTML =
+            '<h3 style="margin-bottom:12px;">❌ No se realizó la importación</h3>'
+            + '<pre style="white-space:pre-wrap;font-family:inherit;">'
+            + escaparHtml(
+                error.message
+            )
+            + '</pre>';
+
+    } finally {
+
+        boton.disabled = false;
+
+        boton.textContent =
+            '✅ Importar inventario';
+    }
+}
+
+async function guardarProducto(event) {
+
+    event.preventDefault();
+
+    const id =
+        document.getElementById(
+            'productoId'
+        ).value;
+
+    const data = {
+
+        nombre:
+            document.getElementById(
+                'nombre'
+            ).value,
+
+        codigoBarras:
+            document.getElementById(
+                'codigoBarras'
+            ).value,
+
+        descripcion:
+            document.getElementById(
+                'descripcion'
+            ).value,
+
+        precioCompra:
+            parseFloat(
+                document.getElementById(
+                    'precioCompra'
+                ).value
+            ),
+
+        precioVenta:
+            parseFloat(
+                document.getElementById(
+                    'precioVenta'
+                ).value
+            ),
+
+        stock:
+            parseInt(
+                document.getElementById(
+                    'stock'
+                ).value,
+                10
+            ),
+
+        stockMinimo:
+            parseInt(
+                document.getElementById(
+                    'stockMinimo'
+                ).value,
+                10
+            ),
+
+        categoriaId:
+            document.getElementById(
+                'categoriaId'
+            ).value || null
+    };
+
+    const url =
+        id
+            ? `/api/productos/${id}`
+            : '/api/productos';
+
+    const method =
+        id
+            ? 'PUT'
+            : 'POST';
+
+    try {
+
+        const headers = {
+            'Content-Type':
+                'application/json',
+            ...obtenerCsrfHeaders()
+        };
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: method,
+                    headers: headers,
+                    body: JSON.stringify(
+                        data
+                    )
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (result.success) {
+
+            alert(
+                '✅ Producto guardado'
+            );
+
+            location.reload();
+
+        } else {
+
+            alert(
+                '❌ '
+                + result.message
+            );
+        }
+
+    } catch (error) {
+
+        alert(
+            'Error: '
+            + error.message
+        );
+    }
+}
+
+function editarProducto(btn) {
+
+    const row =
+        btn.closest(
+            'tr'
+        );
+
+    document.getElementById(
+        'productoId'
+    ).value =
+        row.dataset.id;
+
+    document.getElementById(
+        'nombre'
+    ).value =
+        row.cells[1].textContent.trim();
+
+    document.getElementById(
+        'codigoBarras'
+    ).value =
+        row.cells[2].textContent.trim() !== '-'
+            ? row.cells[2].textContent.trim()
+            : '';
+
+    fetch(
+        `/api/productos/${row.dataset.id}`
+    )
+        .then(
+            response =>
+                response.json()
+        )
+        .then(
+            result => {
+
+                if (result.success) {
+
+                    const producto =
+                        result.data;
+
+                    document.getElementById(
+                        'precioCompra'
+                    ).value =
+                        producto.precioCompra;
+
+                    document.getElementById(
+                        'precioVenta'
+                    ).value =
+                        producto.precioVenta;
+
+                    document.getElementById(
+                        'stock'
+                    ).value =
+                        producto.stock;
+
+                    document.getElementById(
+                        'stockMinimo'
+                    ).value =
+                        producto.stockMinimo;
+
+                    document.getElementById(
+                        'descripcion'
+                    ).value =
+                        producto.descripcion || '';
+
+                    document.getElementById(
+                        'categoriaId'
+                    ).value =
+                        producto.categoriaId || '';
+                }
+            }
+        );
+
+    document.getElementById(
+        'formTitulo'
+    ).textContent =
+        'Editar Producto';
+
+    document.getElementById(
+        'formularioProducto'
+    ).style.display =
+        'block';
+
+    ocultarImportacion();
+
+    window.scrollTo(
+        0,
+        0
+    );
+}
+
+async function eliminarProducto(btn) {
+
+    if (!confirm(
+        '¿Eliminar este producto?'
+    )) {
+        return;
+    }
+
+    const id =
+        btn.closest(
+            'tr'
+        ).dataset.id;
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/productos/${id}`,
+                {
+                    method: 'DELETE',
+                    headers:
+                        obtenerCsrfHeaders()
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (result.success) {
+
+            alert(
+                '✅ Producto eliminado'
+            );
+
+            location.reload();
+
+        } else {
+
+            alert(
+                '❌ '
+                + result.message
+            );
+        }
+
+    } catch (error) {
+
+        alert(
+            'Error: '
+            + error.message
+        );
+    }
+}
+
+function filtrarProductos(query) {
+
+    const texto =
+        query
+            .toLowerCase()
+            .trim();
+
+    const rows =
+        document.querySelectorAll(
+            '#tablaProductos tbody tr'
+        );
+
+    rows.forEach(
+        row => {
+
+            const nombre =
+                row.cells[1]
+                    .textContent
+                    .toLowerCase();
+
+            const codigo =
+                row.cells[2]
+                    .textContent
+                    .toLowerCase();
+
+            row.style.display =
+                nombre.includes(
+                    texto
+                )
+                || codigo.includes(
+                    texto
+                )
+                    ? ''
+                    : 'none';
+        }
+    );
+}
+
+function escaparHtml(texto) {
+
+    const elemento =
+        document.createElement(
+            'div'
+        );
+
+    elemento.textContent =
+        texto == null
+            ? ''
+            : texto;
+
+    return elemento.innerHTML;
+}
+
+</script>
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

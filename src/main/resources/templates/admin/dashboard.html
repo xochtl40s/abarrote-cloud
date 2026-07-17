@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:replace="~{layout :: head('Dashboard')}">
+</head>
+
+<style>
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(210px, 1fr)
+        );
+        gap: 1.15rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-card {
+        background: #16213e;
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-height: 115px;
+    }
+
+    .dashboard-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.7rem;
+        flex-shrink: 0;
+    }
+
+    .icon-green {
+        background: rgba(74, 222, 128, 0.15);
+    }
+
+    .icon-blue {
+        background: rgba(59, 130, 246, 0.15);
+    }
+
+    .icon-orange {
+        background: rgba(245, 158, 11, 0.15);
+    }
+
+    .icon-red {
+        background: rgba(239, 68, 68, 0.15);
+    }
+
+    .icon-purple {
+        background: rgba(139, 92, 246, 0.15);
+    }
+
+    .icon-cyan {
+        background: rgba(6, 182, 212, 0.15);
+    }
+
+    .dashboard-value {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: #e2e8f0;
+    }
+
+    .dashboard-label {
+        margin-top: 0.3rem;
+        color: #94a3b8;
+        font-size: 0.86rem;
+    }
+
+    .dashboard-success {
+        color: #4ade80;
+    }
+
+    .dashboard-warning {
+        color: #fbbf24;
+    }
+
+    .dashboard-danger {
+        color: #f87171;
+    }
+
+    .analitica-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(310px, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .grafica-resumen {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .grafica-resumen-item span {
+        display: block;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .grafica-resumen-item strong {
+        color: #e2e8f0;
+        font-size: 1.15rem;
+    }
+
+    .grafica {
+        height: 285px;
+        display: flex;
+        align-items: stretch;
+        gap: 0.65rem;
+        padding-top: 1rem;
+        border-bottom: 1px solid #475569;
+    }
+
+    .barra-dia {
+        flex: 1;
+        min-width: 42px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        position: relative;
+    }
+
+    .barra-total {
+        color: #cbd5e1;
+        font-size: 0.7rem;
+        margin-bottom: 0.4rem;
+        white-space: nowrap;
+    }
+
+    .barra-contenedor {
+        width: 70%;
+        max-width: 65px;
+        height: 190px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .barra {
+        width: 100%;
+        min-height: 4px;
+        border-radius: 8px 8px 0 0;
+        background: linear-gradient(
+            180deg,
+            #4ade80,
+            #16a34a
+        );
+        transition: height 0.3s ease;
+    }
+
+    .barra-dia:hover .barra {
+        filter: brightness(1.18);
+    }
+
+    .barra-etiqueta {
+        margin-top: 0.6rem;
+        color: #94a3b8;
+        font-size: 0.73rem;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .barra-operaciones {
+        color: #64748b;
+        font-size: 0.68rem;
+        margin-top: 0.2rem;
+    }
+
+    .top-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .top-producto {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem;
+        background: #111827;
+        border: 1px solid #334155;
+        border-radius: 10px;
+    }
+
+    .top-posicion {
+        font-size: 1.35rem;
+        text-align: center;
+    }
+
+    .top-informacion {
+        min-width: 0;
+    }
+
+    .top-informacion strong {
+        display: block;
+        color: #e2e8f0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .top-informacion small {
+        color: #94a3b8;
+    }
+
+    .top-importe {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .top-importe strong {
+        display: block;
+        color: #4ade80;
+    }
+
+    .top-importe small {
+        color: #94a3b8;
+    }
+
+    .inventario-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .alertas-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .alerta-stock {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        background: #111827;
+    }
+
+    .alerta-stock.agotado {
+        border-left: 4px solid #ef4444;
+    }
+
+    .alerta-stock.bajo {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .alerta-producto strong {
+        display: block;
+        color: #e2e8f0;
+    }
+
+    .alerta-producto small {
+        color: #94a3b8;
+    }
+
+    .alerta-existencia {
+        text-align: right;
+    }
+
+    .alerta-existencia strong {
+        display: block;
+        font-size: 1.05rem;
+    }
+
+    .alerta-existencia small {
+        color: #94a3b8;
+    }
+
+    .resumen-inventario {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .resumen-fila {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #334155;
+    }
+
+    .resumen-fila:last-child {
+        border-bottom: none;
+    }
+
+    .resumen-fila span {
+        color: #94a3b8;
+    }
+
+    .estado-vacio {
+        padding: 2rem;
+        text-align: center;
+        color: #94a3b8;
+        border: 1px dashed #475569;
+        border-radius: 10px;
+    }
+
+    .acciones-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(170px, 1fr)
+        );
+        gap: 0.8rem;
+    }
+
+    .accion-dashboard {
+        justify-content: center;
+        min-height: 48px;
+    }
+
+    @media (max-width: 1050px) {
+
+        .analitica-grid,
+        .inventario-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 650px) {
+
+        .grafica {
+            overflow-x: auto;
+            justify-content: flex-start;
+        }
+
+        .barra-dia {
+            min-width: 65px;
+        }
+
+        .alerta-stock {
+            grid-template-columns: auto minmax(0, 1fr);
+        }
+
+        .alerta-existencia {
+            grid-column: 2;
+            text-align: left;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+	<div
+        class="alert alert-danger"
+        th:if="${param.accesoDenegado}"
+        style="margin-bottom:1rem;">
+
+    ⛔ Tu usuario no tiene permiso para realizar esa operación.
+
+</div>
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    📊 Dashboard
+                </h1>
+
+                <p style="color:#94a3b8; margin-top:0.35rem;">
+
+                    Bienvenido,
+
+                    <strong
+                            style="color:#e2e8f0;"
+                            sec:authentication="name">
+                        administrador
+                    </strong>
+
+                </p>
+
+            </div>
+
+            <span
+                    th:text="${#temporals.format(
+                        #temporals.createNow(),
+                        'dd/MM/yyyy HH:mm'
+                    )}"
+                    style="color:#94a3b8;">
+                01/01/2026
+            </span>
+
+        </div>
+
+        <!-- KPI -->
+
+        <section class="dashboard-grid">
+
+            <article class="dashboard-card">
+                <div class="dashboard-icon icon-green">💰</div>
+                <div>
+                    <h2
+                            class="dashboard-value dashboard-success"
+                            th:text="'$ ' + ${#numbers.formatDecimal(
+                                totalVentasHoy, 1, 'COMMA', 2, 'POINT'
+                            )}">
+                        $ 0.00
+                    </h2>
+                    <p class="dashboard-label">Ventas de hoy</p>
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="dashboard-icon icon-cyan">🧾</div>
+                <div>
+                    <h2
+                            class="dashboard-value"
+                            th:text="${numeroVentasHoy}">
+                        0
+                    </h2>
+                    <p class="dashboard-label">Operaciones de hoy</p>
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="dashboard-icon icon-blue">📦</div>
+                <div>
+                    <h2
+                            class="dashboard-value"
+                            th:text="${totalProductos}">
+                        0
+                    </h2>
+                    <p class="dashboard-label">Productos activos</p>
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="dashboard-icon icon-orange">⚠️</div>
+                <div>
+                    <h2
+                            class="dashboard-value dashboard-warning"
+                            th:text="${cantidadStockBajo}">
+                        0
+                    </h2>
+                    <p class="dashboard-label">Stock bajo</p>
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="dashboard-icon icon-red">🚫</div>
+                <div>
+                    <h2
+                            class="dashboard-value dashboard-danger"
+                            th:text="${cantidadAgotados}">
+                        0
+                    </h2>
+                    <p class="dashboard-label">Productos agotados</p>
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="dashboard-icon icon-purple">👥</div>
+                <div>
+                    <h2
+                            class="dashboard-value"
+                            th:text="${totalUsuarios}">
+                        0
+                    </h2>
+                    <p class="dashboard-label">Usuarios activos</p>
+                </div>
+            </article>
+
+        </section>
+
+        <!-- GRÁFICA Y TOP -->
+
+        <section class="analitica-grid">
+
+            <div class="card">
+
+                <div class="card-header">
+                    <span class="card-title">
+                        📈 Ventas de los últimos 7 días
+                    </span>
+                </div>
+
+                <div class="grafica-resumen">
+
+                    <div class="grafica-resumen-item">
+                        <span>Total acumulado</span>
+                        <strong
+                                th:text="'$ ' + ${#numbers.formatDecimal(
+                                    totalUltimosSieteDias,
+                                    1,
+                                    'COMMA',
+                                    2,
+                                    'POINT'
+                                )}">
+                            $ 0.00
+                        </strong>
+                    </div>
+
+                    <div class="grafica-resumen-item">
+                        <span>Operaciones</span>
+                        <strong
+                                th:text="${operacionesUltimosSieteDias}">
+                            0
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="grafica">
+
+                    <div
+                            class="barra-dia"
+                            th:each="dia : ${ventasUltimosSieteDias}">
+
+                        <div
+                                class="barra-total"
+                                th:text="'$' + ${#numbers.formatDecimal(
+                                    dia.total,
+                                    1,
+                                    'COMMA',
+                                    0,
+                                    'POINT'
+                                )}">
+                            $0
+                        </div>
+
+                        <div class="barra-contenedor">
+
+                            <div
+                                    class="barra"
+                                    th:style="'height:' +
+                                        ${dia.porcentaje == 0
+                                            ? 2
+                                            : dia.porcentaje}
+                                        + '%'">
+                            </div>
+
+                        </div>
+
+                        <div
+                                class="barra-etiqueta"
+                                th:text="${dia.etiqueta}">
+                            Lun 1
+                        </div>
+
+                        <div
+                                class="barra-operaciones"
+                                th:text="${dia.numeroVentas} + ' ventas'">
+                            0 ventas
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <aside class="card">
+
+                <div class="card-header">
+                    <span class="card-title">
+                        🏆 Más vendidos · 30 días
+                    </span>
+                </div>
+
+                <div
+                        class="top-lista"
+                        th:if="${!#lists.isEmpty(productosMasVendidos)}">
+
+                    <article
+                            class="top-producto"
+                            th:each="producto : ${productosMasVendidos}">
+
+                        <div
+                                class="top-posicion"
+                                th:switch="${producto.posicion}">
+
+                            <span th:case="1">🥇</span>
+                            <span th:case="2">🥈</span>
+                            <span th:case="3">🥉</span>
+                            <span
+                                    th:case="*"
+                                    th:text="${producto.posicion}">
+                                4
+                            </span>
+
+                        </div>
+
+                        <div class="top-informacion">
+
+                            <strong th:text="${producto.nombre}">
+                                Producto
+                            </strong>
+
+                            <small
+                                    th:text="${producto.cantidadVendida}
+                                        + ' piezas vendidas'">
+                                0 piezas
+                            </small>
+
+                        </div>
+
+                        <div class="top-importe">
+
+                            <strong
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            producto.importeVendido,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </strong>
+
+                            <small>
+                                importe
+                            </small>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+                <div
+                        class="estado-vacio"
+                        th:if="${#lists.isEmpty(productosMasVendidos)}">
+
+                    <div style="font-size:2rem;">📊</div>
+
+                    <p style="margin-top:0.5rem;">
+                        Todavía no existen ventas para calcular
+                        los productos más vendidos.
+                    </p>
+
+                </div>
+
+            </aside>
+
+        </section>
+
+        <!-- INVENTARIO -->
+
+        <section class="inventario-grid">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        🔔 Alertas de inventario
+                    </span>
+
+                    <a
+                            th:href="@{/admin/productos}"
+                            class="btn btn-sm btn-warning">
+                        Administrar
+                    </a>
+
+                </div>
+
+                <div
+                        class="alertas-lista"
+                        th:if="${!#lists.isEmpty(productosStockBajo)}">
+
+                    <article
+                            class="alerta-stock"
+                            th:each="producto : ${productosStockBajo}"
+                            th:classappend="${producto.agotado}
+                                ? ' agotado'
+                                : ' bajo'">
+
+                        <div
+                                th:text="${producto.agotado}
+                                    ? '🔴'
+                                    : '🟠'">
+                            🟠
+                        </div>
+
+                        <div class="alerta-producto">
+
+                            <strong th:text="${producto.nombre}">
+                                Producto
+                            </strong>
+
+                            <small>
+                                Stock mínimo:
+                                <span th:text="${producto.stockMinimo}">
+                                    5
+                                </span>
+                            </small>
+
+                        </div>
+
+                        <div class="alerta-existencia">
+
+                            <strong
+                                    th:classappend="${producto.agotado}
+                                        ? 'dashboard-danger'
+                                        : 'dashboard-warning'"
+                                    th:text="${producto.stock}">
+                                0
+                            </strong>
+
+                            <small>existencias</small>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+                <div
+                        class="estado-vacio"
+                        th:if="${#lists.isEmpty(productosStockBajo)}">
+
+                    <div style="font-size:2rem;">✅</div>
+
+                    <p style="margin-top:0.5rem;">
+                        El inventario se encuentra saludable.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <aside class="card">
+
+                <div class="card-header">
+                    <span class="card-title">
+                        📦 Resumen
+                    </span>
+                </div>
+
+                <div class="resumen-inventario">
+
+                    <div class="resumen-fila">
+                        <span>Productos activos</span>
+                        <strong th:text="${totalProductos}">0</strong>
+                    </div>
+
+                    <div class="resumen-fila">
+                        <span>Stock bajo</span>
+                        <strong
+                                class="dashboard-warning"
+                                th:text="${cantidadStockBajo}">
+                            0
+                        </strong>
+                    </div>
+
+                    <div class="resumen-fila">
+                        <span>Agotados</span>
+                        <strong
+                                class="dashboard-danger"
+                                th:text="${cantidadAgotados}">
+                            0
+                        </strong>
+                    </div>
+
+                    <div class="resumen-fila">
+                        <span>Ventas últimos 7 días</span>
+                        <strong
+                                th:text="${operacionesUltimosSieteDias}">
+                            0
+                        </strong>
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </section>
+
+        <!-- ACCESOS -->
+
+        <section class="card">
+
+            <div class="card-header">
+                <span class="card-title">
+                    ⚡ Accesos rápidos
+                </span>
+            </div>
+
+            <div class="acciones-grid">
+
+                <a
+                        th:href="@{/pos}"
+                        target="_blank"
+                        class="btn btn-primary accion-dashboard">
+                    🖥️ Abrir POS
+                </a>
+
+                <a
+                        th:href="@{/admin/productos}"
+                        class="btn btn-primary accion-dashboard"
+                        style="background:#3b82f6;">
+                    📦 Productos
+                </a>
+
+                <a
+                        th:href="@{/admin/reportes}"
+                        class="btn btn-primary accion-dashboard"
+                        style="background:#8b5cf6;">
+                    📈 Reportes
+                </a>
+
+                <a
+                        th:href="@{/admin/corte}"
+                        class="btn btn-primary accion-dashboard"
+                        style="background:#f59e0b;">
+                    💰 Corte de caja
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

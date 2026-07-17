@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html
+        xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Inventario por tienda')}">
+</head>
+
+<style>
+
+    .inventario-subtitulo {
+        color: #94a3b8;
+        margin-top: 0.4rem;
+        line-height: 1.5;
+    }
+
+    .inventario-acciones {
+        display: flex;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .inventario-kpis {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(190px, 1fr)
+        );
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .inventario-kpi {
+        min-height: 118px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.15rem;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        background: #16213e;
+    }
+
+    .inventario-kpi-icono {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 13px;
+        font-size: 1.5rem;
+    }
+
+    .kpi-verde {
+        background: rgba(74, 222, 128, 0.14);
+    }
+
+    .kpi-azul {
+        background: rgba(59, 130, 246, 0.14);
+    }
+
+    .kpi-naranja {
+        background: rgba(245, 158, 11, 0.14);
+    }
+
+    .kpi-rojo {
+        background: rgba(239, 68, 68, 0.14);
+    }
+
+    .kpi-morado {
+        background: rgba(139, 92, 246, 0.14);
+    }
+
+    .inventario-kpi strong {
+        display: block;
+        color: #e2e8f0;
+        font-size: 1.4rem;
+        overflow-wrap: anywhere;
+    }
+
+    .inventario-kpi span {
+        display: block;
+        margin-top: 0.25rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+
+    .inventario-layout {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1.55fr)
+            minmax(300px, 0.75fr);
+        gap: 1.5rem;
+        align-items: start;
+        margin-bottom: 1.5rem;
+    }
+
+    .grafica-contenedor {
+        position: relative;
+        width: 100%;
+        min-height: 360px;
+        padding: 0.5rem 0;
+    }
+
+    #graficaInventario {
+        display: block;
+        width: 100%;
+        height: 350px;
+        overflow: visible;
+    }
+
+    .grafica-linea {
+        fill: none;
+        stroke: #4ade80;
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .grafica-area {
+        fill: rgba(74, 222, 128, 0.08);
+        stroke: none;
+    }
+
+    .grafica-punto {
+        fill: #4ade80;
+        stroke: #16213e;
+        stroke-width: 4;
+    }
+
+    .grafica-rejilla {
+        stroke: #334155;
+        stroke-width: 1;
+        stroke-dasharray: 5 5;
+    }
+
+    .grafica-eje {
+        stroke: #64748b;
+        stroke-width: 1.2;
+    }
+
+    .grafica-texto {
+        fill: #94a3b8;
+        font-size: 12px;
+    }
+
+    .grafica-valor {
+        fill: #e2e8f0;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .grafica-vacia {
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        text-align: center;
+    }
+
+    .sucursal-resumen-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    .sucursal-resumen {
+        padding: 0.95rem;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        background: #111827;
+    }
+
+    .sucursal-resumen-cabecera {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .sucursal-resumen-nombre {
+        color: #e2e8f0;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .sucursal-resumen-nombre:hover {
+        color: #4ade80;
+    }
+
+    .sucursal-resumen-codigo {
+        display: block;
+        margin-top: 0.2rem;
+        color: #60a5fa;
+        font-family: monospace;
+        font-size: 0.75rem;
+    }
+
+    .sucursal-resumen-unidades {
+        color: #4ade80;
+        font-size: 1.2rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .sucursal-resumen-datos {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.55rem;
+        color: #94a3b8;
+        font-size: 0.78rem;
+    }
+
+    .sucursal-resumen-datos strong {
+        display: block;
+        margin-top: 0.15rem;
+        color: #e2e8f0;
+        font-size: 0.9rem;
+    }
+
+    .inventario-filtros {
+        display: grid;
+        grid-template-columns:
+            minmax(220px, 0.7fr)
+            minmax(250px, 1.3fr)
+            auto;
+        gap: 0.9rem;
+        align-items: end;
+    }
+
+    .filtro-grupo {
+        min-width: 0;
+    }
+
+    .filtro-grupo label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: #94a3b8;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .tabla-producto {
+        white-space: normal;
+        min-width: 180px;
+    }
+
+    .tabla-producto strong {
+        display: block;
+        color: #e2e8f0;
+    }
+
+    .tabla-producto small {
+        display: block;
+        margin-top: 0.2rem;
+        color: #94a3b8;
+    }
+
+    .estado-inventario {
+        min-width: 96px;
+    }
+
+    .sin-resultados {
+        padding: 2rem;
+        color: #94a3b8;
+        text-align: center;
+    }
+
+    .contador-resultados {
+        color: #94a3b8;
+        font-size: 0.82rem;
+    }
+
+    @media (max-width: 1050px) {
+
+        .inventario-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 780px) {
+
+        .inventario-acciones {
+            width: 100%;
+        }
+
+        .inventario-acciones .btn {
+            width: 100%;
+        }
+
+        .inventario-filtros {
+            grid-template-columns: 1fr;
+        }
+
+        .inventario-filtros .btn {
+            width: 100%;
+        }
+
+        .grafica-contenedor {
+            min-height: 300px;
+        }
+
+        #graficaInventario {
+            height: 290px;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    📦 Inventario por tienda
+                </h1>
+
+                <p class="inventario-subtitulo">
+                    Consulta la mercancía disponible en cada sucursal,
+                    identifica faltantes y compara la distribución
+                    del inventario.
+                </p>
+
+            </div>
+
+            <div class="inventario-acciones">
+
+                <a
+                        th:href="@{/admin/inventario/transferencias}"
+                        class="btn btn-primary">
+                    🚚 Mover mercancía
+                </a>
+
+                <a
+                        th:href="@{/admin/sucursales}"
+                        class="btn btn-cancel">
+                    🏪 Sucursales
+                </a>
+
+            </div>
+
+        </div>
+
+        <!-- ================================================= -->
+        <!-- KPI                                               -->
+        <!-- ================================================= -->
+
+        <section class="inventario-kpis">
+
+            <article class="inventario-kpi">
+
+                <div class="inventario-kpi-icono kpi-azul">
+                    🏪
+                </div>
+
+                <div>
+
+                    <strong th:text="${totalSucursales}">
+                        0
+                    </strong>
+
+                    <span>Sucursales activas</span>
+
+                </div>
+
+            </article>
+
+            <article class="inventario-kpi">
+
+                <div class="inventario-kpi-icono kpi-verde">
+                    📦
+                </div>
+
+                <div>
+
+                    <strong th:text="${unidadesTotales}">
+                        0
+                    </strong>
+
+                    <span>Unidades disponibles</span>
+
+                </div>
+
+            </article>
+
+            <article class="inventario-kpi">
+
+                <div class="inventario-kpi-icono kpi-morado">
+                    💵
+                </div>
+
+                <div>
+
+                    <strong
+                            th:text="'$ ' +
+                                ${#numbers.formatDecimal(
+                                    valorTotalInventario,
+                                    1,
+                                    'COMMA',
+                                    2,
+                                    'POINT'
+                                )}">
+                        $ 0.00
+                    </strong>
+
+                    <span>Valor de venta del inventario</span>
+
+                </div>
+
+            </article>
+
+            <article class="inventario-kpi">
+
+                <div class="inventario-kpi-icono kpi-naranja">
+                    ⚠️
+                </div>
+
+                <div>
+
+                    <strong th:text="${productosStockBajo}">
+                        0
+                    </strong>
+
+                    <span>Registros con stock bajo</span>
+
+                </div>
+
+            </article>
+
+            <article class="inventario-kpi">
+
+                <div class="inventario-kpi-icono kpi-rojo">
+                    🚫
+                </div>
+
+                <div>
+
+                    <strong th:text="${productosAgotados}">
+                        0
+                    </strong>
+
+                    <span>Registros agotados</span>
+
+                </div>
+
+            </article>
+
+        </section>
+
+        <!-- ================================================= -->
+        <!-- GRÁFICA Y RESUMEN                                 -->
+        <!-- ================================================= -->
+
+        <section class="inventario-layout">
+
+            <div class="card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="card-title">
+                            📈 Mercancía por sucursal
+                        </span>
+
+                        <p
+                                style="
+                                    margin-top:0.35rem;
+                                    color:#94a3b8;
+                                    font-size:0.82rem;
+                                ">
+                            Evolución de las unidades disponibles
+                            durante los últimos siete días.
+                        </p>
+
+                    </div>
+
+                    <span class="badge badge-info">
+                        Unidades
+                    </span>
+
+                </div>
+
+                <div
+                        class="grafica-contenedor"
+                        th:if="${!#lists.isEmpty(
+                            comparativoSucursales
+                        )}">
+
+                    <div
+                            id="graficaLeyenda"
+                            style="
+                                margin-bottom:0.8rem;
+                                min-height:28px;
+                            ">
+                    </div>
+
+                    <svg
+                            id="graficaInventario"
+                            role="img"
+                            aria-label="Tendencia histórica del inventario por sucursal">
+                    </svg>
+
+                </div>
+
+                <div
+                        class="grafica-vacia"
+                        th:if="${#lists.isEmpty(
+                            comparativoSucursales
+                        )}">
+
+                    No existen sucursales activas
+                    para construir el comparativo.
+
+                </div>
+
+            </div>
+
+            <aside class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        🏪 Resumen por tienda
+                    </span>
+
+                </div>
+
+                <div
+                        class="sucursal-resumen-lista"
+                        th:if="${!#lists.isEmpty(
+                            comparativoSucursales
+                        )}">
+
+                    <article
+                            class="sucursal-resumen"
+                            th:each="sucursal :
+                                ${comparativoSucursales}"
+                            th:attr="
+                                data-sucursal-id=${sucursal.sucursalId},
+                                data-codigo=${sucursal.codigo},
+                                data-nombre=${sucursal.nombre},
+                                data-unidades=${sucursal.unidadesInventario}">
+
+                        <div class="sucursal-resumen-cabecera">
+
+                            <div>
+
+                                <a
+                                        class="sucursal-resumen-nombre"
+                                        th:href="@{/admin/sucursales/{id}
+                                            (id=${sucursal.sucursalId})}"
+                                        th:text="${sucursal.nombre}">
+                                    Sucursal
+                                </a>
+
+                                <span
+                                        class="sucursal-resumen-codigo"
+                                        th:text="${sucursal.codigo}">
+                                    MAT
+                                </span>
+
+                            </div>
+
+                            <span
+                                    class="sucursal-resumen-unidades"
+                                    th:text="${sucursal.unidadesInventario}">
+                                0
+                            </span>
+
+                        </div>
+
+                        <div class="sucursal-resumen-datos">
+
+                            <div>
+                                Productos
+                                <strong
+                                        th:text="${sucursal.productosDiferentes}">
+                                    0
+                                </strong>
+                            </div>
+
+                            <div>
+                                Valor
+                                <strong
+                                        th:text="'$ ' +
+                                            ${#numbers.formatDecimal(
+                                                sucursal.valorInventario,
+                                                1,
+                                                'COMMA',
+                                                2,
+                                                'POINT'
+                                            )}">
+                                    $ 0.00
+                                </strong>
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+                <div
+                        class="sin-resultados"
+                        th:if="${#lists.isEmpty(
+                            comparativoSucursales
+                        )}">
+
+                    Sin sucursales disponibles.
+
+                </div>
+
+            </aside>
+
+        </section>
+
+        <!-- ================================================= -->
+        <!-- INVENTARIO DETALLADO                              -->
+        <!-- ================================================= -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <div>
+
+                    <span class="card-title">
+                        📋 Mercancía por tienda
+                    </span>
+
+                    <p
+                            class="contador-resultados"
+                            id="contadorResultados">
+                        Mostrando todos los registros
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="inventario-filtros">
+
+                <div class="filtro-grupo">
+
+                    <label for="filtroSucursal">
+                        Sucursal
+                    </label>
+
+                    <select
+                            id="filtroSucursal"
+                            class="form-control">
+
+                        <option value="">
+                            Todas las sucursales
+                        </option>
+
+                        <option
+                                th:each="sucursal : ${sucursales}"
+                                th:value="${sucursal.id}"
+                                th:text="${sucursal.codigo
+                                    + ' - '
+                                    + sucursal.nombre}">
+                            Sucursal
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="filtro-grupo">
+
+                    <label for="busquedaInventario">
+                        Buscar mercancía
+                    </label>
+
+                    <input
+                            id="busquedaInventario"
+                            type="search"
+                            class="form-control"
+                            placeholder="Nombre o código de barras"
+                            autocomplete="off">
+
+                </div>
+
+                <button
+                        id="limpiarFiltros"
+                        type="button"
+                        class="btn btn-cancel">
+                    Limpiar
+                </button>
+
+            </div>
+
+            <div
+                    class="table-container"
+                    style="margin-top:1.25rem;">
+
+                <table id="tablaInventario">
+
+                    <thead>
+
+                    <tr>
+                        <th>Sucursal</th>
+                        <th>Producto</th>
+                        <th>Código</th>
+                        <th>Existencia</th>
+                        <th>Stock mínimo</th>
+                        <th>Estado</th>
+                        <th>Detalle</th>
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr
+                            class="fila-inventario"
+                            th:each="inventario : ${inventarios}"
+                            th:attr="
+                                data-sucursal=${inventario.sucursalId},
+                                data-producto=${#strings.toLowerCase(
+                                    inventario.productoNombre
+                                )},
+                                data-codigo=${inventario.codigoBarras != null
+                                    ? #strings.toLowerCase(
+                                        inventario.codigoBarras
+                                    )
+                                    : ''}">
+
+                        <td>
+
+                            <strong
+                                    th:text="${inventario.sucursalNombre}">
+                                Sucursal
+                            </strong>
+
+                            <div
+                                    style="
+                                        color:#60a5fa;
+                                        font-family:monospace;
+                                        font-size:0.75rem;
+                                        margin-top:0.2rem;
+                                    "
+                                    th:text="${inventario.sucursalCodigo}">
+                                MAT
+                            </div>
+
+                        </td>
+
+                        <td class="tabla-producto">
+
+                            <strong
+                                    th:text="${inventario.productoNombre}">
+                                Producto
+                            </strong>
+
+                        </td>
+
+                        <td
+                                th:text="${inventario.codigoBarras != null
+                                    and !inventario.codigoBarras.isBlank()
+                                    ? inventario.codigoBarras
+                                    : 'Sin código'}">
+                            Código
+                        </td>
+
+                        <td>
+
+                            <span
+                                    class="badge"
+                                    th:classappend="${inventario.existencia <= 0}
+                                        ? ' badge-danger'
+                                        : (${inventario.existencia
+                                            <= inventario.stockMinimo}
+                                            ? ' badge-warning'
+                                            : ' badge-success')"
+                                    th:text="${inventario.existencia}">
+                                0
+                            </span>
+
+                        </td>
+
+                        <td th:text="${inventario.stockMinimo}">
+                            0
+                        </td>
+
+                        <td class="estado-inventario">
+
+                            <span
+                                    class="badge badge-danger"
+                                    th:if="${inventario.existencia <= 0}">
+                                Agotado
+                            </span>
+
+                            <span
+                                    class="badge badge-warning"
+                                    th:if="${inventario.existencia > 0
+                                        and inventario.existencia
+                                        <= inventario.stockMinimo}">
+                                Stock bajo
+                            </span>
+
+                            <span
+                                    class="badge badge-success"
+                                    th:if="${inventario.existencia
+                                        > inventario.stockMinimo}">
+                                Saludable
+                            </span>
+
+                        </td>
+
+                        <td>
+
+                            <a
+                                    th:href="@{/admin/sucursales/{id}
+                                        (id=${inventario.sucursalId})}"
+                                    class="btn btn-sm btn-cancel">
+                                Ver tienda
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    <tr
+                            id="filaSinResultados"
+                            style="display:none;">
+
+                        <td
+                                colspan="7"
+                                class="sin-resultados">
+
+                            No existen productos que coincidan
+                            con los filtros seleccionados.
+
+                        </td>
+
+                    </tr>
+
+                    <tr
+                            th:if="${#lists.isEmpty(inventarios)}">
+
+                        <td
+                                colspan="7"
+                                class="sin-resultados">
+
+                            Todavía no existe mercancía asignada
+                            a las sucursales.
+
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+
+<script
+        id="inventarioTrendData"
+        type="application/json"
+        th:utext="${inventarioTrendJson}">
+</script>
+
+<script
+        defer
+        th:src="@{/js/inventario-tiendas.js?v=4}">
+</script>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

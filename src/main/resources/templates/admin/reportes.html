@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Reportes')}">
+</head>
+
+<style>
+
+    .reportes-header-acciones {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-reporte-avanzado {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 44px;
+        padding: 0.75rem 1.1rem;
+        border: 1px solid rgba(139, 92, 246, 0.55);
+        border-radius: 9px;
+        background: linear-gradient(
+            135deg,
+            #7c3aed,
+            #6d28d9
+        );
+        color: #ffffff;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+            transform 0.2s ease,
+            filter 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .btn-reporte-avanzado:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.1);
+        box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
+    }
+
+    .form-row-reportes {
+        display: grid;
+        grid-template-columns:
+            minmax(180px, 1fr)
+            minmax(180px, 1fr)
+            auto;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .resumen-cajero {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #0f3460;
+        border: 1px solid #334155;
+        border-radius: 10px;
+    }
+
+    .resumen-cajero-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid #334155;
+    }
+
+    .resumen-cajero-nombre {
+        color: #4ade80;
+        font-size: 1.1rem;
+    }
+
+    .resumen-cajero-ventas {
+        color: #94a3b8;
+        font-size: 0.85rem;
+        margin-left: 0.5rem;
+    }
+
+    .resumen-cajero-total {
+        color: #4ade80;
+        font-weight: 700;
+        font-size: 1.1rem;
+        white-space: nowrap;
+    }
+
+    .productos-cajero-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(200px, 1fr)
+        );
+        gap: 0.5rem;
+    }
+
+    .producto-cajero {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0.8rem;
+        background: #16213e;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .producto-cajero-cantidad {
+        color: #4ade80;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .detalle-reportes-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1.5fr)
+            minmax(300px, 1fr);
+        gap: 1.5rem;
+    }
+
+    .ranking-productos {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .ranking-producto {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #333;
+    }
+
+    .ranking-producto:last-child {
+        border-bottom: none;
+    }
+
+    .ranking-producto-info {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+    }
+
+    .ranking-posicion {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #4ade80;
+        color: #1a1a2e;
+        border-radius: 50%;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .ranking-nombre {
+        min-width: 0;
+        margin-left: 0.8rem;
+    }
+
+    .ranking-nombre-producto {
+        color: #e2e8f0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ranking-unidades {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
+    .ranking-total {
+        color: #4ade80;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .estado-reporte-vacio {
+        text-align: center;
+        padding: 3rem;
+        color: #94a3b8;
+    }
+
+    .estado-reporte-vacio-icono {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 950px) {
+
+        .detalle-reportes-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 700px) {
+
+        .page-header {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .reportes-header-acciones {
+            width: 100%;
+        }
+
+        .btn-reporte-avanzado {
+            width: 100%;
+        }
+
+        .form-row-reportes {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row-reportes .btn {
+            width: 100%;
+        }
+
+        .resumen-cajero-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    📈 Reportes de ventas
+                </h1>
+
+                <p
+                        style="
+                            color:#94a3b8;
+                            margin-top:0.35rem;
+                        ">
+                    Consulta las ventas y el desempeño comercial.
+                </p>
+
+            </div>
+
+            <div class="reportes-header-acciones">
+
+                <a
+                        th:href="@{/admin/reportes-avanzados}"
+                        class="btn-reporte-avanzado">
+
+                    <span>📊</span>
+
+                    <span>
+                        Reportes avanzados
+                    </span>
+
+                </a>
+
+            </div>
+
+        </div>
+
+        <!-- FILTROS -->
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    🔍 Filtros
+                </span>
+
+            </div>
+
+            <form
+                    th:action="@{/admin/reportes}"
+                    method="post"
+                    class="form-row-reportes">
+
+                <div class="form-group">
+
+                    <label for="fechaInicio">
+                        Fecha inicial
+                    </label>
+
+                    <input
+                            type="date"
+                            class="form-control"
+                            name="fechaInicio"
+                            id="fechaInicio"
+                            th:value="${reporte != null
+                                ? reporte.fechaInicio
+                                : null}"
+                            required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="fechaFin">
+                        Fecha final
+                    </label>
+
+                    <input
+                            type="date"
+                            class="form-control"
+                            name="fechaFin"
+                            id="fechaFin"
+                            th:value="${reporte != null
+                                ? reporte.fechaFin
+                                : null}"
+                            required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary">
+
+                        📊 Generar reporte
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+        <!-- RESULTADOS -->
+
+        <div th:if="${reporte != null}">
+
+            <!-- KPI -->
+
+            <section class="stats-grid">
+
+                <article class="stat-card">
+
+                    <div class="stat-icon green">
+                        🛒
+                    </div>
+
+                    <div class="stat-info">
+
+                        <h3 th:text="${reporte.totalVentas}">
+                            0
+                        </h3>
+
+                        <p>
+                            Total de ventas
+                        </p>
+
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-icon blue">
+                        💰
+                    </div>
+
+                    <div class="stat-info">
+
+                        <h3
+                                th:text="'$ ' +
+                                    ${#numbers.formatDecimal(
+                                        reporte.montoTotal,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )}">
+                            $ 0.00
+                        </h3>
+
+                        <p>
+                            Monto total
+                        </p>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+            <!-- RESUMEN POR CAJERO -->
+
+            <section class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        👤 Resumen por cajero
+                    </span>
+
+                </div>
+
+                <article
+                        class="resumen-cajero"
+                        th:each="cajero :
+                            ${reporte.resumenPorCajero}">
+
+                    <div class="resumen-cajero-header">
+
+                        <div>
+
+                            <strong
+                                    class="resumen-cajero-nombre"
+                                    th:text="${cajero.cajero}">
+                                Cajero
+                            </strong>
+
+                            <span
+                                    class="resumen-cajero-ventas"
+                                    th:text="'(' +
+                                        ${cajero.cantidadVentas} +
+                                        ' ventas)'">
+                                (0 ventas)
+                            </span>
+
+                        </div>
+
+                        <div
+                                class="resumen-cajero-total"
+                                th:text="'$ ' +
+                                    ${#numbers.formatDecimal(
+                                        cajero.montoTotal,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )}">
+                            $ 0.00
+                        </div>
+
+                    </div>
+
+                    <div class="productos-cajero-grid">
+
+                        <div
+                                class="producto-cajero"
+                                th:each="producto :
+                                    ${cajero.productosVendidos}">
+
+                            <span
+                                    th:text="${producto.nombreProducto}">
+                                Producto
+                            </span>
+
+                            <span
+                                    class="producto-cajero-cantidad"
+                                    th:text="${producto.cantidad}
+                                        + ' uds'">
+                                0 uds
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+                <div
+                        class="estado-reporte-vacio"
+                        th:if="${reporte.resumenPorCajero == null
+                            or
+                            reporte.resumenPorCajero.isEmpty()}">
+
+                    No existen datos de ventas por cajero
+                    para el periodo seleccionado.
+
+                </div>
+
+            </section>
+
+            <!-- DETALLE Y RANKING -->
+
+            <section class="detalle-reportes-grid">
+
+                <div class="card">
+
+                    <div class="card-header">
+
+                        <span class="card-title">
+                            📋 Detalle de ventas
+                        </span>
+
+                    </div>
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Cajero</th>
+                                <th>Productos</th>
+                                <th>Total</th>
+                            </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                            <tr
+                                    th:each="venta :
+                                        ${reporte.ventas}">
+
+                                <td
+                                        th:text="'#' +
+                                            ${venta.ventaId}">
+                                    #1
+                                </td>
+
+                                <td th:text="${venta.fecha}">
+                                    -
+                                </td>
+
+                                <td th:text="${venta.cajero}">
+                                    -
+                                </td>
+
+                                <td
+                                        th:text="${venta.cantidadProductos}">
+                                    0
+                                </td>
+
+                                <td
+                                        th:text="'$ ' +
+                                            ${#numbers.formatDecimal(
+                                                venta.total,
+                                                1,
+                                                'COMMA',
+                                                2,
+                                                'POINT'
+                                            )}">
+                                    $ 0.00
+                                </td>
+
+                            </tr>
+
+                            <tr
+                                    th:if="${reporte.ventas == null
+                                        or
+                                        reporte.ventas.isEmpty()}">
+
+                                <td
+                                        colspan="5"
+                                        style="
+                                            text-align:center;
+                                            color:#94a3b8;
+                                        ">
+                                    No existen ventas en este periodo.
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                <aside class="card">
+
+                    <div class="card-header">
+
+                        <span class="card-title">
+                            🏆 Productos más vendidos
+                        </span>
+
+                    </div>
+
+                    <ul class="ranking-productos">
+
+                        <li
+                                class="ranking-producto"
+                                th:each="producto, iterador :
+                                    ${reporte.productosMasVendidos}">
+
+                            <div class="ranking-producto-info">
+
+                                <span
+                                        class="ranking-posicion"
+                                        th:text="${iterador.count}">
+                                    1
+                                </span>
+
+                                <div class="ranking-nombre">
+
+                                    <div
+                                            class="ranking-nombre-producto"
+                                            th:text="${producto.nombre}">
+                                        Producto
+                                    </div>
+
+                                    <div
+                                            class="ranking-unidades"
+                                            th:text="${producto.cantidadVendida}
+                                                + ' unidades'">
+                                        0 unidades
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <span
+                                    class="ranking-total"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            producto.montoTotal,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </span>
+
+                        </li>
+
+                        <li
+                                class="estado-reporte-vacio"
+                                th:if="${reporte.productosMasVendidos == null
+                                    or
+                                    reporte.productosMasVendidos.isEmpty()}">
+
+                            No existen productos vendidos
+                            en este periodo.
+
+                        </li>
+
+                    </ul>
+
+                </aside>
+
+            </section>
+
+        </div>
+
+        <!-- ESTADO INICIAL -->
+
+        <section
+                th:unless="${reporte != null}"
+                class="card estado-reporte-vacio">
+
+            <div class="estado-reporte-vacio-icono">
+                📊
+            </div>
+
+            <p>
+                Selecciona un rango de fechas y presiona
+                <strong>Generar reporte</strong>.
+            </p>
+
+            <p
+                    style="
+                        margin-top:0.75rem;
+                        font-size:0.9rem;
+                    ">
+                Para indicadores de rentabilidad, categorías
+                y desempeño por cajero utiliza
+                <strong>Reportes avanzados</strong>.
+            </p>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script>
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            const fechaInicio =
+                document.getElementById('fechaInicio');
+
+            const fechaFin =
+                document.getElementById('fechaFin');
+
+            const hoy =
+                new Date();
+
+            const formatoFecha = function (fecha) {
+
+                const year =
+                    fecha.getFullYear();
+
+                const month =
+                    String(
+                        fecha.getMonth() + 1
+                    ).padStart(2, '0');
+
+                const day =
+                    String(
+                        fecha.getDate()
+                    ).padStart(2, '0');
+
+                return year
+                    + '-'
+                    + month
+                    + '-'
+                    + day;
+            };
+
+            if (
+                fechaInicio
+                && !fechaInicio.value
+            ) {
+
+                fechaInicio.value =
+                    formatoFecha(hoy);
+            }
+
+            if (
+                fechaFin
+                && !fechaFin.value
+            ) {
+
+                fechaFin.value =
+                    formatoFecha(hoy);
+            }
+        }
+    );
+
+</script>
+
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

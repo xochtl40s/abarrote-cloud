@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Inventario')}"><style th:replace="~{layout :: styles}"></style></head>
+<body>
+<div class="wrapper">
+<div th:replace="~{layout :: admin-sidebar}"></div>
+<div class="main-content">
+<div class="page-header">
+    <h1>📦 Inventario por Categorías</h1>
+    <button class="btn btn-primary" onclick="mostrarFormularioCategoria()">➕ Nueva Categoría</button>
+</div>
+
+<!-- ===== FORMULARIO CATEGORÍA ===== -->
+<div class="card" id="formularioCategoria" style="display: none;">
+    <div class="card-header">
+        <span class="card-title" id="formTituloCategoria">Nueva Categoría</span>
+        <button onclick="ocultarFormularioCategoria()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button>
+    </div>
+    <form id="categoriaForm" onsubmit="guardarCategoria(event)">
+        <input type="hidden" id="categoriaId">
+        <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+                <label>Nombre *</label>
+                <input type="text" class="form-control" id="nombreCategoria" required placeholder="Ej: Bebidas">
+            </div>
+            <div class="form-group" style="flex: 2;">
+                <label>Descripción</label>
+                <input type="text" class="form-control" id="descripcionCategoria" placeholder="Ej: Gaseosas, jugos, agua mineral...">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">💾 Guardar Categoría</button>
+        <button type="button" class="btn btn-cancel" onclick="ocultarFormularioCategoria()" style="margin-left: 0.5rem;">Cancelar</button>
+    </form>
+</div>
+
+<!-- ===== STATS ===== -->
+<div class="stats-grid" style="margin-bottom: 1.5rem;">
+    <div class="stat-card">
+        <div class="stat-icon blue">🏷️</div>
+        <div class="stat-info">
+            <h3 th:text="${#lists.size(categorias)}">0</h3>
+            <p>Categorías</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green">📦</div>
+        <div class="stat-info">
+            <h3 th:text="${totalProductos}">0</h3>
+            <p>Total Productos</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon orange">⚠️</div>
+        <div class="stat-info">
+            <h3 th:text="${productosStockBajo}">0</h3>
+            <p>Stock Bajo</p>
+        </div>
+    </div>
+</div>
+
+<!-- ===== INVENTARIO POR CATEGORÍA ===== -->
+<div th:each="cat : ${categorias}" class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span class="card-title" th:text="${cat.nombre}">Categoría</span>
+            <span style="color: #94a3b8; font-size: 0.85rem; margin-left: 0.5rem;" th:text="'(' + ${#lists.size(cat.productos)} + ' productos)'">(0)</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm btn-primary" onclick="mostrarFormularioProducto(this)" th:data-categoria-id="${cat.id}" th:data-categoria-nombre="${cat.nombre}">➕ Producto</button>
+            <button class="btn btn-sm btn-warning" onclick="editarCategoria(this)" th:data-id="${cat.id}" th:data-nombre="${cat.nombre}" th:data-descripcion="${cat.descripcion}">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="eliminarCategoria(this)" th:data-id="${cat.id}" th:data-nombre="${cat.nombre}" th:data-productos="${#lists.size(cat.productos)}">🗑️</button>
+        </div>
+    </div>
+    
+    <!-- Tabla de productos de esta categoría -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Código</th>
+                    <th style="text-align: right;">Precio Compra</th>
+                    <th style="text-align: right;">Precio Venta</th>
+                    <th style="text-align: center;">Stock</th>
+                    <th style="text-align: center;">Mínimo</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="prod : ${cat.productos}" th:if="${prod.activo}">
+                    <td th:text="${prod.id}">1</td>
+                    <td th:text="${prod.nombre}">Producto</td>
+                    <td th:text="${prod.codigoBarras} ?: '-'">-</td>
+                    <td style="text-align: right;" th:text="'₲ ' + ${#numbers.formatDecimal(prod.precioCompra, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    <td style="text-align: right; color: #4ade80; font-weight: 600;" th:text="'₲ ' + ${#numbers.formatDecimal(prod.precioVenta, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    <td style="text-align: center;">
+                        <span th:class="${prod.stockBajo} ? 'badge badge-danger' : 'badge badge-success'" 
+                              th:text="${prod.stock}">0</span>
+                    </td>
+                    <td style="text-align: center;" th:text="${prod.stockMinimo}">5</td>
+                    <td>
+                        <span class="badge badge-success">Activo</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-sm btn-warning" onclick="editarProducto(this)" 
+                                th:data-id="${prod.id}"
+                                th:data-nombre="${prod.nombre}"
+                                th:data-codigo="${prod.codigoBarras}"
+                                th:data-precio-compra="${prod.precioCompra}"
+                                th:data-precio-venta="${prod.precioVenta}"
+                                th:data-stock="${prod.stock}"
+                                th:data-stock-minimo="${prod.stockMinimo}"
+                                th:data-categoria-id="${cat.id}">✏️</button>
+                        <button class="btn btn-sm btn-primary" onclick="ajustarStock(this)"
+                                th:data-id="${prod.id}"
+                                th:data-nombre="${prod.nombre}"
+                                th:data-stock="${prod.stock}">📦</button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarProducto(this)" th:data-id="${prod.id}" th:data-nombre="${prod.nombre}">🗑️</button>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(cat.productos)}">
+                    <td colspan="9" style="text-align:center; color:#94a3b8; padding: 2rem;">
+                        No hay productos en esta categoría. <button class="btn btn-sm btn-primary" onclick="mostrarFormularioProducto(this)" th:data-categoria-id="${cat.id}" style="margin-left: 0.5rem;">Agregar producto</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Sin categorías -->
+<div th:if="${#lists.isEmpty(categorias)}" class="card" style="text-align: center; padding: 3rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📦</div>
+    <p style="color: #94a3b8;">No hay categorías. Crea una para comenzar a gestionar el inventario.</p>
+    <button class="btn btn-primary" onclick="mostrarFormularioCategoria()" style="margin-top: 1rem;">➕ Nueva Categoría</button>
+</div>
+
+</div>
+</div>
+
+<!-- ===== MODAL PRODUCTO ===== -->
+<div class="modal-overlay" id="modalProducto" style="display: none;">
+    <div class="modal" style="max-width: 500px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="color: #4ade80; margin: 0;" id="tituloModalProducto">Nuevo Producto</h2>
+            <button onclick="cerrarModalProducto()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;">✕</button>
+        </div>
+        <form id="productoForm" onsubmit="guardarProducto(event)">
+            <input type="hidden" id="productoId">
+            <input type="hidden" id="productoCategoriaId">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" class="form-control" id="nombreProducto" required placeholder="Ej: Coca Cola 600ml">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Código de Barras</label>
+                    <input type="text" class="form-control" id="codigoBarras" placeholder="Ej: 123456789">
+                </div>
+                <div class="form-group">
+                    <label>Stock Inicial *</label>
+                    <input type="number" class="form-control" id="stockProducto" required min="0" value="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Precio Compra *</label>
+                    <input type="number" class="form-control" id="precioCompra" required min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Precio Venta *</label>
+                    <input type="number" class="form-control" id="precioVenta" required min="0" step="0.01" placeholder="0.00">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Stock Mínimo (alerta)</label>
+                <input type="number" class="form-control" id="stockMinimo" min="1" value="5">
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">💾 Guardar</button>
+                <button type="button" class="btn btn-cancel" onclick="cerrarModalProducto()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===== MODAL AJUSTAR STOCK ===== -->
+<div class="modal-overlay" id="modalStock" style="display: none;">
+    <div class="modal" style="max-width: 400px;">
+        <h2 style="color: #4ade80; margin-bottom: 1rem;">📦 Ajustar Stock</h2>
+        <p id="nombreProductoStock" style="color: #94a3b8; margin-bottom: 1rem;">Producto</p>
+        <input type="hidden" id="stockProductoId">
+        <div class="form-group">
+            <label>Stock Actual</label>
+            <input type="number" class="form-control" id="stockActual" readonly style="background: #0f3460;">
+        </div>
+        <div class="form-group">
+            <label>Nuevo Stock</label>
+            <input type="number" class="form-control" id="nuevoStock" required min="0">
+        </div>
+        <div class="modal-buttons" style="margin-top: 1rem;">
+            <button class="btn-confirm" onclick="guardarAjusteStock()">💾 Guardar</button>
+            <button class="btn-cancel" onclick="cerrarModalStock()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== CATEGORÍAS =====
+function mostrarFormularioCategoria() {
+    document.getElementById('formularioCategoria').style.display = 'block';
+    document.getElementById('formTituloCategoria').textContent = 'Nueva Categoría';
+    document.getElementById('categoriaForm').reset();
+    document.getElementById('categoriaId').value = '';
+    document.getElementById('nombreCategoria').focus();
+    window.scrollTo(0, 0);
+}
+
+function ocultarFormularioCategoria() {
+    document.getElementById('formularioCategoria').style.display = 'none';
+}
+
+async function guardarCategoria(e) {
+    e.preventDefault();
+    const id = document.getElementById('categoriaId').value;
+    const data = {
+        nombre: document.getElementById('nombreCategoria').value.trim(),
+        descripcion: document.getElementById('descripcionCategoria').value.trim()
+    };
+    
+    if (!data.nombre) { mostrarToast('❌ El nombre es obligatorio', true); return; }
+    
+    const url = id ? `/api/categorias/${id}` : '/api/categorias';
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+            mostrarToast('✅ Categoría guardada');
+            location.reload();
+        } else {
+            mostrarToast('❌ ' + (result.message || 'Error'), true);
+        }
+    } catch (error) {
+        mostrarToast('❌ Error: ' + error.message, true);
+    }
+}
+
+function editarCategoria(btn) {
+    document.getElementById('categoriaId').value = btn.dataset.id;
+    document.getElementById('nombreCategoria').value = btn.dataset.nombre;
+    document.getElementById('descripcionCategoria').value = btn.dataset.descripcion || '';
+    document.getElementById('formTituloCategoria').textContent = 'Editar Categoría';
+    document.getElementById('formularioCategoria').style.display = 'block';
+    window.scrollTo(0, 0);
+}
+
+async function eliminarCategoria(btn) {
+    const nombre = btn.dataset.nombre;
+    const productos = parseInt(btn.dataset.productos);
+    
+    if (productos > 0) {
+        if (!confirm(`⚠️ "${nombre}" tiene ${productos} producto(s).\n\n¿Eliminar de todos modos? Los productos quedarán sin categoría.`)) return;
+    } else {
+        if (!confirm(`¿Eliminar la categoría "${nombre}"?`)) return;
+    }
+    
+    try {
+        const response = await fetch(`/api/categorias/${btn.dataset.id}`, {method: 'DELETE'});
+        const result = await response.json();
+        if (result.success) {
+            mostrarToast('✅ Categoría eliminada');
+            location.reload();
+        } else {
+            mostrarToast('❌ ' + (result.message || 'Error'), true);
+        }
+    } catch (error) {
+        mostrarToast('❌ Error: ' + error.message, true);
+    }
+}
+
+// ===== PRODUCTOS =====
+function mostrarFormularioProducto(btn) {
+    document.getElementById('modalProducto').style.display = 'flex';
+    document.getElementById('tituloModalProducto').textContent = 'Nuevo Producto';
+    document.getElementById('productoForm').reset();
+    document.getElementById('productoId').value = '';
+    document.getElementById('productoCategoriaId').value = btn.dataset.categoriaId;
+    document.getElementById('nombreProducto').focus();
+}
+
+function cerrarModalProducto() {
+    document.getElementById('modalProducto').style.display = 'none';
+}
+
+function editarProducto(btn) {
+    document.getElementById('modalProducto').style.display = 'flex';
+    document.getElementById('tituloModalProducto').textContent = 'Editar Producto';
+    document.getElementById('productoId').value = btn.dataset.id;
+    document.getElementById('productoCategoriaId').value = btn.dataset.categoriaId;
+    document.getElementById('nombreProducto').value = btn.dataset.nombre;
+    document.getElementById('codigoBarras').value = btn.dataset.codigo || '';
+    document.getElementById('precioCompra').value = btn.dataset.precioCompra;
+    document.getElementById('precioVenta').value = btn.dataset.precioVenta;
+    document.getElementById('stockProducto').value = btn.dataset.stock;
+    document.getElementById('stockMinimo').value = btn.dataset.stockMinimo;
+}
+
+async function guardarProducto(e) {
+    e.preventDefault();
+    const id = document.getElementById('productoId').value;
+    const data = {
+        nombre: document.getElementById('nombreProducto').value.trim(),
+        codigoBarras: document.getElementById('codigoBarras').value.trim() || null,
+        precioCompra: parseFloat(document.getElementById('precioCompra').value),
+        precioVenta: parseFloat(document.getElementById('precioVenta').value),
+        stock: parseInt(document.getElementById('stockProducto').value),
+        stockMinimo: parseInt(document.getElementById('stockMinimo').value) || 5,
+        categoriaId: parseInt(document.getElementById('productoCategoriaId').value)
+    };
+    
+    if (!data.nombre || !data.precioCompra || !data.precioVenta) {
+        mostrarToast('❌ Complete todos los campos obligatorios', true);
+        return;
+    }
+    
+    const url = id ? `/api/productos/${id}` : '/api/productos';
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+            mostrarToast('✅ Producto guardado');
+            location.reload();
+        } else {
+            mostrarToast('❌ ' + (result.message || 'Error'), true);
+        }
+    } catch (error) {
+        mostrarToast('❌ Error: ' + error.message, true);
+    }
+}
+
+async function eliminarProducto(btn) {
+    if (!confirm(`¿Eliminar el producto "${btn.dataset.nombre}"?`)) return;
+    
+    try {
+        const response = await fetch(`/api/productos/${btn.dataset.id}`, {method: 'DELETE'});
+        const result = await response.json();
+        if (result.success) {
+            mostrarToast('✅ Producto eliminado');
+            location.reload();
+        } else {
+            mostrarToast('❌ ' + (result.message || 'Error'), true);
+        }
+    } catch (error) {
+        mostrarToast('❌ Error: ' + error.message, true);
+    }
+}
+
+// ===== AJUSTAR STOCK =====
+function ajustarStock(btn) {
+    document.getElementById('modalStock').style.display = 'flex';
+    document.getElementById('stockProductoId').value = btn.dataset.id;
+    document.getElementById('nombreProductoStock').textContent = btn.dataset.nombre;
+    document.getElementById('stockActual').value = btn.dataset.stock;
+    document.getElementById('nuevoStock').value = btn.dataset.stock;
+    document.getElementById('nuevoStock').focus();
+}
+
+function cerrarModalStock() {
+    document.getElementById('modalStock').style.display = 'none';
+}
+
+async function guardarAjusteStock() {
+    const id = document.getElementById('stockProductoId').value;
+    const nuevoStock = parseInt(document.getElementById('nuevoStock').value);
+    
+    if (isNaN(nuevoStock) || nuevoStock < 0) {
+        mostrarToast('❌ Stock inválido', true);
+        return;
+    }
+    
+    try {
+        // Obtener producto actual
+        const resp = await fetch(`/api/productos/${id}`);
+        const result = await resp.json();
+        if (!result.success) {
+            mostrarToast('❌ Error obteniendo producto', true);
+            return;
+        }
+        
+        const producto = result.data;
+        producto.stock = nuevoStock;
+        
+        // Actualizar
+        const updateResp = await fetch(`/api/productos/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(producto)
+        });
+        const updateResult = await updateResp.json();
+        if (updateResult.success) {
+            mostrarToast('✅ Stock actualizado');
+            location.reload();
+        } else {
+            mostrarToast('❌ ' + (updateResult.message || 'Error'), true);
+        }
+    } catch (error) {
+        mostrarToast('❌ Error: ' + error.message, true);
+    }
+}
+
+// ===== UTILS =====
+function mostrarToast(mensaje, esError = false) {
+    const toast = document.getElementById('toast');
+    toast.textContent = mensaje;
+    toast.className = 'toast' + (esError ? ' error' : '');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+</script>
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

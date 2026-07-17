@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html
+        xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Reportes avanzados')}">
+</head>
+
+<style>
+
+    .filtros-reporte {
+        display: grid;
+        grid-template-columns:
+            minmax(180px, 1fr)
+            minmax(180px, 1fr)
+            minmax(220px, 1fr)
+            auto;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .metricas-grid {
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fit,
+            minmax(190px, 1fr)
+        );
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .metrica {
+        padding: 1.2rem;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        background: #16213e;
+    }
+
+    .metrica-label {
+        color: #94a3b8;
+        font-size: 0.82rem;
+        margin-bottom: 0.45rem;
+    }
+
+    .metrica-valor {
+        color: #e2e8f0;
+        font-size: 1.45rem;
+        font-weight: 700;
+    }
+
+    .metrica-valor.positivo {
+        color: #4ade80;
+    }
+
+    .tabs-reportes {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .tab-reporte {
+        min-height: 42px;
+        padding: 0.65rem 1rem;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        background: #111827;
+        color: #cbd5e1;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .tab-reporte.activo {
+        border-color: #4ade80;
+        background: rgba(74, 222, 128, 0.12);
+        color: #4ade80;
+    }
+
+    .panel-reporte {
+        display: none;
+    }
+
+    .panel-reporte.activo {
+        display: block;
+    }
+
+    .periodo {
+        color: #94a3b8;
+        margin-top: 0.35rem;
+    }
+
+    @media (max-width: 900px) {
+
+        .filtros-reporte {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+
+        .filtros-reporte {
+            grid-template-columns: 1fr;
+        }
+
+        .filtros-reporte .btn {
+            width: 100%;
+        }
+
+        .tabs-reportes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .tab-reporte {
+            width: 100%;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    📊 Reportes avanzados
+                </h1>
+
+                <p
+                        class="periodo"
+                        th:text="'Periodo: ' +
+                            ${#temporals.format(
+                                fechaInicio,
+                                'dd/MM/yyyy'
+                            )} +
+                            ' al ' +
+                            ${#temporals.format(
+                                fechaFin,
+                                'dd/MM/yyyy'
+                            )}">
+                    Periodo
+                </p>
+
+            </div>
+
+        </div>
+
+        <section class="card">
+
+            <div class="card-header">
+
+                <span class="card-title">
+                    🔍 Filtros
+                </span>
+
+            </div>
+
+            <form
+                    th:action="@{/admin/reportes-avanzados}"
+                    method="get"
+                    class="filtros-reporte">
+
+                <div class="form-group">
+
+                    <label for="fechaInicio">
+                        Fecha inicial
+                    </label>
+
+                    <input
+                            type="date"
+                            id="fechaInicio"
+                            name="fechaInicio"
+                            class="form-control"
+                            th:value="${fechaInicio}"
+                            required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="fechaFin">
+                        Fecha final
+                    </label>
+
+                    <input
+                            type="date"
+                            id="fechaFin"
+                            name="fechaFin"
+                            class="form-control"
+                            th:value="${fechaFin}"
+                            required>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="usuarioId">
+                        Cajero
+                    </label>
+
+                    <select
+                            id="usuarioId"
+                            name="usuarioId"
+                            class="form-control">
+
+                        <option value="">
+                            Todos los cajeros
+                        </option>
+
+                        <option
+                                th:each="usuario : ${usuarios}"
+                                th:value="${usuario.id}"
+                                th:text="${usuario.nombre}"
+                                th:selected="${usuarioId != null
+                                    and usuario.id == usuarioId}">
+                            Cajero
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary">
+                        📊 Actualizar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+        <section class="metricas-grid">
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Ventas netas
+                </div>
+
+                <div
+                        class="metrica-valor positivo"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                reporte.ventasNetas,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Beneficio bruto
+                </div>
+
+                <div
+                        class="metrica-valor positivo"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                reporte.beneficioBruto,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Costo de mercancía
+                </div>
+
+                <div
+                        class="metrica-valor"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                reporte.costoMercancia,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Margen bruto
+                </div>
+
+                <div
+                        class="metrica-valor"
+                        th:text="${#numbers.formatDecimal(
+                            reporte.margenBruto,
+                            1,
+                            'COMMA',
+                            2,
+                            'POINT'
+                        )} + ' %'">
+                    0 %
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Ventas realizadas
+                </div>
+
+                <div
+                        class="metrica-valor"
+                        th:text="${reporte.numeroVentas}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Venta promedio
+                </div>
+
+                <div
+                        class="metrica-valor"
+                        th:text="'$ ' +
+                            ${#numbers.formatDecimal(
+                                reporte.ventaPromedio,
+                                1,
+                                'COMMA',
+                                2,
+                                'POINT'
+                            )}">
+                    $ 0.00
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-label">
+                    Artículos vendidos
+                </div>
+
+                <div
+                        class="metrica-valor"
+                        th:text="${reporte.articulosVendidos}">
+                    0
+                </div>
+
+            </article>
+
+        </section>
+
+        <section class="card">
+
+            <div class="tabs-reportes">
+
+                <button
+                        type="button"
+                        class="tab-reporte activo"
+                        onclick="mostrarPanel(
+                            'productos',
+                            this
+                        )">
+                    📦 Productos
+                </button>
+
+                <button
+                        type="button"
+                        class="tab-reporte"
+                        onclick="mostrarPanel(
+                            'categorias',
+                            this
+                        )">
+                    🏷️ Categorías
+                </button>
+
+                <button
+                        type="button"
+                        class="tab-reporte"
+                        onclick="mostrarPanel(
+                            'cajeros',
+                            this
+                        )">
+                    👥 Cajeros
+                </button>
+
+            </div>
+
+            <!-- PRODUCTOS -->
+
+            <div
+                    id="panel-productos"
+                    class="panel-reporte activo">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Artículos</th>
+                            <th>Ventas netas</th>
+                            <th>Costo</th>
+                            <th>Beneficio</th>
+                            <th>Margen</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                                th:each="item :
+                                    ${reporte.ventasPorProducto}">
+
+                            <td th:text="${item.producto}">
+                                Producto
+                            </td>
+
+                            <td th:text="${item.categoria}">
+                                Categoría
+                            </td>
+
+                            <td th:text="${item.articulosVendidos}">
+                                0
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.ventasNetas,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.costoMercancia,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    style="color:#4ade80;"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.beneficioBruto,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    th:text="${#numbers.formatDecimal(
+                                        item.margenBruto,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )} + ' %'">
+                                0 %
+                            </td>
+
+                        </tr>
+
+                        <tr
+                                th:if="${#lists.isEmpty(
+                                    reporte.ventasPorProducto
+                                )}">
+
+                            <td
+                                    colspan="7"
+                                    style="
+                                        text-align:center;
+                                        color:#94a3b8;
+                                    ">
+                                No existen ventas en el periodo.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <!-- CATEGORÍAS -->
+
+            <div
+                    id="panel-categorias"
+                    class="panel-reporte">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Artículos vendidos</th>
+                            <th>Ventas netas</th>
+                            <th>Costo</th>
+                            <th>Beneficio</th>
+                            <th>Margen</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                                th:each="item :
+                                    ${reporte.ventasPorCategoria}">
+
+                            <td th:text="${item.categoria}">
+                                Categoría
+                            </td>
+
+                            <td th:text="${item.articulosVendidos}">
+                                0
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.ventasNetas,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.costoMercancia,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    style="color:#4ade80;"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.beneficioBruto,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    th:text="${#numbers.formatDecimal(
+                                        item.margenBruto,
+                                        1,
+                                        'COMMA',
+                                        2,
+                                        'POINT'
+                                    )} + ' %'">
+                                0 %
+                            </td>
+
+                        </tr>
+
+                        <tr
+                                th:if="${#lists.isEmpty(
+                                    reporte.ventasPorCategoria
+                                )}">
+
+                            <td
+                                    colspan="6"
+                                    style="
+                                        text-align:center;
+                                        color:#94a3b8;
+                                    ">
+                                No existen ventas en el periodo.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <!-- CAJEROS -->
+
+            <div
+                    id="panel-cajeros"
+                    class="panel-reporte">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Cajero</th>
+                            <th>Ventas</th>
+                            <th>Artículos</th>
+                            <th>Ventas netas</th>
+                            <th>Costo</th>
+                            <th>Beneficio</th>
+                            <th>Venta promedio</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                                th:each="item :
+                                    ${reporte.ventasPorCajero}">
+
+                            <td th:text="${item.cajero}">
+                                Cajero
+                            </td>
+
+                            <td th:text="${item.numeroVentas}">
+                                0
+                            </td>
+
+                            <td th:text="${item.articulosVendidos}">
+                                0
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.ventasNetas,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.costoMercancia,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    style="color:#4ade80;"
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.beneficioBruto,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                            <td
+                                    th:text="'$ ' +
+                                        ${#numbers.formatDecimal(
+                                            item.ventaPromedio,
+                                            1,
+                                            'COMMA',
+                                            2,
+                                            'POINT'
+                                        )}">
+                                $ 0.00
+                            </td>
+
+                        </tr>
+
+                        <tr
+                                th:if="${#lists.isEmpty(
+                                    reporte.ventasPorCajero
+                                )}">
+
+                            <td
+                                    colspan="7"
+                                    style="
+                                        text-align:center;
+                                        color:#94a3b8;
+                                    ">
+                                No existen ventas en el periodo.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script>
+
+    function mostrarPanel(
+        nombre,
+        boton
+    ) {
+
+        document
+            .querySelectorAll('.panel-reporte')
+            .forEach(function (panel) {
+
+                panel.classList.remove('activo');
+            });
+
+        document
+            .querySelectorAll('.tab-reporte')
+            .forEach(function (tab) {
+
+                tab.classList.remove('activo');
+            });
+
+        document
+            .getElementById(
+                'panel-' + nombre
+            )
+            .classList
+            .add('activo');
+
+        boton.classList.add('activo');
+    }
+
+</script>
+
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

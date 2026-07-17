@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Asistente operativo')}">
+</head>
+
+<style>
+
+    .asistente-layout {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1.5fr)
+            minmax(280px, 0.6fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .chat-panel {
+        min-height: 610px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-mensajes {
+        flex: 1;
+        min-height: 420px;
+        max-height: 590px;
+        overflow-y: auto;
+        padding: 1.25rem;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        background: #0f172a;
+    }
+
+    .chat-mensaje {
+        max-width: 86%;
+        margin-bottom: 1rem;
+        padding: 0.95rem 1rem;
+        border-radius: 12px;
+        line-height: 1.55;
+        white-space: pre-wrap;
+    }
+
+    .chat-mensaje.usuario {
+        margin-left: auto;
+        color: white;
+        background: #1d4ed8;
+        border-bottom-right-radius: 4px;
+    }
+
+    .chat-mensaje.asistente {
+        margin-right: auto;
+        color: #dbeafe;
+        background: #172554;
+        border: 1px solid #1e40af;
+        border-bottom-left-radius: 4px;
+    }
+
+    .chat-formulario {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .pregunta-sugerida {
+        width: 100%;
+        margin-bottom: 0.65rem;
+        padding: 0.85rem;
+        color: #cbd5e1;
+        text-align: left;
+        border: 1px solid #334155;
+        border-radius: 9px;
+        background: #111827;
+        cursor: pointer;
+    }
+
+    .pregunta-sugerida:hover {
+        color: #4ade80;
+        border-color: #4ade80;
+    }
+
+    .asistente-estado {
+        min-height: 22px;
+        margin-top: 0.5rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 900px) {
+
+        .asistente-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .chat-formulario {
+            grid-template-columns: 1fr;
+        }
+
+        .chat-formulario .btn {
+            width: 100%;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>🤖 Asistente operativo</h1>
+
+                <p style="color:#94a3b8; margin-top:0.35rem;">
+                    Consulta el inventario real de las sucursales
+                    y recibe recomendaciones operativas.
+                </p>
+
+            </div>
+
+            <span class="badge badge-success">
+                Datos en tiempo real
+            </span>
+
+        </div>
+
+        <section class="asistente-layout">
+
+            <article class="card chat-panel">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        💬 Conversación
+                    </span>
+
+                    <button
+                            id="limpiarChat"
+                            type="button"
+                            class="btn btn-sm btn-cancel">
+                        Limpiar
+                    </button>
+
+                </div>
+
+                <div
+                        id="chatMensajes"
+                        class="chat-mensajes"
+                        aria-live="polite">
+
+                    <div class="chat-mensaje asistente">
+Hola. Soy el asistente operativo de Abarrote Cloud.
+
+Puedo ayudarte a identificar faltantes, agotados y transferencias sugeridas entre sucursales.
+                    </div>
+
+                </div>
+
+                <div class="chat-formulario">
+
+                    <input
+                            id="preguntaAsistente"
+                            type="text"
+                            class="form-control"
+                            placeholder="Ejemplo: ¿Qué productos requiero surtir para cada tienda?"
+                            autocomplete="off">
+
+                    <button
+                            id="enviarPregunta"
+                            type="button"
+                            class="btn btn-primary">
+                        Enviar
+                    </button>
+
+                </div>
+
+                <div
+                        id="estadoAsistente"
+                        class="asistente-estado">
+                </div>
+
+            </article>
+
+            <aside class="card">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        Preguntas sugeridas
+                    </span>
+
+                </div>
+
+                <button
+                        type="button"
+                        class="pregunta-sugerida"
+                        data-pregunta="¿Qué productos requiero surtir para cada tienda?">
+                    📦 ¿Qué productos requiero surtir?
+                </button>
+
+                <button
+                        type="button"
+                        class="pregunta-sugerida"
+                        data-pregunta="¿Qué productos están agotados?">
+                    🚫 ¿Qué productos están agotados?
+                </button>
+
+                <button
+                        type="button"
+                        class="pregunta-sugerida"
+                        data-pregunta="¿Qué sucursal tiene menos mercancía?">
+                    🏪 ¿Qué sucursal tiene menos mercancía?
+                </button>
+
+                <button
+                        type="button"
+                        class="pregunta-sugerida"
+                        data-pregunta="¿Qué mercancía conviene transferir entre sucursales?">
+                    🚚 ¿Qué mercancía conviene transferir?
+                </button>
+
+                <div
+                        style="
+                            margin-top:1.2rem;
+                            padding:1rem;
+                            border-radius:10px;
+                            background:#0f172a;
+                            color:#94a3b8;
+                            font-size:0.82rem;
+                            line-height:1.5;
+                        ">
+
+                    Esta primera versión utiliza reglas de negocio
+                    y datos reales de PostgreSQL. No envía información
+                    a servicios externos.
+
+                </div>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script
+        defer
+        th:src="@{/js/asistente-operativo.js?v=1}">
+</script>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

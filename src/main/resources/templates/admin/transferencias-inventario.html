@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{layout :: head('Transferencias de inventario')}">
+</head>
+
+<style>
+
+    .transferencia-grid {
+        display: grid;
+        grid-template-columns:
+            minmax(320px, 0.8fr)
+            minmax(0, 1.2fr);
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .form-transferencia {
+        position: sticky;
+        top: 1rem;
+    }
+
+    .inventario-resumen {
+        max-height: 440px;
+        overflow-y: auto;
+    }
+
+    .existencia-disponible {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 0.45rem;
+        padding: 0.65rem 0.8rem;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        background: #111827;
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+
+    .existencia-disponible strong {
+        color: #4ade80;
+    }
+
+    .movimiento-folio {
+        color: #60a5fa;
+        font-family: monospace;
+        font-size: 0.82rem;
+    }
+
+    .ruta-transferencia {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .ruta-transferencia span {
+        color: #94a3b8;
+    }
+
+    .cantidad-movimiento {
+        color: #4ade80;
+        font-weight: 700;
+    }
+
+    .cambio-existencia {
+        font-size: 0.8rem;
+    }
+
+    .cambio-existencia .anterior {
+        color: #94a3b8;
+    }
+
+    .cambio-existencia .nuevo {
+        color: #4ade80;
+        font-weight: 700;
+    }
+
+    .sin-registros {
+        padding: 2rem;
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    .campo-ayuda {
+        display: block;
+        margin-top: 0.4rem;
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    @media (max-width: 1050px) {
+
+        .transferencia-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-transferencia {
+            position: static;
+        }
+    }
+
+</style>
+
+<body>
+
+<div th:replace="~{layout :: mobile-header}"></div>
+
+<div th:replace="~{layout :: sidebar-overlay}"></div>
+
+<div class="wrapper">
+
+    <div th:replace="~{layout :: admin-sidebar}"></div>
+
+    <main class="main-content">
+
+        <div class="page-header">
+
+            <div>
+
+                <h1>
+                    🚚 Transferencias de inventario
+                </h1>
+
+                <p
+                        style="
+                            color:#94a3b8;
+                            margin-top:0.35rem;
+                        ">
+                    Mueve mercancía entre sucursales
+                    conservando evidencia completa.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div
+                class="alert alert-success"
+                th:if="${mensajeExito}"
+                th:text="${mensajeExito}">
+        </div>
+
+        <div
+                class="alert alert-danger"
+                th:if="${mensajeError}"
+                th:text="${mensajeError}">
+        </div>
+
+        <section class="transferencia-grid">
+
+            <div class="card form-transferencia">
+
+                <div class="card-header">
+
+                    <span class="card-title">
+                        📦 Nueva transferencia
+                    </span>
+
+                </div>
+
+                <form
+                        th:action="@{/admin/inventario/transferencias}"
+                        th:object="${transferenciaRequest}"
+                        method="post">
+
+                    <div class="form-group">
+
+                        <label for="sucursalOrigenId">
+                            Sucursal de origen
+                        </label>
+
+                        <select
+                                id="sucursalOrigenId"
+                                th:field="*{sucursalOrigenId}"
+                                class="form-control"
+                                onchange="actualizarProductos()"
+                                required>
+
+                            <option value="">
+                                Selecciona el origen
+                            </option>
+
+                            <option
+                                    th:each="sucursal : ${sucursales}"
+                                    th:value="${sucursal.id}"
+                                    th:text="${sucursal.codigo
+                                        + ' - '
+                                        + sucursal.nombre}">
+                                Sucursal
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="sucursalDestinoId">
+                            Sucursal de destino
+                        </label>
+
+                        <select
+                                id="sucursalDestinoId"
+                                th:field="*{sucursalDestinoId}"
+                                class="form-control"
+                                required>
+
+                            <option value="">
+                                Selecciona el destino
+                            </option>
+
+                            <option
+                                    th:each="sucursal : ${sucursales}"
+                                    th:value="${sucursal.id}"
+                                    th:text="${sucursal.codigo
+                                        + ' - '
+                                        + sucursal.nombre}">
+                                Sucursal
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="productoId">
+                            Producto
+                        </label>
+
+                        <select
+                                id="productoId"
+                                th:field="*{productoId}"
+                                class="form-control"
+                                onchange="mostrarExistencia()"
+                                required>
+
+                            <option value="">
+                                Selecciona primero una sucursal
+                            </option>
+
+                            <option
+                                    th:each="inventario : ${inventarios}"
+                                    th:value="${inventario.productoId}"
+                                    th:text="${inventario.productoNombre}"
+                                    th:attr="
+                                        data-sucursal=${inventario.sucursalId},
+                                        data-existencia=${inventario.existencia},
+                                        data-codigo=${inventario.codigoBarras}">
+                                Producto
+                            </option>
+
+                        </select>
+
+                        <div
+                                id="existenciaDisponible"
+                                class="existencia-disponible"
+                                style="display:none;">
+
+                            <span>
+                                Existencia disponible
+                            </span>
+
+                            <strong id="valorExistencia">
+                                0
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="cantidad">
+                            Cantidad
+                        </label>
+
+                        <input
+                                type="number"
+                                id="cantidad"
+                                th:field="*{cantidad}"
+                                class="form-control"
+                                min="1"
+                                step="1"
+                                required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="motivo">
+                            Motivo
+                        </label>
+
+                        <select
+                                id="motivo"
+                                th:field="*{motivo}"
+                                class="form-control"
+                                required>
+
+                            <option value="">
+                                Selecciona un motivo
+                            </option>
+
+                            <option value="Rotación de mercancía">
+                                Rotación de mercancía
+                            </option>
+
+                            <option value="Reabastecimiento">
+                                Reabastecimiento
+                            </option>
+
+                            <option value="Exceso de inventario">
+                                Exceso de inventario
+                            </option>
+
+                            <option value="Demanda en otra sucursal">
+                                Demanda en otra sucursal
+                            </option>
+
+                            <option value="Reubicación operativa">
+                                Reubicación operativa
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="observaciones">
+                            Observaciones
+                        </label>
+
+                        <textarea
+                                id="observaciones"
+                                th:field="*{observaciones}"
+                                class="form-control"
+                                maxlength="240"
+                                placeholder="Describe detalles adicionales">
+                        </textarea>
+
+                        <span class="campo-ayuda">
+                            Máximo 240 caracteres.
+                        </span>
+
+                    </div>
+
+                    <button
+                            type="submit"
+                            class="btn btn-primary"
+                            style="width:100%;">
+
+                        🚚 Aplicar transferencia
+
+                    </button>
+
+                </form>
+
+            </div>
+
+            <div>
+
+                <section class="card">
+
+                    <div class="card-header">
+
+                        <span class="card-title">
+                            🏪 Existencias por sucursal
+                        </span>
+
+                    </div>
+
+                    <div class="table-container inventario-resumen">
+
+                        <table>
+
+                            <thead>
+
+                            <tr>
+                                <th>Sucursal</th>
+                                <th>Producto</th>
+                                <th>Código</th>
+                                <th>Existencia</th>
+                            </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                            <tr
+                                    th:each="inventario :
+                                        ${inventarios}">
+
+                                <td
+                                        th:text="${inventario.sucursalNombre}">
+                                    Sucursal
+                                </td>
+
+                                <td
+                                        th:text="${inventario.productoNombre}">
+                                    Producto
+                                </td>
+
+                                <td
+                                        th:text="${inventario.codigoBarras
+                                            != null
+                                            and
+                                            !inventario.codigoBarras.isBlank()
+                                            ? inventario.codigoBarras
+                                            : 'Sin código'}">
+                                    Código
+                                </td>
+
+                                <td>
+
+                                    <span
+                                            class="badge"
+                                            th:classappend="${inventario.existencia <= 0}
+                                                ? ' badge-danger'
+                                                : (${inventario.existencia
+                                                    <= inventario.stockMinimo}
+                                                    ? ' badge-warning'
+                                                    : ' badge-success')"
+                                            th:text="${inventario.existencia}">
+                                        0
+                                    </span>
+
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+                <section class="card">
+
+                    <div class="card-header">
+
+                        <span class="card-title">
+                            📖 Historial de movimientos
+                        </span>
+
+                    </div>
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Folio</th>
+                                <th>Producto</th>
+                                <th>Movimiento</th>
+                                <th>Cantidad</th>
+                                <th>Existencias</th>
+                                <th>Usuario</th>
+                                <th>Motivo</th>
+                            </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                            <tr
+                                    th:each="movimiento :
+                                        ${movimientos}">
+
+                                <td
+                                        th:text="${#temporals.format(
+                                            movimiento.fechaMovimiento,
+                                            'dd/MM/yyyy HH:mm'
+                                        )}">
+                                    Fecha
+                                </td>
+
+                                <td
+                                        class="movimiento-folio"
+                                        th:text="${movimiento.folio}">
+                                    Folio
+                                </td>
+
+                                <td>
+
+                                    <strong
+                                            th:text="${movimiento.producto}">
+                                        Producto
+                                    </strong>
+
+                                    <div
+                                            style="
+                                                color:#94a3b8;
+                                                font-size:0.78rem;
+                                            "
+                                            th:text="${movimiento.codigoBarras
+                                                != null
+                                                ? movimiento.codigoBarras
+                                                : ''}">
+                                    </div>
+
+                                </td>
+
+                                <td>
+
+                                    <div class="ruta-transferencia">
+
+                                        <span
+                                                th:text="${movimiento.sucursalOrigen}">
+                                            Origen
+                                        </span>
+
+                                        <strong>→</strong>
+
+                                        <span
+                                                th:text="${movimiento.sucursalDestino}">
+                                            Destino
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                                <td
+                                        class="cantidad-movimiento"
+                                        th:text="${movimiento.cantidad}">
+                                    0
+                                </td>
+
+                                <td>
+
+                                    <div class="cambio-existencia">
+
+                                        Origen:
+
+                                        <span
+                                                class="anterior"
+                                                th:text="${movimiento.existenciaOrigenAnterior}">
+                                            0
+                                        </span>
+
+                                        →
+
+                                        <span
+                                                class="nuevo"
+                                                th:text="${movimiento.existenciaOrigenNueva}">
+                                            0
+                                        </span>
+
+                                    </div>
+
+                                    <div class="cambio-existencia">
+
+                                        Destino:
+
+                                        <span
+                                                class="anterior"
+                                                th:text="${movimiento.existenciaDestinoAnterior}">
+                                            0
+                                        </span>
+
+                                        →
+
+                                        <span
+                                                class="nuevo"
+                                                th:text="${movimiento.existenciaDestinoNueva}">
+                                            0
+                                        </span>
+
+                                    </div>
+
+                                </td>
+
+                                <td
+                                        th:text="${movimiento.usuarioResponsable}">
+                                    Usuario
+                                </td>
+
+                                <td
+                                        style="
+                                            max-width:250px;
+                                            white-space:normal;
+                                        "
+                                        th:text="${movimiento.motivo}">
+                                    Motivo
+                                </td>
+
+                            </tr>
+
+                            <tr
+                                    th:if="${#lists.isEmpty(
+                                        movimientos
+                                    )}">
+
+                                <td
+                                        colspan="8"
+                                        class="sin-registros">
+
+                                    Todavía no existen
+                                    transferencias registradas.
+
+                                </td>
+
+                            </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<div th:replace="~{layout :: responsive-script}"></div>
+
+<script th:inline="javascript">
+
+    const inventarios = /*[[${inventarios}]]*/ [];
+
+    function actualizarProductos() {
+
+        const sucursalOrigen =
+            document.getElementById(
+                'sucursalOrigenId'
+            ).value;
+
+        const productoSelect =
+            document.getElementById(
+                'productoId'
+            );
+
+        const productoSeleccionado =
+            productoSelect.value;
+
+        productoSelect.innerHTML =
+            '<option value="">'
+            + 'Selecciona un producto'
+            + '</option>';
+
+        const productosAgregados =
+            new Set();
+
+        inventarios.forEach(
+            function (inventario) {
+
+                if (
+                    String(inventario.sucursalId)
+                        !== String(sucursalOrigen)
+                ) {
+                    return;
+                }
+
+                if (
+                    inventario.existencia <= 0
+                    || productosAgregados.has(
+                        inventario.productoId
+                    )
+                ) {
+                    return;
+                }
+
+                productosAgregados.add(
+                    inventario.productoId
+                );
+
+                const opcion =
+                    document.createElement(
+                        'option'
+                    );
+
+                opcion.value =
+                    inventario.productoId;
+
+                opcion.textContent =
+                    inventario.productoNombre
+                    + ' · '
+                    + inventario.existencia
+                    + ' disponibles';
+
+                opcion.dataset.existencia =
+                    inventario.existencia;
+
+                opcion.dataset.codigo =
+                    inventario.codigoBarras || '';
+
+                productoSelect.appendChild(
+                    opcion
+                );
+            }
+        );
+
+        if (productoSeleccionado) {
+
+            productoSelect.value =
+                productoSeleccionado;
+        }
+
+        mostrarExistencia();
+    }
+
+    function mostrarExistencia() {
+
+        const productoSelect =
+            document.getElementById(
+                'productoId'
+            );
+
+        const opcion =
+            productoSelect.options[
+                productoSelect.selectedIndex
+            ];
+
+        const contenedor =
+            document.getElementById(
+                'existenciaDisponible'
+            );
+
+        const valor =
+            document.getElementById(
+                'valorExistencia'
+            );
+
+        const cantidad =
+            document.getElementById(
+                'cantidad'
+            );
+
+        if (
+            !opcion
+            || !opcion.value
+            || opcion.dataset.existencia === undefined
+        ) {
+
+            contenedor.style.display =
+                'none';
+
+            cantidad.removeAttribute(
+                'max'
+            );
+
+            return;
+        }
+
+        const existencia =
+            opcion.dataset.existencia;
+
+        valor.textContent =
+            existencia + ' piezas';
+
+        contenedor.style.display =
+            'flex';
+
+        cantidad.max =
+            existencia;
+    }
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            actualizarProductos();
+        }
+    );
+
+</script>
+
+
+<script
+        defer
+        th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+</body>
+</html>

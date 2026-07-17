@@ -1,171 +1,720 @@
 package com.abarrote.abarroteapi.controller;
 
-import com.abarrote.abarroteapi.entity.Usuario;
-import com.abarrote.abarroteapi.repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.abarrote.abarroteapi.dto.CorteCajaResponse;
+import com.abarrote.abarroteapi.dto.DashboardProductoTopResponse;
+import com.abarrote.abarroteapi.dto.DashboardVentaDiaResponse;
+import com.abarrote.abarroteapi.dto.ProductoResponse;
+import com.abarrote.abarroteapi.dto.ReporteVentasRequest;
+import com.abarrote.abarroteapi.dto.ReporteVentasResponse;
+import com.abarrote.abarroteapi.entity.Venta;
+import com.abarrote.abarroteapi.repository.DetalleVentaRepository;
+import com.abarrote.abarroteapi.repository.VentaRepository;
+import com.abarrote.abarroteapi.service.CategoriaService;
+import com.abarrote.abarroteapi.service.CorteCajaService;
+import com.abarrote.abarroteapi.service.ProductoService;
+import com.abarrote.abarroteapi.service.ReporteService;
+import com.abarrote.abarroteapi.service.SucursalService;
+import com.abarrote.abarroteapi.service.UsuarioService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.abarrote.abarroteapi.entity.Producto;
-import com.abarrote.abarroteapi.repository.ProductoRepository;
-import java.math.BigDecimal;
-
 @Controller
+@RequestMapping("/admin")
 public class AdminController {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final ProductoService productoService;
 
-    @Autowired
-    private ProductoRepository productoRepository; // <-- Inyectamos el nuevo repositorio
+    private final UsuarioService usuarioService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final CategoriaService categoriaService;
 
-    @GetMapping("/pos/inicio")
-    public String mostrarDashboard(Model model, Authentication authentication) {
-        boolean esAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    private final ReporteService reporteService;
 
-        if (!esAdmin) {
-            return "redirect:/pos/caja";
-        }
+    private final CorteCajaService corteCajaService;
 
-        // Cargar cajeros activos
-        List<Usuario> cajerosActivos = usuarioRepository.findAll().stream()
-                .filter(u -> "CAJERO".equalsIgnoreCase(u.getRol()) && (u.getActivo() != null && u.getActivo()))
-                .collect(Collectors.toList());
-        model.addAttribute("cajeros", cajerosActivos);
+    private final SucursalService sucursalService;
 
-        // Cargar TODOS los productos para el visor de inventario
-        List<Producto> listaProductos = productoRepository.findAll();
-        model.addAttribute("productos", listaProductos); // <-- Enviamos los productos a la vista
+    private final VentaRepository ventaRepository;
 
-        return "inicio";
+    private final DetalleVentaRepository
+            detalleVentaRepository;
+
+    public AdminController(
+            ProductoService productoService,
+            UsuarioService usuarioService,
+            CategoriaService categoriaService,
+            ReporteService reporteService,
+            CorteCajaService corteCajaService,
+            SucursalService sucursalService,
+            VentaRepository ventaRepository,
+            DetalleVentaRepository detalleVentaRepository) {
+
+        this.productoService = productoService;
+
+        this.usuarioService = usuarioService;
+
+        this.categoriaService = categoriaService;
+
+        this.reporteService = reporteService;
+
+        this.corteCajaService = corteCajaService;
+
+        this.sucursalService = sucursalService;
+
+        this.ventaRepository = ventaRepository;
+
+        this.detalleVentaRepository =
+                detalleVentaRepository;
+    }
+
+    // ============================================================
+    // DASHBOARD
+    // ============================================================
+
+    @GetMapping
+    public String dashboard(
+            Model model) {
+
+        LocalDate hoy =
+                LocalDate.now();
+
+        BigDecimal totalVentasHoy =
+                valorSeguro(
+                        reporteService
+                                .obtenerTotalVentasDelDia(
+                                        hoy
+                                )
+                );
+
+        List<ProductoResponse> productosActivos =
+                productoService.listarTodos();
+
+        List<ProductoResponse> productosStockBajo =
+                productoService.listarStockBajo();
+
+        List<ProductoResponse> productosAgotados =
+                productoService.listarAgotados();
+
+        List<Venta> ventasHoy =
+                ventaRepository
+                        .findByFechaHoraBetweenOrderByFechaHoraDesc(
+                                hoy.atStartOfDay(),
+                                hoy.atTime(
+                                        LocalTime.MAX
+                                )
+                        )
+                        .stream()
+                        .filter(
+                                venta ->
+                                        venta.getEstado()
+                                                == Venta
+                                                .EstadoVenta
+                                                .COMPLETADA
+                        )
+                        .toList();
+
+        List<DashboardVentaDiaResponse>
+                ventasUltimosSieteDias =
+                construirVentasUltimosSieteDias(
+                        hoy
+                );
+
+        List<DashboardProductoTopResponse>
+                productosMasVendidos =
+                obtenerProductosMasVendidos(
+                        hoy
+                );
+
+        BigDecimal totalUltimosSieteDias =
+                ventasUltimosSieteDias
+                        .stream()
+                        .map(
+                                DashboardVentaDiaResponse
+                                        ::getTotal
+                        )
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
+
+        int operacionesUltimosSieteDias =
+                ventasUltimosSieteDias
+                        .stream()
+                        .mapToInt(
+                                DashboardVentaDiaResponse
+                                        ::getNumeroVentas
+                        )
+                        .sum();
+
+        model.addAttribute(
+                "totalVentasHoy",
+                totalVentasHoy
+        );
+
+        model.addAttribute(
+                "numeroVentasHoy",
+                ventasHoy.size()
+        );
+
+        model.addAttribute(
+                "totalProductos",
+                productosActivos.size()
+        );
+
+        model.addAttribute(
+                "cantidadStockBajo",
+                productoService.contarStockBajo()
+        );
+
+        model.addAttribute(
+                "cantidadAgotados",
+                productoService.contarAgotados()
+        );
+
+        model.addAttribute(
+                "totalUsuarios",
+                usuarioService
+                        .listarActivos()
+                        .size()
+        );
+
+        model.addAttribute(
+                "productosStockBajo",
+                productosStockBajo
+        );
+
+        model.addAttribute(
+                "productosAgotados",
+                productosAgotados
+        );
+
+        model.addAttribute(
+                "ventasUltimosSieteDias",
+                ventasUltimosSieteDias
+        );
+
+        model.addAttribute(
+                "productosMasVendidos",
+                productosMasVendidos
+        );
+
+        model.addAttribute(
+                "totalUltimosSieteDias",
+                totalUltimosSieteDias
+        );
+
+        model.addAttribute(
+                "operacionesUltimosSieteDias",
+                operacionesUltimosSieteDias
+        );
+
+        model.addAttribute(
+                "activePage",
+                "dashboard"
+        );
+
+        return "admin/dashboard";
+    }
+
+    // ============================================================
+    // PRODUCTOS
+    // ============================================================
+
+    @GetMapping("/productos")
+    public String listarProductos(
+            Model model) {
+
+        model.addAttribute(
+                "productos",
+                productoService.listarTodos()
+        );
+
+        model.addAttribute(
+                "categorias",
+                categoriaService.listarTodas()
+        );
+
+        model.addAttribute(
+                "activePage",
+                "productos"
+        );
+
+        return "admin/productos";
+    }
+
+    // ============================================================
+    // USUARIOS
+    // ============================================================
+
+    @GetMapping("/usuarios")
+    public String listarUsuarios(
+            Model model) {
+
+        model.addAttribute(
+                "usuarios",
+                usuarioService.listarTodos()
+        );
+
+        /*
+         * Se envían las sucursales activas para el selector
+         * del formulario de alta y edición de usuarios.
+         *
+         * Si únicamente existe una, el formulario la muestra
+         * bloqueada y el servicio la asigna automáticamente.
+         */
+        model.addAttribute(
+                "sucursalesActivas",
+                sucursalService.listarActivas()
+        );
+
+        model.addAttribute(
+                "activePage",
+                "usuarios"
+        );
+
+        return "admin/usuarios";
+    }
+
+    // ============================================================
+    // CATEGORÍAS
+    // ============================================================
+
+    @GetMapping("/categorias")
+    public String listarCategorias(
+            Model model) {
+
+        model.addAttribute(
+                "categorias",
+                categoriaService
+                        .listarTodasConProductos()
+        );
+
+        model.addAttribute(
+                "totalProductos",
+                productoService
+                        .listarTodos()
+                        .size()
+        );
+
+        model.addAttribute(
+                "productosStockBajo",
+                productoService
+                        .listarStockBajo()
+                        .size()
+        );
+
+        model.addAttribute(
+                "activePage",
+                "categorias"
+        );
+
+        return "admin/categorias";
+    }
+
+    // ============================================================
+    // REPORTES
+    // ============================================================
+
+    @GetMapping("/reportes")
+    public String reportes(
+            Model model) {
+
+        model.addAttribute(
+                "fechaInicio",
+                LocalDate.now()
+                        .minusDays(7)
+        );
+
+        model.addAttribute(
+                "fechaFin",
+                LocalDate.now()
+        );
+
+        model.addAttribute(
+                "activePage",
+                "reportes"
+        );
+
+        return "admin/reportes";
+    }
+
+    @PostMapping("/reportes")
+    public String generarReporte(
+            @RequestParam
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE
+            )
+            LocalDate fechaInicio,
+
+            @RequestParam
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE
+            )
+            LocalDate fechaFin,
+
+            Model model) {
+
+        ReporteVentasRequest request =
+                new ReporteVentasRequest();
+
+        request.setFechaInicio(
+                fechaInicio
+        );
+
+        request.setFechaFin(
+                fechaFin
+        );
+
+        ReporteVentasResponse reporte =
+                reporteService
+                        .generarReporteVentas(
+                                request
+                        );
+
+        model.addAttribute(
+                "reporte",
+                reporte
+        );
+
+        model.addAttribute(
+                "fechaInicio",
+                fechaInicio
+        );
+
+        model.addAttribute(
+                "fechaFin",
+                fechaFin
+        );
+
+        model.addAttribute(
+                "activePage",
+                "reportes"
+        );
+
+        return "admin/reportes";
+    }
+
+    // ============================================================
+    // CORTE DE CAJA
+    // ============================================================
+
+    @GetMapping("/corte")
+    public String corteCaja(
+            @RequestParam(
+                    required = false
+            )
+            @DateTimeFormat(
+                    iso = DateTimeFormat.ISO.DATE
+            )
+            LocalDate fecha,
+
+            Model model) {
+
+        LocalDate fechaConsulta =
+                fecha != null
+                        ? fecha
+                        : LocalDate.now();
+
+        CorteCajaResponse corte =
+                corteCajaService
+                        .generarCorte(
+                                fechaConsulta
+                        );
+
+        model.addAttribute(
+                "corte",
+                corte
+        );
+
+        model.addAttribute(
+                "fecha",
+                corte.getFecha()
+        );
+
+        model.addAttribute(
+                "totalVentas",
+                corte.getTotalVentas()
+        );
+
+        model.addAttribute(
+                "numeroVentas",
+                corte.getNumeroVentas()
+        );
+
+        model.addAttribute(
+                "ventas",
+                corte.getTickets()
+        );
+
+        model.addAttribute(
+                "activePage",
+                "corte"
+        );
+
+        return "admin/corte";
     }
 
 
-    @PostMapping("/admin/registrar-producto")
-    public String registrarProducto(@RequestParam String codigoBarras,
-                                    @RequestParam String nombre,
-                                    @RequestParam BigDecimal precioCompra,
-                                    @RequestParam BigDecimal precioVenta,
-                                    @RequestParam Integer stock,
-                                    RedirectAttributes redirectAttributes) {
-        try {
-            if (productoRepository.findByCodigoBarras(codigoBarras.trim()).isPresent()) {
-                redirectAttributes.addFlashAttribute("error", "El código de barras '" + codigoBarras + "' ya pertenece a otro producto.");
-                return "redirect:/pos/inicio";
+    // ============================================================
+    // MÉTODOS PRIVADOS DEL DASHBOARD
+    // ============================================================
+
+    private List<DashboardVentaDiaResponse>
+    construirVentasUltimosSieteDias(
+            LocalDate hoy) {
+
+        LocalDate fechaInicial =
+                hoy.minusDays(6);
+
+        LocalDateTime inicio =
+                fechaInicial.atStartOfDay();
+
+        LocalDateTime fin =
+                hoy.atTime(
+                        LocalTime.MAX
+                );
+
+        List<Venta> ventas =
+                ventaRepository
+                        .findByFechaHoraBetweenOrderByFechaHoraDesc(
+                                inicio,
+                                fin
+                        )
+                        .stream()
+                        .filter(
+                                venta ->
+                                        venta.getEstado()
+                                                == Venta
+                                                .EstadoVenta
+                                                .COMPLETADA
+                        )
+                        .toList();
+
+        Map<LocalDate, List<Venta>>
+                ventasPorFecha =
+                ventas.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        venta ->
+                                                venta
+                                                        .getFechaHora()
+                                                        .toLocalDate()
+                                )
+                        );
+
+        List<DashboardVentaDiaResponse> resultado =
+                new ArrayList<>();
+
+        for (int i = 0; i < 7; i++) {
+
+            LocalDate fecha =
+                    fechaInicial.plusDays(i);
+
+            List<Venta> ventasDelDia =
+                    ventasPorFecha.getOrDefault(
+                            fecha,
+                            List.of()
+                    );
+
+            BigDecimal totalDelDia =
+                    ventasDelDia
+                            .stream()
+                            .map(Venta::getTotal)
+                            .filter(
+                                    total ->
+                                            total != null
+                            )
+                            .reduce(
+                                    BigDecimal.ZERO,
+                                    BigDecimal::add
+                            );
+
+            String nombreDia =
+                    fecha
+                            .getDayOfWeek()
+                            .getDisplayName(
+                                    TextStyle.SHORT,
+                                    new Locale(
+                                            "es",
+                                            "MX"
+                                    )
+                            );
+
+            String etiqueta =
+                    nombreDia
+                            .substring(0, 1)
+                            .toUpperCase()
+                            + nombreDia.substring(1)
+                            + " "
+                            + fecha.getDayOfMonth();
+
+            DashboardVentaDiaResponse dato =
+                    new DashboardVentaDiaResponse();
+
+            dato.setFecha(
+                    fecha
+            );
+
+            dato.setEtiqueta(
+                    etiqueta
+            );
+
+            dato.setTotal(
+                    totalDelDia
+            );
+
+            dato.setNumeroVentas(
+                    ventasDelDia.size()
+            );
+
+            dato.setPorcentaje(0);
+
+            resultado.add(
+                    dato
+            );
+        }
+
+        BigDecimal mayorVenta =
+                resultado
+                        .stream()
+                        .map(
+                                DashboardVentaDiaResponse
+                                        ::getTotal
+                        )
+                        .max(
+                                Comparator.naturalOrder()
+                        )
+                        .orElse(
+                                BigDecimal.ZERO
+                        );
+
+        for (DashboardVentaDiaResponse dato
+                : resultado) {
+
+            int porcentaje;
+
+            if (mayorVenta.compareTo(
+                    BigDecimal.ZERO
+            ) == 0) {
+
+                porcentaje = 0;
+
+            } else {
+
+                porcentaje =
+                        dato.getTotal()
+                                .multiply(
+                                        BigDecimal
+                                                .valueOf(100)
+                                )
+                                .divide(
+                                        mayorVenta,
+                                        0,
+                                        RoundingMode.HALF_UP
+                                )
+                                .intValue();
             }
 
-            Producto nuevoProducto = new Producto();
-            nuevoProducto.setCodigoBarras(codigoBarras);
-            nuevoProducto.setNombre(nombre);
-            nuevoProducto.setPrecioCompra(precioCompra);
-            nuevoProducto.setPrecioVenta(precioVenta);
-            nuevoProducto.setStock(stock);
-
-            productoRepository.save(nuevoProducto);
-            redirectAttributes.addFlashAttribute("exito", "¡Producto '" + nombre + "' agregado al inventario!");
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error interno al registrar el producto.");
-        }
-        return "redirect:/pos/inicio";
-    }    
-	
-@PostMapping("/admin/registrar-cajero")
-    public String registrarCajero(@RequestParam String nombre,
-                                  @RequestParam String username,
-                                  @RequestParam String password,
-                                  RedirectAttributes redirectAttributes) {
-        try {
-            String usernameLimpio = username.trim().toLowerCase();
-            java.util.Optional<Usuario> usuarioExistente = usuarioRepository.findByUsernameIgnoreCase(usernameLimpio);
-
-            if (usuarioExistente.isPresent()) {
-                Usuario usuario = usuarioExistente.get();
-                
-                // CASO 1: Si ya está activo pero tiene rol ADMIN, protegemos el registro
-                if (usuario.getActivo() != null && usuario.getActivo() && "ADMIN".equalsIgnoreCase(usuario.getRol())) {
-                    redirectAttributes.addFlashAttribute("error", "El nombre de usuario '" + usernameLimpio + "' ya está registrado como ADMINISTRADOR.");
-                    return "redirect:/pos/inicio";
-                }
-                
-                // CASO 2: Si el usuario ya existe pero estaba INACTIVO (fue eliminado previamente), lo reactivamos
-                if (usuario.getActivo() == null || !usuario.getActivo()) {
-                    usuario.setNombre(nombre.trim());
-                    usuario.setPassword(passwordEncoder.encode(password));
-                    usuario.setRol("CAJERO"); // Nos aseguramos de forzar el rol correcto
-                    usuario.setActivo(true);   // Lo volvemos a dar de alta
-                    usuarioRepository.save(usuario);
-                    redirectAttributes.addFlashAttribute("exito", "¡El usuario '" + usernameLimpio + "' ha sido reactivado como cajero con éxito!");
-                    return "redirect:/pos/inicio";
-                }
-
-                // CASO 3: Ya existe y ya está activo como cajero
-                redirectAttributes.addFlashAttribute("error", "El nombre de usuario '" + usernameLimpio + "' ya está registrado y activo.");
-                return "redirect:/pos/inicio";
-            }
-
-            // CASO 4: Registro limpio desde cero si no existe ningún registro previo
-            Usuario nuevoUsuario = new Usuario();
-            nuevoUsuario.setNombre(nombre.trim());
-            nuevoUsuario.setUsername(usernameLimpio);
-            nuevoUsuario.setPassword(passwordEncoder.encode(password));
-            nuevoUsuario.setRol("CAJERO");
-            nuevoUsuario.setActivo(true);
-
-            usuarioRepository.save(nuevoUsuario);
-            redirectAttributes.addFlashAttribute("exito", "¡Cajero '" + usernameLimpio + "' registrado con éxito!");
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error interno al registrar el cajero.");
+            dato.setPorcentaje(
+                    porcentaje
+            );
         }
 
-        return "redirect:/pos/inicio";
+        return resultado;
     }
-// Ruta para eliminar (dar de baja) un cajero por su username
-    @PostMapping("/admin/eliminar-cajero")
-    public String eliminarCajero(@RequestParam String username, RedirectAttributes redirectAttributes) {
-        try {
-            String usernameLimpio = username.trim().toLowerCase();
-            
-            // Buscamos si el usuario existe
-            java.util.Optional<Usuario> usuarioOpt = usuarioRepository.findByUsernameIgnoreCase(usernameLimpio);
-            
-            if (usuarioOpt.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "El usuario '@" + usernameLimpio + "' no existe.");
-                return "redirect:/pos/inicio";
-            }
 
-            Usuario usuario = usuarioOpt.get();
+    private List<DashboardProductoTopResponse>
+    obtenerProductosMasVendidos(
+            LocalDate hoy) {
 
-            // Validación de seguridad: No dejar que se borren cuentas ADMIN desde aquí
-            if ("ADMIN".equalsIgnoreCase(usuario.getRol())) {
-                redirectAttributes.addFlashAttribute("error", "No se puede eliminar un usuario con rol ADMINISTRADOR.");
-                return "redirect:/pos/inicio";
-            }
+        LocalDateTime inicio =
+                hoy.minusDays(29)
+                        .atStartOfDay();
 
-            // Opción segura: En lugar de borrar el registro físico (Hard Delete), lo marcamos inactivo (Soft Delete)
-            usuario.setActivo(false);
-            usuarioRepository.save(usuario);
-            
-            redirectAttributes.addFlashAttribute("exito", "¡El cajero @" + usernameLimpio + " ha sido dado de baja correctamente!");
+        LocalDateTime fin =
+                hoy.atTime(
+                        LocalTime.MAX
+                );
 
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error interno al procesar la baja del cajero.");
+        List<Object[]> resultados =
+                detalleVentaRepository
+                        .buscarProductosMasVendidos(
+                                inicio,
+                                fin,
+                                PageRequest.of(
+                                        0,
+                                        5
+                                )
+                        );
+
+        List<DashboardProductoTopResponse>
+                productos =
+                new ArrayList<>();
+
+        int posicion = 1;
+
+        for (Object[] fila : resultados) {
+
+            Long productoId =
+                    ((Number) fila[0])
+                            .longValue();
+
+            String nombre =
+                    String.valueOf(
+                            fila[1]
+                    );
+
+            Long cantidad =
+                    ((Number) fila[2])
+                            .longValue();
+
+            BigDecimal importe =
+                    fila[3] instanceof BigDecimal
+                            ? (BigDecimal) fila[3]
+                            : new BigDecimal(
+                                    fila[3].toString()
+                            );
+
+            productos.add(
+                    new DashboardProductoTopResponse(
+                            productoId,
+                            nombre,
+                            cantidad,
+                            importe,
+                            posicion
+                    )
+            );
+
+            posicion++;
         }
 
-        return "redirect:/pos/inicio";
+        return productos;
+    }
+
+    private BigDecimal valorSeguro(
+            BigDecimal valor) {
+
+        return valor != null
+                ? valor
+                : BigDecimal.ZERO;
     }
 }
