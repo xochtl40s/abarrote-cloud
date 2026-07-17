@@ -60,7 +60,7 @@ public class TransferenciaInventarioController {
 
         model.addAttribute(
                 "activePage",
-                "inventario"
+                "inventario-transferencias"
         );
 
         return "admin/transferencias-inventario";
