@@ -1,3684 +1,742 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width,
+                   initial-scale=1.0,
+                   maximum-scale=1.0,
+                   user-scalable=no">
+
     <title>POS - Abarrote Cloud</title>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --fondo: #0f172a;
+            --panel: #111827;
+            --panel-secundario: #1e293b;
+            --borde: #334155;
+            --texto: #f8fafc;
+            --muted: #94a3b8;
+            --verde: #22c55e;
+            --verde-oscuro: #15803d;
+            --azul: #2563eb;
+            --rojo: #ef4444;
+            --amarillo: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #1a1a2e;
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
+            background: var(--fondo);
+            color: var(--texto);
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
         }
-        .pos-container {
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .pos {
             display: grid;
-            grid-template-columns: 1fr 380px;
-            height: 100vh;
+            grid-template-columns: minmax(0, 1fr) 390px;
+            min-height: 100vh;
         }
-        .products-panel {
+
+        .catalogo {
+            min-width: 0;
+            padding: 18px;
+        }
+
+        .ticket-panel {
+            background: var(--panel);
+            border-left: 1px solid var(--borde);
             display: flex;
             flex-direction: column;
-            padding: 1rem;
-            gap: 1rem;
+            min-height: 100vh;
+            padding: 18px;
         }
-        .pos-header {
+
+        .encabezado {
+            align-items: center;
             display: flex;
+            gap: 14px;
             justify-content: space-between;
-            align-items: center;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #333;
+            margin-bottom: 16px;
         }
-        .pos-header h1 { font-size: 1.3rem; color: #4ade80; }
-        
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .cajero { color: #888; font-size: 0.85rem; }
-        
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.75rem;
-            padding: 0.3rem 0.7rem;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-        .connection-status.online {
-            background: rgba(74, 222, 128, 0.15);
+
+        .titulo {
             color: #4ade80;
-        }
-        .connection-status.offline {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-        .connection-status.syncing {
-            background: rgba(245, 158, 11, 0.15);
-            color: #f59e0b;
-        }
-        .connection-status .dot {
-            width: 8px; height: 8px; border-radius: 50%;
-        }
-        .connection-status.online .dot { background: #4ade80; }
-        .connection-status.offline .dot { background: #ef4444; }
-        .connection-status.syncing .dot { background: #f59e0b; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-        
-        .pending-badge {
-            background: #f59e0b;
-            color: #1a1a2e;
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 0.15rem 0.5rem;
-            border-radius: 10px;
-            margin-left: 0.3rem;
-        }
-        
-        .logout-btn {
-            background: transparent;
-            border: 1px solid #ef4444;
-            color: #ef4444;
-            padding: 0.4rem 0.9rem;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-        .logout-btn:hover {
-            background: #ef4444;
-            color: #fff;
-        }
-        
-        /* ===== FILTROS DE CATEGORÍA ===== */
-        .category-filters {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            padding: 0.5rem 0;
-        }
-        .category-chip {
-            padding: 0.4rem 1rem;
-            background: #16213e;
-            border: 1px solid #333;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #94a3b8;
-        }
-        .category-chip:hover {
-            border-color: #4ade80;
-            color: #4ade80;
-        }
-        .category-chip.active {
-            background: #4ade80;
-            color: #1a1a2e;
-            border-color: #4ade80;
-            font-weight: 600;
-        }
-        
-        .search-box { display: flex; gap: 0.5rem; }
-        .search-box input {
-            flex: 1; padding: 0.8rem 1rem; border: 2px solid #333;
-            border-radius: 8px; background: #16213e; color: #fff; font-size: 1rem;
-        }
-        .search-box input:focus { outline: none; border-color: #4ade80; }
-        .search-box button {
-            padding: 0.8rem 1.2rem; background: #4ade80; color: #1a1a2e;
-            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
-        }
-        .search-results {
-            flex: 1; overflow-y: auto;
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 0.8rem; padding-right: 0.5rem;
-        }
-        .product-card {
-            background: #16213e; border: 1px solid #333; border-radius: 10px;
-            padding: 1rem; cursor: pointer; transition: all 0.2s; text-align: center;
-        }
-        .product-card:hover { border-color: #4ade80; transform: translateY(-2px); }
-        .product-card .name { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
-        .product-card .price { color: #4ade80; font-size: 1.1rem; font-weight: 700; }
-        .product-card .stock { font-size: 0.75rem; color: #888; margin-top: 0.3rem; }
-        .product-card .stock.bajo { color: #ef4444; }
-        .product-card .category-tag {
-            font-size: 0.7rem;
-            color: #60a5fa;
-            margin-top: 0.2rem;
-        }
-        .ticket-panel {
-            background: #0f3460; display: flex; flex-direction: column;
-            border-left: 1px solid #333;
-        }
-        .ticket-header { padding: 1rem; border-bottom: 1px solid #333; text-align: center; }
-        .ticket-header h2 { font-size: 1.1rem; color: #4ade80; }
-        .ticket-header .ticket-num { font-size: 0.8rem; color: #888; }
-        .ticket-items { flex: 1; overflow-y: auto; padding: 1rem; }
-        .ticket-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0.7rem; background: #16213e; border-radius: 8px; margin-bottom: 0.5rem;
-        }
-        .ticket-item .info { flex: 1; }
-        .ticket-item .info .name { font-size: 0.9rem; font-weight: 600; }
-        .ticket-item .info .qty-price { font-size: 0.8rem; color: #888; }
-        .ticket-item .total { font-weight: 700; color: #4ade80; }
-        .ticket-item .remove {
-            background: none; border: none; color: #ef4444; cursor: pointer;
-            font-size: 1.2rem; margin-left: 0.5rem;
-        }
-        .ticket-empty { text-align: center; color: #888; padding: 3rem 1rem; }
-        .ticket-footer { padding: 1rem; border-top: 1px solid #333; background: #1a1a2e; }
-        .ticket-total {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem;
-        }
-        .ticket-total .amount { color: #4ade80; }
-        .btn-cobrar {
-            width: 100%; padding: 1rem;
-            background: linear-gradient(135deg, #4ade80, #22c55e);
-            color: #1a1a2e; border: none; border-radius: 10px;
-            font-size: 1.2rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-cobrar:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4); }
-        .btn-cobrar:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; }
-        .btn-cancelar {
-            width: 100%; padding: 0.7rem; background: transparent;
-            color: #ef4444; border: 1px solid #ef4444;
-            border-radius: 8px; font-size: 0.9rem; cursor: pointer; margin-top: 0.5rem;
-        }
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal {
-            background: #16213e; border-radius: 16px; padding: 2rem;
-            width: 90%; max-width: 400px; text-align: center;
-        }
-        .modal h2 { color: #4ade80; margin-bottom: 1rem; }
-        .modal .total-modal { font-size: 2rem; font-weight: 700; color: #4ade80; margin: 1rem 0; }
-        .modal input {
-            width: 100%; padding: 1rem; font-size: 1.5rem; text-align: center;
-            border: 2px solid #333; border-radius: 10px;
-            background: #1a1a2e; color: #fff; margin-bottom: 1rem;
-        }
-        .modal .cambio { font-size: 1.2rem; color: #888; margin-bottom: 1rem; }
-        .modal .cambio span { color: #4ade80; font-weight: 700; }
-        .modal-buttons { display: flex; gap: 0.5rem; }
-        .modal-buttons button { flex: 1; padding: 0.9rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
-        .modal-buttons .btn-confirm { background: #4ade80; color: #1a1a2e; }
-        .modal-buttons .btn-cancel { background: #333; color: #fff; }
-        .toast {
-            position: fixed; bottom: 2rem; left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: #4ade80; color: #1a1a2e; padding: 1rem 2rem;
-            border-radius: 8px; font-weight: 600; opacity: 0;
-            transition: all 0.3s; z-index: 2000;
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.error { background: #ef4444; color: #fff; }
-        .toast.warning { background: #f59e0b; color: #1a1a2e; }
-    
-        /* ================================================== */
-        /* ESCÁNER DE CÓDIGO DE BARRAS                        */
-        /* ================================================== */
-
-        .scanner-button {
-            min-width: 54px;
-            padding: 0.8rem 1rem;
-            border: 2px solid #4ade80;
-            border-radius: 8px;
-            background: #16213e;
-            color: #4ade80;
-            font-size: 1.15rem;
-            font-weight: 700;
-            cursor: pointer;
+            font-size: 24px;
         }
 
-        .scanner-button:hover {
-            background: #4ade80;
-            color: #1a1a2e;
+        .datos-sesion {
+            color: var(--muted);
+            font-size: 13px;
+            text-align: right;
         }
 
-        .scanner-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            background: rgba(3, 7, 18, 0.97);
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
+        .busqueda {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            margin-bottom: 14px;
         }
 
-        .scanner-overlay.active {
-            display: flex;
+        .busqueda input {
+            background: var(--panel);
+            border: 2px solid var(--borde);
+            border-radius: 9px;
+            color: var(--texto);
+            font-size: 18px;
+            min-width: 0;
+            outline: none;
+            padding: 14px;
         }
 
-        .scanner-panel {
-            width: 100%;
-            max-width: 560px;
-            max-height: 96vh;
-            overflow-y: auto;
-            background: #111827;
-            border: 1px solid #334155;
-            border-radius: 18px;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.65);
+        .busqueda input:focus {
+            border-color: var(--verde);
         }
 
-        .scanner-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.1rem;
-            border-bottom: 1px solid #334155;
-        }
-
-        .scanner-header h2 {
-            margin: 0;
-            color: #4ade80;
-            font-size: 1.15rem;
-        }
-
-        .scanner-close {
-            width: 42px;
-            height: 42px;
-            border: 1px solid #ef4444;
-            border-radius: 50%;
-            background: transparent;
-            color: #ef4444;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
-
-        .scanner-body {
-            padding: 1rem;
-        }
-
-        #barcodeReader {
-            width: 100%;
-            overflow: hidden;
-            border-radius: 14px;
-            background: #000;
-        }
-
-        #barcodeReader video {
-            object-fit: cover !important;
-            border-radius: 14px;
-        }
-
-        .scanner-guide {
-            margin-top: 0.9rem;
-            color: #cbd5e1;
-            text-align: center;
-            line-height: 1.5;
-            font-size: 0.9rem;
-        }
-
-        .scanner-status {
-            min-height: 46px;
-            margin-top: 0.9rem;
-            padding: 0.8rem;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            background: #0f172a;
-            color: #94a3b8;
-            text-align: center;
-            line-height: 1.4;
-        }
-
-        .scanner-status.success {
-            border-color: #22c55e;
-            background: rgba(34, 197, 94, 0.12);
-            color: #86efac;
-        }
-
-        .scanner-status.error {
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.12);
-            color: #fca5a5;
-        }
-
-        .scanner-actions {
-            display: flex;
-            gap: 0.7rem;
-            margin-top: 1rem;
-        }
-
-        .scanner-actions button {
-            flex: 1;
-            padding: 0.85rem;
+        .btn {
             border: none;
             border-radius: 9px;
+            color: white;
             font-weight: 700;
-            cursor: pointer;
+            padding: 12px 18px;
         }
 
-        .scanner-retry {
-            background: #4ade80;
-            color: #1a1a2e;
+        .btn-buscar {
+            background: var(--azul);
         }
 
-        .scanner-cancel {
-            background: #374151;
-            color: #fff;
+        .btn-todos {
+            background: var(--panel-secundario);
+            border: 1px solid var(--borde);
         }
 
-        @media (max-width: 760px) {
+        .btn-cobrar {
+            background: var(--verde);
+            color: #052e16;
+            font-size: 20px;
+            margin-top: 14px;
+            padding: 16px;
+            width: 100%;
+        }
 
-            .pos-container {
-                grid-template-columns: 1fr;
-                overflow-y: auto;
+        .btn-cobrar:disabled {
+            cursor: not-allowed;
+            opacity: .45;
+        }
+
+        .btn-cancelar {
+            background: var(--rojo);
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .estado {
+            border-radius: 8px;
+            display: none;
+            margin-bottom: 14px;
+            padding: 12px;
+        }
+
+        .estado.visible {
+            display: block;
+        }
+
+        .estado.info {
+            background: rgba(37, 99, 235, .18);
+            border: 1px solid #2563eb;
+        }
+
+        .estado.error {
+            background: rgba(239, 68, 68, .18);
+            border: 1px solid #ef4444;
+        }
+
+        .estado.ok {
+            background: rgba(34, 197, 94, .18);
+            border: 1px solid #22c55e;
+        }
+
+        .categorias {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .categoria {
+            background: var(--panel-secundario);
+            border: 1px solid var(--borde);
+            border-radius: 999px;
+            color: var(--texto);
+            padding: 8px 13px;
+        }
+
+        .categoria.activa {
+            background: var(--verde);
+            border-color: var(--verde);
+            color: #052e16;
+            font-weight: 700;
+        }
+
+        .productos {
+            display: grid;
+            gap: 12px;
+            grid-template-columns:
+                repeat(auto-fill, minmax(190px, 1fr));
+            max-height: calc(100vh - 190px);
+            overflow-y: auto;
+            padding-bottom: 30px;
+        }
+
+        .producto {
+            background: var(--panel);
+            border: 1px solid var(--borde);
+            border-radius: 12px;
+            color: var(--texto);
+            min-height: 145px;
+            padding: 15px;
+            text-align: left;
+            transition: transform .12s ease,
+                        border-color .12s ease;
+        }
+
+        .producto:hover {
+            border-color: var(--verde);
+            transform: translateY(-2px);
+        }
+
+        .producto:disabled {
+            cursor: not-allowed;
+            opacity: .45;
+        }
+
+        .producto-nombre {
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.25;
+            min-height: 42px;
+        }
+
+        .producto-codigo {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .producto-precio {
+            color: #4ade80;
+            font-size: 23px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        .producto-stock {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .ticket-titulo {
+            border-bottom: 1px solid var(--borde);
+            font-size: 22px;
+            padding-bottom: 14px;
+        }
+
+        .ticket-items {
+            flex: 1;
+            margin-top: 10px;
+            max-height: calc(100vh - 275px);
+            overflow-y: auto;
+        }
+
+        .ticket-vacio {
+            color: var(--muted);
+            padding: 35px 10px;
+            text-align: center;
+        }
+
+        .ticket-item {
+            border-bottom: 1px solid var(--borde);
+            padding: 12px 0;
+        }
+
+        .ticket-item-superior {
+            align-items: flex-start;
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+        }
+
+        .ticket-item-nombre {
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .ticket-item-precio {
+            color: #4ade80;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .ticket-controles {
+            align-items: center;
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .ticket-controles button {
+            background: var(--panel-secundario);
+            border: 1px solid var(--borde);
+            border-radius: 7px;
+            color: white;
+            height: 34px;
+            width: 36px;
+        }
+
+        .ticket-controles .eliminar {
+            background: rgba(239, 68, 68, .2);
+            border-color: var(--rojo);
+            margin-left: auto;
+        }
+
+        .cantidad {
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .total {
+            border-top: 1px solid var(--borde);
+            display: flex;
+            font-size: 28px;
+            font-weight: 800;
+            justify-content: space-between;
+            padding-top: 16px;
+        }
+
+        .total-importe {
+            color: #4ade80;
+        }
+
+        .modal {
+            align-items: center;
+            background: rgba(0, 0, 0, .72);
+            display: none;
+            inset: 0;
+            justify-content: center;
+            padding: 18px;
+            position: fixed;
+            z-index: 1000;
+        }
+
+        .modal.visible {
+            display: flex;
+        }
+
+        .modal-contenido {
+            background: var(--panel);
+            border: 1px solid var(--borde);
+            border-radius: 14px;
+            max-width: 440px;
+            padding: 24px;
+            width: 100%;
+        }
+
+        .modal-contenido h2 {
+            margin-bottom: 18px;
+        }
+
+        .modal-total {
+            color: #4ade80;
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+
+        .campo-pago label {
+            color: var(--muted);
+            display: block;
+            margin-bottom: 7px;
+        }
+
+        .campo-pago input {
+            background: var(--fondo);
+            border: 2px solid var(--borde);
+            border-radius: 9px;
+            color: white;
+            font-size: 26px;
+            padding: 13px;
+            text-align: right;
+            width: 100%;
+        }
+
+        .cambio {
+            font-size: 21px;
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .modal-botones {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: 1fr 1fr;
+            margin-top: 20px;
+        }
+
+        .btn-confirmar {
+            background: var(--verde);
+            color: #052e16;
+        }
+
+        .btn-cerrar {
+            background: var(--panel-secundario);
+            border: 1px solid var(--borde);
+        }
+
+        @media (max-width: 900px) {
+            body {
+                overflow: auto;
             }
 
-            .products-panel {
-                min-height: 100vh;
+            .pos {
+                display: block;
+            }
+
+            .catalogo {
+                padding: 12px;
             }
 
             .ticket-panel {
-                min-height: 70vh;
+                border-left: none;
+                border-top: 1px solid var(--borde);
+                min-height: auto;
+                padding: 14px;
             }
 
-            .search-box {
-                flex-wrap: wrap;
+            .productos {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+                max-height: none;
             }
 
-            .search-box input {
-                min-width: 0;
-                width: calc(100% - 64px);
-            }
-
-            .search-box > button:not(.scanner-button) {
-                width: 100%;
-            }
-
-            .scanner-panel {
-                max-width: none;
-                max-height: 100vh;
-                border-radius: 14px;
+            .ticket-items {
+                max-height: 370px;
             }
         }
 
-</style>
+        @media (max-width: 560px) {
+            .encabezado {
+                align-items: flex-start;
+            }
 
-    <!-- ABARROTE_ESCANER_MOTOROLA_V1 -->
-    <script
-            src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
-            defer>
-    </script>
+            .titulo {
+                font-size: 20px;
+            }
 
+            .busqueda {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .busqueda input {
+                grid-column: 1 / -1;
+            }
+
+            .productos {
+                grid-template-columns:
+                    repeat(2, minmax(0, 1fr));
+            }
+
+            .producto {
+                min-height: 135px;
+                padding: 11px;
+            }
+
+            .producto-precio {
+                font-size: 20px;
+            }
+        }
+    </style>
 </head>
-<body>
-<div
-        th:if="${param.accesoDenegado}"
-        style="
-            position:fixed;
-            top:20px;
-            left:50%;
-            transform:translateX(-50%);
-            z-index:99999;
-            max-width:620px;
-            width:calc(100% - 40px);
-            padding:1rem 1.25rem;
-            border:1px solid #f59e0b;
-            border-radius:10px;
-            background:#451a03;
-            color:#fbbf24;
-            font-family:'Segoe UI',system-ui,sans-serif;
-            font-weight:600;
-            text-align:center;
-            box-shadow:0 15px 35px rgba(0,0,0,0.45);
-        ">
 
-    ⚠️ Tu sesión actual pertenece a un cajero.
-    No tienes permisos para abrir el panel administrativo.
+<body>
+
+<div class="pos">
+
+    <main class="catalogo">
+
+        <div class="encabezado">
+
+            <h1 class="titulo">
+                🛒 Abarrote Cloud POS
+            </h1>
+
+            <div class="datos-sesion">
+                <div>
+                    Cajero:
+                    <strong th:text="${nombreCajero != null
+                                      ? nombreCajero
+                                      : cajero}">
+                        Cajero
+                    </strong>
+                </div>
+
+                <div>
+                    Sucursal:
+                    <strong th:text="${sucursal}">
+                        Principal
+                    </strong>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="busqueda">
+
+            <input id="searchInput"
+                   type="search"
+                   autocomplete="off"
+                   autocapitalize="off"
+                   spellcheck="false"
+                   inputmode="search"
+                   placeholder="Escanea código o escribe producto">
+
+            <button id="btnBuscar"
+                    class="btn btn-buscar"
+                    type="button">
+                Buscar
+            </button>
+
+            <button id="btnTodos"
+                    class="btn btn-todos"
+                    type="button">
+                Todos
+            </button>
+
+        </div>
+
+        <div id="estado"
+             class="estado">
+        </div>
+
+        <div id="categorias"
+             class="categorias">
+
+            <button class="categoria activa"
+                    type="button"
+                    data-categoria="">
+                Todos
+            </button>
+
+        </div>
+
+        <section id="productos"
+                 class="productos">
+
+            <div class="ticket-vacio">
+                Cargando productos…
+            </div>
+
+        </section>
+
+    </main>
+
+    <aside class="ticket-panel">
+
+        <h2 class="ticket-titulo">
+            Ticket de venta
+        </h2>
+
+        <div id="ticketItems"
+             class="ticket-items">
+
+            <div class="ticket-vacio">
+                Agrega productos al ticket
+            </div>
+
+        </div>
+
+        <div class="total">
+            <span>Total</span>
+
+            <span id="totalTicket"
+                  class="total-importe">
+                $0.00
+            </span>
+        </div>
+
+        <button id="btnCobrar"
+                class="btn btn-cobrar"
+                type="button"
+                disabled>
+            Cobrar
+        </button>
+
+        <button id="btnCancelarVenta"
+                class="btn btn-cancelar"
+                type="button">
+            Cancelar ticket
+        </button>
+
+    </aside>
 
 </div>
-    <div class="pos-container">
-        <div class="products-panel">
-            <div class="pos-header">
-                <h1>🏪 Abarrote Cloud - POS</h1>
-                <div class="header-right">
-                    <div class="connection-status online" id="connectionStatus">
-                        <span class="dot"></span>
-                        <span id="connectionText">Online</span>
-                        <span class="pending-badge" id="pendingBadge" style="display:none;">0</span>
-                    </div>
-                    <span
-                            class="cajero"
-                            th:text="'Cajero: '
-                                + ${cajero}
-                                + ' · '
-                                + ${sucursalCodigo}
-                                + ' - '
-                                + ${sucursal}">
-                        Cajero · Sucursal
-                    </span>
-                    <form th:action="@{/logout}" method="post" style="margin:0;">
-                        <button type="submit" class="logout-btn">🚪 Cerrar Sesión</button>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- ===== FILTROS DE CATEGORÍA ===== -->
-            <div class="category-filters" id="categoryFilters">
-                <div class="category-chip active" onclick="filtrarPorCategoria(null)">📦 Todos</div>
-            </div>
-            
-            <div class="search-box">
 
-                <input
-                        type="text"
-                        id="searchInput"
-                        placeholder="🔍 Buscar o escanear producto..."
-                        autocomplete="off"
-                        inputmode="search"
-                        autofocus
-                        onclick="abrirEscanerDesdeCampo(event)">
+<div id="modalCobro"
+     class="modal">
 
-                <button
-                        type="button"
-                        class="scanner-button"
-                        title="Abrir cámara para escanear"
-                        aria-label="Abrir cámara para escanear"
-                        onclick="abrirEscanerCodigo()">
-                    📷
-                </button>
+    <div class="modal-contenido">
 
-                <button
-                        type="button"
-                        onclick="buscarProductos()">
-                    Buscar
-                </button>
+        <h2>Confirmar cobro</h2>
 
-            </div>
-            <div class="search-results" id="searchResults">
-                <div style="color: #888; text-align: center; padding: 3rem;">Escribe para buscar productos o selecciona una categoría...</div>
-            </div>
+        <div id="modalTotal"
+             class="modal-total">
+            $0.00
         </div>
-        <div class="ticket-panel">
-            <div class="ticket-header">
-                <h2>🧾 Ticket de Venta</h2>
-                <div class="ticket-num" id="ticketNum">#0001</div>
-            </div>
-            <div class="ticket-items" id="ticketItems">
-                <div class="ticket-empty">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
-                    <p>Agrega productos para comenzar</p>
-                </div>
-            </div>
-            <div class="ticket-footer">
-                <div class="ticket-total">
-                    <span>TOTAL</span>
-                    <span class="amount" id="ticketTotal">₲ 0.00</span>
-                </div>
-                <button class="btn-cobrar" id="btnCobrar" onclick="abrirCobro()" disabled>💵 COBRAR</button>
-                <button class="btn-cancelar" onclick="cancelarVenta()">❌ Cancelar Venta</button>
-            </div>
+
+        <div class="campo-pago">
+
+            <label for="inputPago">
+                Efectivo recibido
+            </label>
+
+            <input id="inputPago"
+                   type="number"
+                   min="0"
+                   step="0.01"
+                   inputmode="decimal"
+                   placeholder="0.00">
+
         </div>
-    </div>
-    <div class="modal-overlay" id="modalCobro">
-        <div class="modal">
-            <h2>💵 Cobrar</h2>
-            <div class="total-modal" id="modalTotal">₲ 0.00</div>
-            <input type="number" id="inputPago" placeholder="Monto recibido" step="0.01" min="0">
-            <div class="cambio">Cambio: <span id="cambio">₲ 0.00</span></div>
-            <div class="modal-buttons">
-                <button class="btn-confirm" onclick="confirmarCobro()">✅ Confirmar</button>
-                <button class="btn-cancel" onclick="cerrarCobro()">❌ Cancelar</button>
-            </div>
+
+        <div class="cambio">
+            Cambio:
+            <strong id="cambio">
+                $0.00
+            </strong>
         </div>
-    </div>
 
-    <!-- ==================================================== -->
-    <!-- ESCÁNER MOTOROLA / CÁMARA MÓVIL                      -->
-    <!-- ==================================================== -->
+        <div class="modal-botones">
 
-    <div
-            class="scanner-overlay"
-            id="scannerOverlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="scannerTitle">
+            <button id="btnCerrarCobro"
+                    class="btn btn-cerrar"
+                    type="button">
+                Regresar
+            </button>
 
-        <div class="scanner-panel">
-
-            <div class="scanner-header">
-
-                <h2 id="scannerTitle">
-                    📷 Escanear código de barras
-                </h2>
-
-                <button
-                        type="button"
-                        class="scanner-close"
-                        onclick="cerrarEscanerCodigo()"
-                        aria-label="Cerrar escáner">
-                    ✕
-                </button>
-
-            </div>
-
-            <div class="scanner-body">
-
-                <div id="barcodeReader"></div>
-
-                <p class="scanner-guide">
-                    Coloca el código de barras dentro del recuadro.
-                    Mantén el teléfono estable y evita reflejos.
-                </p>
-
-                <div
-                        class="scanner-status"
-                        id="scannerStatus">
-                    Preparando cámara trasera…
-                </div>
-
-                <div class="scanner-actions">
-
-                    <button
-                            type="button"
-                            class="scanner-retry"
-                            onclick="reiniciarEscanerCodigo()">
-                        🔄 Reintentar
-                    </button>
-
-                    <button
-                            type="button"
-                            class="scanner-cancel"
-                            onclick="cerrarEscanerCodigo()">
-                        Cancelar
-                    </button>
-
-                </div>
-
-            </div>
+            <button id="btnConfirmarVenta"
+                    class="btn btn-confirmar"
+                    type="button">
+                Confirmar venta
+            </button>
 
         </div>
 
     </div>
 
-    <div class="toast" id="toast"></div>
-    <script>
-        // ============================================================
-        // ===== SISTEMA OFFLINE - INDEXEDDB =====
-        // ============================================================
-        
-        const DB_NAME = 'AbarrotePOS';
-        const DB_VERSION = 4;
-        let db;
-        let categoriasCache = [];
-        let categoriaActiva = null;
-        
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => { db = request.result; resolve(db); };
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains('productos')) {
-                        db.createObjectStore('productos', { keyPath: 'id' });
-                    }
-                    if (!db.objectStoreNames.contains('categorias')) {
-                        db.createObjectStore('categorias', { keyPath: 'id' });
-                    }
-                    if (!db.objectStoreNames.contains('ventasPendientes')) {
-                        db.createObjectStore('ventasPendientes', { keyPath: 'id', autoIncrement: true });
-                    }
+</div>
 
-                    /*
-                     * ABARROTE_FIX_CATALOGO_MOVIL_V1
-                     *
-                     * Conservamos ventas pendientes, pero limpiamos
-                     * productos y categorías antiguas para que un
-                     * teléfono no siga mostrando objetos incompletos.
-                     */
-                    if (event.oldVersion < 3) {
-
-                        const transaccion =
-                            event.target.transaction;
-
-                        if (
-                            db.objectStoreNames.contains(
-                                'productos'
-                            )
-                        ) {
-
-                            transaccion
-                                .objectStore('productos')
-                                .clear();
-                        }
-
-                        if (
-                            db.objectStoreNames.contains(
-                                'categorias'
-                            )
-                        ) {
-
-                            transaccion
-                                .objectStore('categorias')
-                                .clear();
-                        }
-                    }
-                };
-            });
-        }
-        
-        async function cacheProductos(productos) {
-            const tx = db.transaction(
-                'productos',
-                'readwrite'
-            );
-
-            const store =
-                tx.objectStore('productos');
-
-            await new Promise(
-                (resolve, reject) => {
-
-                    const clearRequest =
-                        store.clear();
-
-                    clearRequest.onsuccess =
-                        () => resolve();
-
-                    clearRequest.onerror =
-                        () => reject(
-                            clearRequest.error
-                        );
-                }
-            );
-
-            for (const p of productos) {
-                await new Promise((resolve, reject) => {
-                    const req = store.put(normalizarProductoPos(p));
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-            }
-        }
-        
-        async function cacheCategorias(categorias) {
-            const tx = db.transaction('categorias', 'readwrite');
-            const store = tx.objectStore('categorias');
-            for (const c of categorias) {
-                await new Promise((resolve, reject) => {
-                    const req = store.put(c);
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-            }
-            categoriasCache = categorias;
-        }
-        
-        async function getProductosCache() {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('productos', 'readonly');
-                const store = tx.objectStore('productos');
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result || []);
-                request.onerror = () => reject(request.error);
-            });
-        }
-        
-        async function getCategoriasCache() {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('categorias', 'readonly');
-                const store = tx.objectStore('categorias');
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result || []);
-                request.onerror = () => reject(request.error);
-            });
-        }
-        
-        async function guardarVentaPendiente(venta) {
-            const tx = db.transaction('ventasPendientes', 'readwrite');
-            const store = tx.objectStore('ventasPendientes');
-            return new Promise((resolve, reject) => {
-                const req = store.add({ venta: venta, fecha: new Date().toISOString(), intentos: 0 });
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-        
-        async function getVentasPendientes() {
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('ventasPendientes', 'readonly');
-                const store = tx.objectStore('ventasPendientes');
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result || []);
-                request.onerror = () => reject(request.error);
-            });
-        }
-        
-        async function eliminarVentaPendiente(id) {
-            const tx = db.transaction('ventasPendientes', 'readwrite');
-            const store = tx.objectStore('ventasPendientes');
-            return new Promise((resolve, reject) => {
-                const req = store.delete(id);
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-            });
-        }
-        
-        async function actualizarBadgePendientes() {
-            try {
-                const pendientes = await getVentasPendientes();
-                const badge = document.getElementById('pendingBadge');
-                if (pendientes.length > 0) {
-                    badge.textContent = pendientes.length;
-                    badge.style.display = 'inline';
-                } else {
-                    badge.style.display = 'none';
-                }
-            } catch (e) { console.error('Error badge:', e); }
-        }
-        
-        // ============================================================
-        // ===== DETECCIÓN DE CONEXIÓN =====
-        // ============================================================
-        
-        let isOnline = navigator.onLine;
-        
-        function updateConnectionStatus() {
-            const status = document.getElementById('connectionStatus');
-            const text = document.getElementById('connectionText');
-            isOnline = navigator.onLine;
-            
-            if (isOnline) {
-                status.className = 'connection-status online';
-                text.textContent = 'Online';
-                sincronizarVentasPendientes();
-            } else {
-                status.className = 'connection-status offline';
-                text.textContent = 'Offline';
-            }
-        }
-        
-        window.addEventListener('online', updateConnectionStatus);
-        window.addEventListener('offline', updateConnectionStatus);
-        
-        // ============================================================
-        // ===== SINCRONIZACIÓN =====
-        // ============================================================
-        
-        let isSyncing = false;
-        
-        async function sincronizarVentasPendientes() {
-
-            if (
-                isSyncing
-                || !navigator.onLine
-            ) {
-                return;
-            }
-
-            isSyncing = true;
-
-            const status =
-                document.getElementById(
-                    'connectionStatus'
-                );
-
-            const text =
-                document.getElementById(
-                    'connectionText'
-                );
-
-            status.className =
-                'connection-status syncing';
-
-            text.textContent =
-                'Sincronizando...';
-
-            try {
-
-                const pendientes =
-                    await getVentasPendientes();
-
-                if (pendientes.length === 0) {
-
-                    status.className =
-                        'connection-status online';
-
-                    text.textContent =
-                        'Online';
-
-                    return;
-                }
-
-                for (const item of pendientes) {
-
-                    try {
-
-                        const response =
-                            await fetch(
-                                '/api/ventas/registrar',
-                                {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type':
-                                            'application/json'
-                                    },
-                                    body:
-                                        JSON.stringify(
-                                            item.venta
-                                        )
-                                }
-                            );
-
-                        if (response.ok) {
-
-                            await eliminarVentaPendiente(
-                                item.id
-                            );
-
-                            continue;
-                        }
-
-                        /*
-                         * El servidor respondió.
-                         * Por tanto, no es un error offline.
-                         *
-                         * Una venta rechazada por inventario,
-                         * sucursal o validación se elimina de
-                         * la cola para evitar reintentos eternos.
-                         */
-                        const mensaje =
-                            await leerErrorServidor(
-                                response
-                            );
-
-                        console.error(
-                            `Venta pendiente ${item.id} rechazada:`,
-                            mensaje
-                        );
-
-                        await eliminarVentaPendiente(
-                            item.id
-                        );
-
-                        mostrarToast(
-                            '⚠️ Venta pendiente descartada: '
-                            + mensaje,
-                            true,
-                            7000
-                        );
-
-                    } catch (errorRed) {
-
-                        console.error(
-                            'No existe comunicación con el servidor:',
-                            errorRed
-                        );
-
-                        break;
-                    }
-                }
-
-                await actualizarBadgePendientes();
-
-                const restantes =
-                    await getVentasPendientes();
-
-                if (restantes.length === 0) {
-
-                    status.className =
-                        'connection-status online';
-
-                    text.textContent =
-                        'Online';
-
-                } else {
-
-                    status.className =
-                        'connection-status offline';
-
-                    text.textContent =
-                        `${restantes.length} pendiente(s)`;
-                }
-
-            } catch (error) {
-
-                console.error(
-                    'Error en sincronización:',
-                    error
-                );
-
-                status.className =
-                    'connection-status offline';
-
-                text.textContent =
-                    'Error de conexión';
-
-            } finally {
-
-                isSyncing = false;
-            }
-        }
-
-
-        setInterval(async () => {
-            const pendientes = await getVentasPendientes();
-            if (pendientes.length > 0 && isOnline && !isSyncing) {
-                sincronizarVentasPendientes();
-            }
-        }, 30000);
-        
-        // ============================================================
-        // ===== CARGA INICIAL =====
-        // ============================================================
-        
-        async function cargarTodosLosProductos() {
-            console.log('🔄 Cargando productos...');
-            if (!isOnline) {
-                console.log('📴 Sin internet, usando caché');
-                return;
-            }
-            try {
-                const response = await fetch('/api/ventas/productos');
-                if (response.ok) {
-                    const result = await response.json();
-                    let productos = [];
-                    if (result && result.success && Array.isArray(result.data)) {
-                        productos = result.data;
-                    }
-                    if (productos.length > 0) {
-                        await cacheProductos(productos);
-                        console.log(`✅ ${productos.length} productos cacheados`);
-                    }
-                }
-            } catch (e) {
-                console.log('❌ Error cargando productos:', e.message);
-            }
-        }
-        
-        async function cargarCategorias() {
-            console.log('🔄 Cargando categorías...');
-            if (!isOnline) {
-                const cache = await getCategoriasCache();
-                renderizarFiltrosCategorias(cache);
-                return;
-            }
-            try {
-                const response = await fetch('/api/categorias');
-                if (response.ok) {
-                    const result = await response.json();
-                    let categorias = [];
-                    if (result && result.success && Array.isArray(result.data)) {
-                        categorias = result.data;
-                    }
-                    if (categorias.length > 0) {
-                        await cacheCategorias(categorias);
-                        renderizarFiltrosCategorias(categorias);
-                        console.log(`✅ ${categorias.length} categorías cacheadas`);
-                    }
-                }
-            } catch (e) {
-                console.log('❌ Error cargando categorías:', e.message);
-                const cache = await getCategoriasCache();
-                renderizarFiltrosCategorias(cache);
-            }
-        }
-        
-        function renderizarFiltrosCategorias(categorias) {
-            const container = document.getElementById('categoryFilters');
-            let html = `<div class="category-chip active" onclick="filtrarPorCategoria(null)">📦 Todos</div>`;
-            categorias.forEach(cat => {
-                html += `<div class="category-chip" onclick="filtrarPorCategoria(${cat.id}, this)" data-id="${cat.id}">${cat.nombre}</div>`;
-            });
-            container.innerHTML = html;
-        }
-        
-        // ============================================================
-        // ===== FILTRAR POR CATEGORÍA =====
-        // ============================================================
-        
-        async function filtrarPorCategoria(categoriaId, elemento) {
-            categoriaActiva = categoriaId;
-            
-            // Actualizar UI
-            document.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
-            if (elemento) {
-                elemento.classList.add('active');
-            } else {
-                document.querySelector('.category-chip').classList.add('active');
-            }
-            
-            // Filtrar productos
-            const productos = await getProductosCache();
-            let filtrados = productos;
-            
-            if (categoriaId) {
-                filtrados = productos.filter(p => {
-                    const catId = p.categoria ? p.categoria.id : (p.categoriaId || null);
-                    return catId === categoriaId;
-                });
-            }
-            
-            if (filtrados.length > 0) {
-                mostrarProductos(filtrados);
-                if (!isOnline) {
-                    mostrarToast('📴 Modo offline', true, 2000);
-                }
-            } else {
-                document.getElementById('searchResults').innerHTML = 
-                    '<div style="color: #888; text-align: center; padding: 3rem;">No hay productos en esta categoría</div>';
-            }
-        }
-        
-        // ============================================================
-        // ===== BÚSQUEDA DE PRODUCTOS =====
-        // ============================================================
-        
-        let carrito = [];
-        let contadorTicket = 1;
-        
-        async function buscarProductos() {
-            const query = document.getElementById('searchInput').value.trim();
-            if (!query) return;
-            
-            // Primero intentar online
-            if (isOnline) {
-                try {
-                    const response = await fetch(`/api/ventas/buscar?q=${encodeURIComponent(query)}`);
-                    if (response.ok) {
-                        const result = await response.json();
-                        let productos = [];
-                        if (result && result.success && Array.isArray(result.data)) {
-                            productos = result.data;
-                        }
-                        if (productos.length > 0) {
-                            mostrarProductos(productos);
-                            await cacheProductos(productos);
-                            return;
-                        }
-                    }
-                } catch (error) {
-                    console.log('Error online, intentando caché...');
-                }
-            }
-            
-            // Fallback a caché
-            try {
-                const productosCache = await getProductosCache();
-                console.log('📦 Productos en caché:', productosCache.length);
-                let filtrados = productosCache.filter(p => 
-                    p && p.nombre && p.nombre.toLowerCase().includes(query.toLowerCase())
-                );
-                
-                // Aplicar filtro de categoría activa
-                if (categoriaActiva) {
-                    filtrados = filtrados.filter(p => {
-                        const catId = p.categoria ? p.categoria.id : (p.categoriaId || null);
-                        return catId === categoriaActiva;
-                    });
-                }
-                
-                if (filtrados.length > 0) {
-                    mostrarProductos(filtrados);
-                    if (!isOnline) {
-                        mostrarToast('📴 Modo offline - usando caché', true, 3000);
-                    }
-                } else {
-                    if (productosCache.length === 0) {
-                        mostrarToast('❌ No hay productos en caché. Conecta a internet y busca primero.', true);
-                    } else {
-                        mostrarToast('❌ No se encontraron productos', true);
-                    }
-                }
-            } catch (e) {
-                mostrarToast('❌ Error al leer caché', true);
-            }
-        }
-        
-        function mostrarProductos(productos) {
-            const container = document.getElementById('searchResults');
-            if (!productos || productos.length === 0) {
-                container.innerHTML = '<div style="color: #888; text-align: center; padding: 3rem;">No se encontraron productos</div>';
-                return;
-            }
-            container.innerHTML = productos.map(p => {
-                const precio = p.precioVenta || p.precio || 0;
-                const stock = p.stock !== undefined ? p.stock : (p.existencia || 0);
-                const stockBajo = p.stockBajo || (stock <= 5);
-                const categoriaNombre = p.categoria ? p.categoria.nombre : (p.categoriaNombre || '');
-                return `
-                <div class="product-card" onclick="agregarAlCarrito(${p.id}, '${(p.nombre || '').replace(/'/g, "\\'")}', ${precio}, ${stock})">
-                    <div class="name">${p.nombre || 'Sin nombre'}</div>
-                    <div class="price">₲ ${formatearPrecio(precio)}</div>
-                    ${categoriaNombre ? `<div class="category-tag">${categoriaNombre}</div>` : ''}
-                    <div class="stock ${stockBajo ? 'bajo' : ''}">Stock: ${stock}${stockBajo ? ' ⚠️' : ''}</div>
-                </div>
-            `}).join('');
-        }
-        
-        function agregarAlCarrito(id, nombre, precio, stock) {
-            const existente = carrito.find(item => item.id === id);
-            if (existente) {
-                if (existente.cantidad >= stock) { mostrarToast('Stock insuficiente', true); return; }
-                existente.cantidad++;
-            } else {
-                if (stock <= 0) { mostrarToast('Producto sin stock', true); return; }
-                carrito.push({ id, nombre, precio, cantidad: 1, stock });
-            }
-            actualizarTicket();
-            mostrarToast(`✅ ${nombre} agregado`);
-        }
-        
-        function actualizarTicket() {
-            const container = document.getElementById('ticketItems');
-            const btnCobrar = document.getElementById('btnCobrar');
-            if (carrito.length === 0) {
-                container.innerHTML = `<div class="ticket-empty"><div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div><p>Agrega productos para comenzar</p></div>`;
-                btnCobrar.disabled = true;
-                document.getElementById('ticketTotal').textContent = '₲ 0.00';
-                return;
-            }
-            let total = 0;
-            container.innerHTML = carrito.map((item, index) => {
-                const subtotal = item.precio * item.cantidad;
-                total += subtotal;
-                return `<div class="ticket-item"><div class="info"><div class="name">${item.nombre}</div><div class="qty-price">${item.cantidad} x ₲ ${formatearPrecio(item.precio)}</div></div><div class="total">₲ ${formatearPrecio(subtotal)}</div><button class="remove" onclick="quitarDelCarrito(${index})">✕</button></div>`;
-            }).join('');
-            document.getElementById('ticketTotal').textContent = '₲ ' + formatearPrecio(total);
-            btnCobrar.disabled = false;
-        }
-        
-        function quitarDelCarrito(index) { carrito.splice(index, 1); actualizarTicket(); }
-        
-        function cancelarVenta() {
-            if (carrito.length === 0) return;
-            if (!confirm('¿Cancelar la venta actual?')) return;
-            carrito = []; actualizarTicket(); mostrarToast('Venta cancelada');
-        }
-        
-        function abrirCobro() {
-            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            document.getElementById('modalTotal').textContent = '₲ ' + formatearPrecio(total);
-            document.getElementById('inputPago').value = '';
-            document.getElementById('cambio').textContent = '₲ 0.00';
-            document.getElementById('modalCobro').classList.add('active');
-            document.getElementById('inputPago').focus();
-        }
-        
-        function cerrarCobro() { document.getElementById('modalCobro').classList.remove('active'); }
-        
-        document.getElementById('inputPago').addEventListener('input', function() {
-            const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-            const pago = parseFloat(this.value) || 0;
-            document.getElementById('cambio').textContent = '₲ ' + formatearPrecio(Math.max(0, pago - total));
-        });
-        
-        async function leerErrorServidor(response) {
-
-            try {
-
-                const texto =
-                    await response.text();
-
-                if (!texto) {
-                    return 'El servidor rechazó la operación.';
-                }
-
-                try {
-
-                    const json =
-                        JSON.parse(texto);
-
-                    if (json.message) {
-                        return json.message;
-                    }
-
-                    if (
-                        json.data
-                        && typeof json.data === 'object'
-                    ) {
-
-                        const mensajes =
-                            Object.values(json.data);
-
-                        if (mensajes.length > 0) {
-                            return mensajes.join('. ');
-                        }
-                    }
-
-                    return texto;
-
-                } catch (errorJson) {
-
-                    return texto;
-                }
-
-            } catch (errorLectura) {
-
-                return 'No fue posible leer la respuesta del servidor.';
-            }
-        }
-
-
-        async function confirmarCobro() {
-
-            const total =
-                carrito.reduce(
-                    (sum, item) =>
-                        sum
-                        + (
-                            item.precio
-                            * item.cantidad
-                        ),
-                    0
-                );
-
-            const pago =
-                parseFloat(
-                    document
-                        .getElementById('inputPago')
-                        .value
-                ) || 0;
-
-            if (pago < total) {
-
-                mostrarToast(
-                    'El pago es insuficiente',
-                    true
-                );
-
-                return;
-            }
-
-            const items =
-                carrito.map(
-                    item => ({
-                        productoId: item.id,
-                        cantidad: item.cantidad
-                    })
-                );
-
-            const ventaData = {
-                items: items
-            };
-
-            if (!navigator.onLine) {
-
-                await guardarVentaOffline(
-                    ventaData
-                );
-
-                return;
-            }
-
-            try {
-
-                const response =
-                    await fetch(
-                        '/api/ventas/registrar',
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type':
-                                    'application/json'
-                            },
-                            body:
-                                JSON.stringify(
-                                    ventaData
-                                )
-                        }
-                    );
-
-                /*
-                 * Los errores 400, 401, 403, 404 y 500
-                 * significan que el servidor sí respondió.
-                 *
-                 * No son modo offline.
-                 */
-                if (!response.ok) {
-
-                    const mensaje =
-                        await leerErrorServidor(
-                            response
-                        );
-
-                    mostrarToast(
-                        '❌ ' + mensaje,
-                        true,
-                        6000
-                    );
-
-                    return;
-                }
-
-                const result =
-                    await response.json();
-
-                if (!result || !result.success) {
-
-                    mostrarToast(
-                        '❌ '
-                        + (
-                            result
-                            && result.message
-                                ? result.message
-                                : 'La venta fue rechazada.'
-                        ),
-                        true,
-                        6000
-                    );
-
-                    return;
-                }
-
-                const ventaId =
-                    result.data
-                        ? (
-                            result.data.id
-                            || result.data.idVenta
-                            || ''
-                        )
-                        : '';
-
-                mostrarToast(
-                    ventaId
-                        ? `✅ Venta #${ventaId} registrada`
-                        : '✅ Venta registrada'
-                );
-
-                carrito = [];
-
-                actualizarTicket();
-                cerrarCobro();
-
-                contadorTicket++;
-
-                document
-                    .getElementById('ticketNum')
-                    .textContent =
-                        '#'
-                        + String(contadorTicket)
-                            .padStart(4, '0');
-
-                /*
-                 * Recargar catálogo para reflejar
-                 * inmediatamente el nuevo inventario.
-                 */
-                await cargarTodosLosProductos();
-
-                await filtrarPorCategoria(
-                    categoriaActiva
-                );
-
-            } catch (error) {
-
-                /*
-                 * Solamente una excepción de red real
-                 * se guarda como venta offline.
-                 */
-                console.error(
-                    'Error real de comunicación:',
-                    error
-                );
-
-                await guardarVentaOffline(
-                    ventaData
-                );
-            }
-        }
-
-
-        async function guardarVentaOffline(ventaData) {
-            await guardarVentaPendiente(ventaData);
-            await actualizarBadgePendientes();
-            mostrarToast('📴 Venta guardada offline. Se sincronizará cuando haya conexión.', true, 5000);
-            carrito = []; actualizarTicket(); cerrarCobro();
-            contadorTicket++; document.getElementById('ticketNum').textContent = '#' + String(contadorTicket).padStart(4, '0');
-            updateConnectionStatus();
-        }
-        
-        function formatearPrecio(numero) {
-            return parseFloat(numero).toLocaleString('es-PY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-        
-        function mostrarToast(mensaje, esError = false, duracion = 3000) {
-            const toast = document.getElementById('toast');
-            toast.textContent = mensaje;
-            toast.className = 'toast' + (esError ? ' error' : '') + (mensaje.includes('📴') ? ' warning' : '');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), duracion);
-        }
-        
-        document.getElementById('searchInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') buscarProductos(); });
-        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') cerrarCobro(); });
-        
-        // Inicializar
-        openDB().then(async () => {
-            console.log('✅ IndexedDB lista');
-            await cargarTodosLosProductos();
-            await cargarCategorias();
-            await actualizarBadgePendientes();
-            updateConnectionStatus();
-        }).catch(err => console.error('❌ Error IndexedDB:', err));
-    </script>
-<script th:src="@{/js/mobile-logout.js}"></script>
-
-    <script>
-    // ============================================================
-    // ABARROTE CLOUD III - ESCÁNER MOTOROLA Y CÁMARA MÓVIL
-    // ============================================================
-
-    let abarroteQrScanner = null;
-    let abarroteScannerActivo = false;
-    let abarroteProcesandoCodigo = false;
-    let abarroteUltimoCodigo = '';
-    let abarroteUltimaLectura = 0;
-    let abarroteClickInputAnterior = 0;
-
-    const ABARROTE_FORMATOS_CODIGO = [
-        'EAN_13',
-        'EAN_8',
-        'UPC_A',
-        'UPC_E',
-        'CODE_128',
-        'CODE_39',
-        'ITF'
-    ];
-
-    function abarroteEsDispositivoMovil() {
-
-        return window.matchMedia(
-            '(max-width: 900px)'
-        ).matches
-        || /Android|iPhone|iPad|iPod|Mobile/i.test(
-            navigator.userAgent
-        );
-    }
-
-    function abrirEscanerDesdeCampo(event) {
-
-        /*
-         * El autofocus inicial no abre la cámara.
-         * Solamente se abre por un toque real del usuario.
-         *
-         * En equipos Motorola con lector físico, el cursor
-         * permanece disponible para recibir el código como teclado.
-         */
-
-        if (!abarroteEsDispositivoMovil()) {
-            return;
-        }
-
-        if (!event || event.isTrusted !== true) {
-            return;
-        }
-
-        const ahora = Date.now();
-
-        if (ahora - abarroteClickInputAnterior < 700) {
-            return;
-        }
-
-        abarroteClickInputAnterior = ahora;
-
-        abrirEscanerCodigo();
-    }
-
-    async function abrirEscanerCodigo() {
-
-        if (abarroteScannerActivo) {
-            return;
-        }
-
-        const overlay =
-            document.getElementById(
-                'scannerOverlay'
-            );
-
-        const status =
-            document.getElementById(
-                'scannerStatus'
-            );
-
-        overlay.classList.add(
-            'active'
-        );
-
-        document.body.style.overflow =
-            'hidden';
-
-        status.className =
-            'scanner-status';
-
-        status.textContent =
-            'Solicitando permiso para utilizar la cámara trasera…';
-
-        abarroteScannerActivo = true;
-        abarroteProcesandoCodigo = false;
-
-        if (typeof Html5Qrcode === 'undefined') {
-
-            mostrarEstadoEscaner(
-                'No fue posible cargar el lector. Verifica tu conexión a Internet y vuelve a intentarlo.',
-                'error'
-            );
-
-            abarroteScannerActivo = false;
-            return;
-        }
-
-        try {
-
-            if (abarroteQrScanner) {
-
-                try {
-                    await abarroteQrScanner.clear();
-                } catch (ignorar) {
-                    console.debug(
-                        'Lector anterior ya estaba limpio'
-                    );
-                }
-            }
-
-            abarroteQrScanner =
-                new Html5Qrcode(
-                    'barcodeReader',
-                    {
-                        verbose: false,
-                        formatsToSupport:
-                            obtenerFormatosHtml5QrCode()
-                    }
-                );
-
-            const configuracion = {
-                fps: 12,
-                qrbox: function (
-                    viewfinderWidth,
-                    viewfinderHeight
-                ) {
-
-                    const ancho =
-                        Math.floor(
-                            viewfinderWidth * 0.88
-                        );
-
-                    const alto =
-                        Math.max(
-                            100,
-                            Math.floor(
-                                viewfinderHeight * 0.30
-                            )
-                        );
-
-                    return {
-                        width: ancho,
-                        height: alto
-                    };
-                },
-                aspectRatio: 1.333334,
-                disableFlip: true
-            };
-
-            await abarroteQrScanner.start(
-                {
-                    facingMode: {
-                        exact: 'environment'
-                    }
-                },
-                configuracion,
-                procesarLecturaCamara,
-                function () {
-                    /*
-                     * Los errores intermedios de lectura son normales
-                     * mientras el usuario apunta la cámara.
-                     */
-                }
-            );
-
-            mostrarEstadoEscaner(
-                'Cámara activa. Apunta al código de barras.',
-                ''
-            );
-
-        } catch (errorCamaraTrasera) {
-
-            console.warn(
-                'No se pudo abrir facingMode exact environment',
-                errorCamaraTrasera
-            );
-
-            try {
-
-                if (abarroteQrScanner) {
-                    try {
-                        await abarroteQrScanner.clear();
-                    } catch (ignorar) {
-                    }
-                }
-
-                abarroteQrScanner =
-                    new Html5Qrcode(
-                        'barcodeReader',
-                        {
-                            verbose: false,
-                            formatsToSupport:
-                                obtenerFormatosHtml5QrCode()
-                        }
-                    );
-
-                await abarroteQrScanner.start(
-                    {
-                        facingMode: 'environment'
-                    },
-                    {
-                        fps: 10,
-                        qrbox: {
-                            width: 300,
-                            height: 130
-                        },
-                        disableFlip: true
-                    },
-                    procesarLecturaCamara,
-                    function () {
-                    }
-                );
-
-                mostrarEstadoEscaner(
-                    'Cámara activa. Apunta al código de barras.',
-                    ''
-                );
-
-            } catch (errorFinal) {
-
-                console.error(
-                    'Error abriendo cámara',
-                    errorFinal
-                );
-
-                abarroteScannerActivo = false;
-
-                mostrarEstadoEscaner(
-                    obtenerMensajeErrorCamara(
-                        errorFinal
-                    ),
-                    'error'
-                );
-            }
-        }
-    }
-
-    function obtenerFormatosHtml5QrCode() {
-
-        if (typeof Html5QrcodeSupportedFormats === 'undefined') {
-            return undefined;
-        }
-
-        const mapa = {
-            EAN_13:
-                Html5QrcodeSupportedFormats.EAN_13,
-
-            EAN_8:
-                Html5QrcodeSupportedFormats.EAN_8,
-
-            UPC_A:
-                Html5QrcodeSupportedFormats.UPC_A,
-
-            UPC_E:
-                Html5QrcodeSupportedFormats.UPC_E,
-
-            CODE_128:
-                Html5QrcodeSupportedFormats.CODE_128,
-
-            CODE_39:
-                Html5QrcodeSupportedFormats.CODE_39,
-
-            ITF:
-                Html5QrcodeSupportedFormats.ITF
-        };
-
-        return ABARROTE_FORMATOS_CODIGO
-            .map(
-                nombre => mapa[nombre]
-            )
-            .filter(
-                valor => valor !== undefined
-            );
-    }
-
-    async function procesarLecturaCamara(
-        decodedText
-    ) {
-
-        const codigo =
-            normalizarCodigoEscaneado(
-                decodedText
-            );
-
-        if (!codigo) {
-            return;
-        }
-
-        const ahora =
-            Date.now();
-
-        if (
-            abarroteProcesandoCodigo
-            || (
-                codigo === abarroteUltimoCodigo
-                && ahora - abarroteUltimaLectura < 2500
-            )
-        ) {
-            return;
-        }
-
-        abarroteProcesandoCodigo = true;
-        abarroteUltimoCodigo = codigo;
-        abarroteUltimaLectura = ahora;
-
-        mostrarEstadoEscaner(
-            'Código detectado: ' + codigo,
-            'success'
-        );
-
-        confirmarLecturaFisica();
-
-        await detenerCamaraEscaner();
-
-        const input =
-            document.getElementById(
-                'searchInput'
-            );
-
-        input.value =
-            codigo;
-
-        await buscarYAgregarCodigoEscaneado(
-            codigo
-        );
-
-        await cerrarEscanerCodigo();
-
-        abarroteProcesandoCodigo = false;
-    }
-
-    function normalizarCodigoEscaneado(
-        valor
-    ) {
-
-        return String(
-            valor == null
-                ? ''
-                : valor
-        )
-            .trim()
-            .replace(
-                /[\r\n\t]/g,
-                ''
-            );
-    }
-
-    async function buscarYAgregarCodigoEscaneado(
-        codigo
-    ) {
-
-        try {
-
-            const response =
-                await fetch(
-                    '/api/ventas/buscar?q='
-                    + encodeURIComponent(
-                        codigo
-                    ),
-                    {
-                        headers: {
-                            'Accept':
-                                'application/json'
-                        }
-                    }
-                );
-
-            if (!response.ok) {
-
-                throw new Error(
-                    'El servidor respondió '
-                    + response.status
-                );
-            }
-
-            const resultado =
-                await response.json();
-
-            const productos =
-                resultado
-                && resultado.success
-                && Array.isArray(
-                    resultado.data
-                )
-                    ? resultado.data
-                    : [];
-
-            const productoExacto =
-                productos.find(
-                    function (producto) {
-
-                        return normalizarCodigoEscaneado(
-                            producto.codigoBarras
-                        ) === codigo;
-                    }
-                );
-
-            if (!productoExacto) {
-
-                if (
-                    typeof buscarProductos
-                    === 'function'
-                ) {
-
-                    await buscarProductos();
-                }
-
-                mostrarToastEscaner(
-                    'No se encontró un producto con el código '
-                    + codigo,
-                    'warning'
-                );
-
-                enfocarBuscador();
-                return;
-            }
-
-            const existencia =
-                Number(
-                    productoExacto.stock
-                    ?? productoExacto.existencia
-                    ?? 0
-                );
-
-            if (
-                !Number.isFinite(
-                    existencia
-                )
-                || existencia <= 0
-            ) {
-
-                mostrarToastEscaner(
-                    productoExacto.nombre
-                    + ' no tiene existencia disponible',
-                    'error'
-                );
-
-                if (
-                    typeof buscarProductos
-                    === 'function'
-                ) {
-
-                    await buscarProductos();
-                }
-
-                enfocarBuscador();
-                return;
-            }
-
-            const agregado =
-                agregarProductoCompatible(
-                    productoExacto
-                );
-
-            if (!agregado) {
-
-                /*
-                 * Si el nombre de la función del carrito cambia,
-                 * mostramos el producto en pantalla sin romper el POS.
-                 */
-                if (
-                    typeof buscarProductos
-                    === 'function'
-                ) {
-
-                    await buscarProductos();
-                }
-
-                mostrarToastEscaner(
-                    'Producto encontrado: '
-                    + productoExacto.nombre,
-                    ''
-                );
-
-            } else {
-
-                mostrarToastEscaner(
-                    '✅ '
-                    + productoExacto.nombre
-                    + ' agregado al ticket',
-                    ''
-                );
-
-                const input =
-                    document.getElementById(
-                        'searchInput'
-                    );
-
-                input.value = '';
-            }
-
-            enfocarBuscador();
-
-        } catch (error) {
-
-            console.error(
-                'Error procesando código escaneado',
-                error
-            );
-
-            mostrarToastEscaner(
-                'No fue posible buscar el código: '
-                + error.message,
-                'error'
-            );
-
-            if (
-                typeof buscarProductos
-                === 'function'
-            ) {
-
-                await buscarProductos();
-            }
-
-            enfocarBuscador();
-        }
-    }
-
-    function agregarProductoCompatible(
-        producto
-    ) {
-
-        /*
-         * Compatibilidad con los nombres más habituales.
-         * Solo se ejecutará una función si realmente existe.
-         */
-
-        if (
-            typeof agregarAlTicket
-            === 'function'
-        ) {
-
-            agregarAlTicket(
-                producto
-            );
-
-            return true;
-        }
-
-        if (
-            typeof agregarProducto
-            === 'function'
-        ) {
-
-            agregarProducto(
-                producto
-            );
-
-            return true;
-        }
-
-        if (
-            typeof agregarAlCarrito
-            === 'function'
-        ) {
-
-            agregarAlCarrito(
-                producto
-            );
-
-            return true;
-        }
-
-        return false;
-    }
-
-    async function detenerCamaraEscaner() {
-
-        if (!abarroteQrScanner) {
-            return;
-        }
-
-        try {
-
-            const estado =
-                abarroteQrScanner.getState
-                    ? abarroteQrScanner.getState()
-                    : null;
-
-            /*
-             * Los estados 2 y 3 corresponden normalmente
-             * a cámara activa o pausada.
-             */
-            if (
-                estado === 2
-                || estado === 3
-                || abarroteScannerActivo
-            ) {
-
-                await abarroteQrScanner.stop();
-            }
-
-        } catch (error) {
-
-            console.debug(
-                'La cámara ya estaba detenida',
-                error
-            );
-        }
-
-        try {
-
-            await abarroteQrScanner.clear();
-
-        } catch (error) {
-
-            console.debug(
-                'El lector ya estaba limpio',
-                error
-            );
-        }
-
-        abarroteQrScanner = null;
-    }
-
-    async function cerrarEscanerCodigo() {
-
-        await detenerCamaraEscaner();
-
-        const overlay =
-            document.getElementById(
-                'scannerOverlay'
-            );
-
-        if (overlay) {
-
-            overlay.classList.remove(
-                'active'
-            );
-        }
-
-        document.body.style.overflow =
-            '';
-
-        abarroteScannerActivo = false;
-        abarroteProcesandoCodigo = false;
-
-        enfocarBuscador();
-    }
-
-    async function reiniciarEscanerCodigo() {
-
-        await detenerCamaraEscaner();
-
-        abarroteScannerActivo = false;
-        abarroteProcesandoCodigo = false;
-
-        await abrirEscanerCodigo();
-    }
-
-    function mostrarEstadoEscaner(
-        mensaje,
-        tipo
-    ) {
-
-        const status =
-            document.getElementById(
-                'scannerStatus'
-            );
-
-        if (!status) {
-            return;
-        }
-
-        status.className =
-            'scanner-status'
-            + (
-                tipo
-                    ? ' ' + tipo
-                    : ''
-            );
-
-        status.textContent =
-            mensaje;
-    }
-
-    function obtenerMensajeErrorCamara(
-        error
-    ) {
-
-        const nombre =
-            error
-            && error.name
-                ? error.name
-                : '';
-
-        if (
-            nombre === 'NotAllowedError'
-            || String(error).includes(
-                'Permission'
-            )
-        ) {
-
-            return 'Permiso de cámara rechazado. Abre los permisos del navegador y permite usar la cámara.';
-        }
-
-        if (
-            nombre === 'NotFoundError'
-        ) {
-
-            return 'No se encontró una cámara disponible en este dispositivo.';
-        }
-
-        if (
-            nombre === 'NotReadableError'
-        ) {
-
-            return 'La cámara está siendo utilizada por otra aplicación. Ciérrala y vuelve a intentar.';
-        }
-
-        if (
-            location.protocol !== 'https:'
-            && location.hostname !== 'localhost'
-        ) {
-
-            return 'La cámara requiere una conexión HTTPS.';
-        }
-
-        return 'No fue posible iniciar la cámara. Puedes escribir o utilizar el lector físico Motorola.';
-    }
-
-    function confirmarLecturaFisica() {
-
-        if (
-            navigator.vibrate
-        ) {
-
-            navigator.vibrate(
-                [80, 40, 120]
-            );
-        }
-
-        try {
-
-            const contexto =
-                new (
-                    window.AudioContext
-                    || window.webkitAudioContext
-                )();
-
-            const oscilador =
-                contexto.createOscillator();
-
-            const ganancia =
-                contexto.createGain();
-
-            oscilador.type =
-                'sine';
-
-            oscilador.frequency.value =
-                1250;
-
-            ganancia.gain.value =
-                0.08;
-
-            oscilador.connect(
-                ganancia
-            );
-
-            ganancia.connect(
-                contexto.destination
-            );
-
-            oscilador.start();
-
-            oscilador.stop(
-                contexto.currentTime
-                + 0.11
-            );
-
-        } catch (error) {
-
-            console.debug(
-                'Audio de confirmación no disponible',
-                error
-            );
-        }
-    }
-
-    function mostrarToastEscaner(
-        mensaje,
-        tipo
-    ) {
-
-        if (
-            typeof mostrarToast
-            === 'function'
-        ) {
-
-            mostrarToast(
-                mensaje,
-                tipo
-            );
-
-            return;
-        }
-
-        const toast =
-            document.getElementById(
-                'toast'
-            );
-
-        if (!toast) {
-            return;
-        }
-
-        toast.textContent =
-            mensaje;
-
-        toast.className =
-            'toast show'
-            + (
-                tipo
-                    ? ' ' + tipo
-                    : ''
-            );
-
-        window.setTimeout(
-            function () {
-
-                toast.className =
-                    'toast';
-            },
-            2600
-        );
-    }
-
-    function enfocarBuscador() {
-
-        window.setTimeout(
-            function () {
-
-                const input =
-                    document.getElementById(
-                        'searchInput'
-                    );
-
-                if (input) {
-
-                    input.focus();
-                    input.select();
-                }
-            },
-            180
-        );
-    }
-
-    /*
-     * Compatibilidad con lector físico Motorola/Zebra.
-     *
-     * Estos lectores suelen escribir el código como teclado
-     * y enviar Enter al final. El código se busca y agrega
-     * automáticamente sin abrir la cámara.
-     */
-    document.addEventListener(
-        'DOMContentLoaded',
-        function () {
-
-            const input =
-                document.getElementById(
-                    'searchInput'
-                );
-
-            if (!input) {
-                return;
-            }
-
-            input.addEventListener(
-                'keydown',
-                async function (event) {
-
-                    if (event.key !== 'Enter') {
-                        return;
-                    }
-
-                    const codigo =
-                        normalizarCodigoEscaneado(
-                            input.value
-                        );
-
-                    if (!codigo) {
-                        return;
-                    }
-
-                    /*
-                     * Los códigos de barras comerciales suelen
-                     * tener al menos seis caracteres.
-                     * Una búsqueda corta se conserva como texto.
-                     */
-                    if (codigo.length < 6) {
-                        return;
-                    }
-
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-
-                    await buscarYAgregarCodigoEscaneado(
-                        codigo
-                    );
-                },
-                true
-            );
-
-            const overlay =
-                document.getElementById(
-                    'scannerOverlay'
-                );
-
-            overlay.addEventListener(
-                'click',
-                function (event) {
-
-                    if (event.target === overlay) {
-                        cerrarEscanerCodigo();
-                    }
-                }
-            );
-
-            document.addEventListener(
-                'keydown',
-                function (event) {
-
-                    if (
-                        event.key === 'Escape'
-                        && abarroteScannerActivo
-                    ) {
-
-                        cerrarEscanerCodigo();
-                    }
-                }
-            );
-        }
-    );
-
-    window.addEventListener(
-        'pagehide',
-        function () {
-
-            detenerCamaraEscaner();
-        }
-    );
-
-    window.addEventListener(
-        'beforeunload',
-        function () {
-
-            detenerCamaraEscaner();
-        }
-    );
-    </script>
-
-
-<script id="abarroteFixCatalogoMovilV1">
-
-/*
- * Convierte cualquier variante anterior del producto
- * al formato actual usado por el POS.
- */
-function normalizarProductoPos(producto) {
-
-    const origen =
-        producto && typeof producto === 'object'
-            ? producto
-            : {};
-
-    const precioCandidato =
-        origen.precioVenta
-        ?? origen.precio
-        ?? origen.precioUnitario
-        ?? origen.salePrice
-        ?? origen.precio_venta;
-
-    const stockCandidato =
-        origen.stock
-        ?? origen.existencia
-        ?? origen.cantidad
-        ?? 0;
-
-    const precio =
-        Number(
-            String(
-                precioCandidato ?? 0
-            )
-                .replace(',', '.')
-                .replace(/[^\d.-]/g, '')
-        );
-
-    const stock =
-        Number(
-            stockCandidato ?? 0
-        );
-
-    return {
-        ...origen,
-
-        id:
-            origen.id,
-
-        nombre:
-            String(
-                origen.nombre
-                ?? origen.productoNombre
-                ?? 'Producto sin nombre'
-            ),
-
-        codigoBarras:
-            String(
-                origen.codigoBarras
-                ?? origen.codigo
-                ?? origen.barcode
-                ?? ''
-            ),
-
-        precioVenta:
-            Number.isFinite(precio)
-                ? precio
-                : 0,
-
-        stock:
-            Number.isFinite(stock)
-                ? stock
-                : 0,
-
-        stockMinimo:
-            Number(
-                origen.stockMinimo
-                ?? origen.stock_minimo
-                ?? 0
-            ),
-
-        categoriaNombre:
-            String(
-                origen.categoriaNombre
-                ?? origen.categoria
-                ?? 'Sin categoría'
-            )
-    };
-}
-
-/*
- * Evita el clásico:
- * SyntaxError: JSON Parse error / Unexpected token <
- *
- * Eso ocurre cuando una sesión expiró y el servidor
- * devuelve HTML de login en lugar de JSON.
- */
-async function leerRespuestaJsonPos(response) {
-
-    const contentType =
-        response.headers
-            .get('content-type')
-        || '';
-
-    const texto =
-        await response.text();
-
-    if (
-        response.redirected
-        || response.url.includes('/login')
-        || contentType.includes('text/html')
-        || texto.trim().startsWith('<!DOCTYPE')
-        || texto.trim().startsWith('<html')
-    ) {
-
-        throw new Error(
-            'La sesión expiró. Cierra sesión, vuelve a entrar y actualiza el catálogo.'
-        );
-    }
-
-    if (!response.ok) {
-
-        throw new Error(
-            'El servidor respondió con estado '
-            + response.status
-        );
-    }
-
-    try {
-
-        return JSON.parse(texto);
-
-    } catch (error) {
-
-        console.error(
-            'Respuesta no válida del POS:',
-            texto
-        );
-
-        throw new Error(
-            'El servidor no devolvió un JSON válido.'
-        );
-    }
-}
-
-/*
- * Descarga siempre el catálogo nuevo, sin usar caché HTTP.
- */
-async function actualizarCatalogoPosDesdeServidor() {
-
-    if (!navigator.onLine) {
-        return false;
-    }
-
-    const response =
-        await fetch(
-            '/api/ventas/productos?_='
-            + Date.now(),
-            {
-                method: 'GET',
-
-                headers: {
-                    'Accept':
-                        'application/json',
-
-                    'Cache-Control':
-                        'no-cache'
-                },
-
-                cache:
-                    'no-store',
-
-                credentials:
-                    'same-origin',
-
-                redirect:
-                    'follow'
-            }
-        );
-
-    const resultado =
-        await leerRespuestaJsonPos(
-            response
-        );
-
-    if (
-        !resultado
-        || resultado.success !== true
-        || !Array.isArray(resultado.data)
-    ) {
-
-        throw new Error(
-            resultado?.message
-            || 'El catálogo recibido no tiene el formato esperado.'
-        );
-    }
-
-    const productos =
-        resultado.data.map(
-            normalizarProductoPos
-        );
-
-    if (db) {
-
-        await cacheProductos(
-            productos
-        );
-    }
-
-    return productos;
-}
-
-/*
- * Limpieza manual disponible desde consola y desde
- * el arranque de esta nueva versión.
- */
-async function limpiarCatalogoLocalPos() {
-
-    if (!db) {
-        return;
-    }
-
-    const transaccion =
-        db.transaction(
-            ['productos', 'categorias'],
-            'readwrite'
-        );
-
-    transaccion
-        .objectStore('productos')
-        .clear();
-
-    transaccion
-        .objectStore('categorias')
-        .clear();
-}
-
-/*
- * Al abrir el POS, espera a que la aplicación original
- * cree IndexedDB y después fuerza actualización.
- */
-window.addEventListener(
-    'load',
-    function () {
-
-        window.setTimeout(
-            async function () {
-
-                try {
-
-                    if (!db) {
-
-                        await openDB();
-                    }
-
-                    const productos =
-                        await actualizarCatalogoPosDesdeServidor();
-
-                    console.info(
-                        'Catálogo móvil actualizado:',
-                        productos.length,
-                        'productos'
-                    );
-
-                    /*
-                     * La función original buscarProductos usa el
-                     * endpoint/caché actual. Ejecutarla de nuevo
-                     * refresca la vista sin duplicar lógica.
-                     */
-                    if (
-                        typeof buscarProductos
-                        === 'function'
-                    ) {
-
-                        const campo =
-                            document.getElementById(
-                                'searchInput'
-                            );
-
-                        if (
-                            campo
-                            && campo.value.trim()
-                        ) {
-
-                            await buscarProductos();
-                        }
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        'No fue posible actualizar el catálogo móvil',
-                        error
-                    );
-
-                    if (
-                        typeof mostrarToast
-                        === 'function'
-                    ) {
-
-                        mostrarToast(
-                            error.message,
-                            'error'
-                        );
-                    }
-                }
-            },
-            1200
-        );
-    }
-);
-
-</script>
-
-
-<script id="abarrotePosPrecioUnificadoV1">
-
-/* ========================================================= */
-/* ABARROTE_POS_PRECIO_UNIFICADO_V1                          */
-/* ========================================================= */
-
-const ABARROTE_CATALOGO_VERSION =
-    'precio-pos-v1';
-
-const ABARROTE_CATALOGO_VERSION_KEY =
-    'abarrote_catalogo_version';
-
-/*
- * Convierte valores como:
- *
- * 25
- * 25.00
- * "25.00"
- * "$ 25.00"
- * "25,00"
- *
- * a un Number válido.
- */
-function convertirPrecioPos(
-    valor
-) {
-
-    if (
-        typeof valor === 'number'
-        && Number.isFinite(valor)
-    ) {
-        return valor;
-    }
-
-    if (
-        valor === null
-        || valor === undefined
-        || valor === ''
-    ) {
-        return NaN;
-    }
-
-    let texto =
-        String(valor)
-            .trim()
-            .replace(/\s/g, '')
-            .replace(/[^\d,.-]/g, '');
-
-    if (
-        texto.includes(',')
-        && texto.includes('.')
-    ) {
-
-        /*
-         * 1,234.56
-         */
-        texto =
-            texto.replace(/,/g, '');
-
-    } else if (
-        texto.includes(',')
-    ) {
-
-        /*
-         * 25,00
-         */
-        texto =
-            texto.replace(',', '.');
-    }
-
-    const numero =
-        Number(texto);
-
-    return Number.isFinite(numero)
-        ? numero
-        : NaN;
-}
-
-/*
- * Unifica todas las variantes utilizadas históricamente
- * por el POS.
- *
- * Después de normalizar:
- *
- * producto.precioVenta
- * producto.precio
- * producto.precioUnitario
- *
- * siempre contienen el mismo valor numérico.
- */
-function normalizarProductoPosSeguro(
-    producto
-) {
-
-    const origen =
-        producto
-        && typeof producto === 'object'
-            ? producto
-            : {};
-
-    const precio =
-        convertirPrecioPos(
-            origen.precioVenta
-            ?? origen.precio
-            ?? origen.precioUnitario
-            ?? origen.salePrice
-            ?? origen.precio_venta
-        );
-
-    const stockNumero =
-        Number(
-            origen.stock
-            ?? origen.existencia
-            ?? origen.cantidad
-            ?? 0
-        );
-
-    const stockMinimoNumero =
-        Number(
-            origen.stockMinimo
-            ?? origen.stock_minimo
-            ?? 0
-        );
-
-    return {
-        ...origen,
-
-        id:
-            origen.id,
-
-        nombre:
-            String(
-                origen.nombre
-                ?? origen.productoNombre
-                ?? 'Producto sin nombre'
-            ),
-
-        codigoBarras:
-            String(
-                origen.codigoBarras
-                ?? origen.codigo
-                ?? origen.barcode
-                ?? ''
-            ),
-
-        precioVenta:
-            precio,
-
-        precio:
-            precio,
-
-        precioUnitario:
-            precio,
-
-        stock:
-            Number.isFinite(stockNumero)
-                ? stockNumero
-                : 0,
-
-        existencia:
-            Number.isFinite(stockNumero)
-                ? stockNumero
-                : 0,
-
-        stockMinimo:
-            Number.isFinite(stockMinimoNumero)
-                ? stockMinimoNumero
-                : 0,
-
-        categoriaNombre:
-            String(
-                origen.categoriaNombre
-                ?? origen.categoria
-                ?? 'Sin categoría'
-            )
-    };
-}
-
-function precioProductoPosValido(
-    producto
-) {
-
-    const normalizado =
-        normalizarProductoPosSeguro(
-            producto
-        );
-
-    return Number.isFinite(
-        normalizado.precioVenta
-    )
-    && normalizado.precioVenta > 0;
-}
-
-function formatearPrecioPos(
-    valor
-) {
-
-    const numero =
-        convertirPrecioPos(
-            valor
-        );
-
-    return Number.isFinite(numero)
-        ? numero.toFixed(2)
-        : '0.00';
-}
-
-/*
- * Normaliza todos los productos de una respuesta ApiResponse.
- */
-function normalizarRespuestaProductosPos(
-    respuesta
-) {
-
-    if (
-        !respuesta
-        || typeof respuesta !== 'object'
-    ) {
-        return respuesta;
-    }
-
-    if (
-        Array.isArray(
-            respuesta.data
-        )
-    ) {
-
-        return {
-            ...respuesta,
-
-            data:
-                respuesta.data.map(
-                    normalizarProductoPosSeguro
-                )
-        };
-    }
-
-    if (
-        respuesta.data
-        && typeof respuesta.data === 'object'
-    ) {
-
-        return {
-            ...respuesta,
-
-            data:
-                normalizarProductoPosSeguro(
-                    respuesta.data
-                )
-        };
-    }
-
-    return respuesta;
-}
-
-/*
- * Intercepta únicamente endpoints del POS.
- *
- * Esto garantiza que el código original reciba los tres
- * nombres de precio, aunque una función antigua use
- * producto.precio y otra use producto.precioVenta.
- */
-(function instalarFetchPosSeguro() {
-
-    if (
-        window.__abarroteFetchPrecioInstalado
-    ) {
-        return;
-    }
-
-    window.__abarroteFetchPrecioInstalado =
-        true;
-
-    const fetchOriginal =
-        window.fetch.bind(window);
-
-    window.fetch =
-        async function (
-            recurso,
-            opciones
-        ) {
-
-            const response =
-                await fetchOriginal(
-                    recurso,
-                    opciones
-                );
-
-            const url =
-                typeof recurso === 'string'
-                    ? recurso
-                    : recurso?.url || '';
-
-            const esCatalogoPos =
-                url.includes(
-                    '/api/ventas/productos'
-                )
-                || url.includes(
-                    '/api/ventas/buscar'
-                );
-
-            if (!esCatalogoPos) {
-                return response;
-            }
-
-            const contentType =
-                response.headers.get(
-                    'content-type'
-                ) || '';
-
-            const texto =
-                await response
-                    .clone()
-                    .text();
-
-            if (
-                response.redirected
-                || response.url.includes(
-                    '/login'
-                )
-                || contentType.includes(
-                    'text/html'
-                )
-                || texto.trim().startsWith(
-                    '<!DOCTYPE'
-                )
-                || texto.trim().startsWith(
-                    '<html'
-                )
-            ) {
-
-                throw new Error(
-                    'La sesión expiró. Vuelve a iniciar sesión.'
-                );
-            }
-
-            let json;
-
-            try {
-
-                json =
-                    JSON.parse(
-                        texto
-                    );
-
-            } catch (error) {
-
-                console.error(
-                    'Respuesta POS que no es JSON:',
-                    texto
-                );
-
-                throw new Error(
-                    'El servidor no devolvió un catálogo válido.'
-                );
-            }
-
-            const normalizada =
-                normalizarRespuestaProductosPos(
-                    json
-                );
-
-            return new Response(
-                JSON.stringify(
-                    normalizada
-                ),
-                {
-                    status:
-                        response.status,
-
-                    statusText:
-                        response.statusText,
-
-                    headers: {
-                        'Content-Type':
-                            'application/json;charset=UTF-8'
-                    }
-                }
-            );
-        };
-})();
-
-/*
- * Reemplaza la lectura del catálogo local para que incluso
- * productos guardados por versiones antiguas recuperen precio.
- */
-function instalarNormalizacionIndexedDbPos() {
-
-    if (
-        typeof getProductosCache
-        !== 'function'
-    ) {
-        return;
-    }
-
-    if (
-        window.__abarroteGetProductosCacheOriginal
-    ) {
-        return;
-    }
-
-    window.__abarroteGetProductosCacheOriginal =
-        getProductosCache;
-
-    window.getProductosCache =
-        async function () {
-
-            const productos =
-                await window
-                    .__abarroteGetProductosCacheOriginal();
-
-            return Array.isArray(productos)
-                ? productos.map(
-                    normalizarProductoPosSeguro
-                )
-                : [];
-        };
-}
-
-/*
- * Envuelve funciones conocidas para que ningún producto
- * llegue sin precio al carrito.
- */
-function envolverFuncionProductoPos(
-    nombreFuncion
-) {
-
-    const original =
-        window[nombreFuncion];
-
-    if (
-        typeof original !== 'function'
-        || original.__abarrotePrecioSeguro
-    ) {
-        return;
-    }
-
-    const envoltura =
-        function (...argumentos) {
-
-            if (
-                argumentos.length > 0
-                && argumentos[0]
-                && typeof argumentos[0] === 'object'
-            ) {
-
-                argumentos[0] =
-                    normalizarProductoPosSeguro(
-                        argumentos[0]
-                    );
-
-                if (
-                    !precioProductoPosValido(
-                        argumentos[0]
-                    )
-                ) {
-
-                    const nombre =
-                        argumentos[0].nombre
-                        || 'El producto';
-
-                    if (
-                        typeof mostrarToast
-                        === 'function'
-                    ) {
-
-                        mostrarToast(
-                            nombre
-                            + ' no tiene un precio de venta válido.',
-                            'error'
-                        );
-
-                    } else {
-
-                        alert(
-                            nombre
-                            + ' no tiene un precio de venta válido.'
-                        );
-                    }
-
-                    return;
-                }
-            }
-
-            return original.apply(
-                this,
-                argumentos
-            );
-        };
-
-    envoltura.__abarrotePrecioSeguro =
-        true;
-
-    window[nombreFuncion] =
-        envoltura;
-}
-
-function instalarProteccionesCarritoPos() {
-
-    [
-        'agregarProducto',
-        'agregarAlTicket',
-        'agregarAlCarrito',
-        'seleccionarProducto',
-        'agregarProductoAlTicket'
-    ].forEach(
-        envolverFuncionProductoPos
-    );
-}
-
-/*
- * Repara productos que ya estén dentro de arrays globales.
- */
-function normalizarColeccionesGlobalesPos() {
-
-    [
-        'productos',
-        'productosCache',
-        'catalogoProductos',
-        'resultadosBusqueda'
-    ].forEach(
-        function (nombre) {
-
-            if (
-                Array.isArray(
-                    window[nombre]
-                )
-            ) {
-
-                window[nombre] =
-                    window[nombre].map(
-                        normalizarProductoPosSeguro
-                    );
-            }
-        }
-    );
-
-    [
-        'ticket',
-        'carrito',
-        'ticketItems',
-        'itemsVenta'
-    ].forEach(
-        function (nombre) {
-
-            if (
-                !Array.isArray(
-                    window[nombre]
-                )
-            ) {
-                return;
-            }
-
-            window[nombre] =
-                window[nombre].map(
-                    function (item) {
-
-                        const normalizado =
-                            normalizarProductoPosSeguro(
-                                item
-                            );
-
-                        return {
-                            ...item,
-                            ...normalizado,
-
-                            cantidad:
-                                Number(
-                                    item.cantidad
-                                    ?? item.qty
-                                    ?? 1
-                                )
-                        };
-                    }
-                );
-        }
-    );
-}
-
-/*
- * Limpia una sola vez el catálogo viejo del Motorola.
- * No elimina ventas pendientes.
- */
-async function limpiarCatalogoViejoMotorola() {
-
-    const versionGuardada =
-        localStorage.getItem(
-            ABARROTE_CATALOGO_VERSION_KEY
-        );
-
-    if (
-        versionGuardada
-        === ABARROTE_CATALOGO_VERSION
-    ) {
-        return;
-    }
-
-    try {
-
-        if (!db) {
-
-            await openDB();
-        }
-
-        const stores = [];
-
-        if (
-            db.objectStoreNames.contains(
-                'productos'
-            )
-        ) {
-            stores.push(
-                'productos'
-            );
-        }
-
-        if (
-            db.objectStoreNames.contains(
-                'categorias'
-            )
-        ) {
-            stores.push(
-                'categorias'
-            );
-        }
-
-        if (stores.length > 0) {
-
-            const transaccion =
-                db.transaction(
-                    stores,
-                    'readwrite'
-                );
-
-            stores.forEach(
-                function (storeName) {
-
-                    transaccion
-                        .objectStore(
-                            storeName
-                        )
-                        .clear();
-                }
-            );
-
-            await new Promise(
-                function (
-                    resolve,
-                    reject
-                ) {
-
-                    transaccion.oncomplete =
-                        resolve;
-
-                    transaccion.onerror =
-                        function () {
-
-                            reject(
-                                transaccion.error
-                            );
-                        };
-                }
-            );
-        }
-
-        localStorage.setItem(
-            ABARROTE_CATALOGO_VERSION_KEY,
-            ABARROTE_CATALOGO_VERSION
-        );
-
-        console.info(
-            'Catálogo viejo del POS eliminado.'
-        );
-
-    } catch (error) {
-
-        console.error(
-            'No fue posible limpiar el catálogo móvil',
-            error
-        );
-    }
-}
-
-/*
- * Descarga y guarda nuevamente el catálogo.
- */
-async function recargarCatalogoPosSeguro() {
-
-    if (!navigator.onLine) {
-        return;
-    }
-
-    const response =
-        await fetch(
-            '/api/ventas/productos?_='
-            + Date.now(),
-            {
-                method:
-                    'GET',
-
-                headers: {
-                    'Accept':
-                        'application/json',
-
-                    'Cache-Control':
-                        'no-cache'
-                },
-
-                cache:
-                    'no-store',
-
-                credentials:
-                    'same-origin'
-            }
-        );
-
-    const resultado =
-        await response.json();
-
-    if (
-        !resultado
-        || resultado.success !== true
-        || !Array.isArray(
-            resultado.data
-        )
-    ) {
-
-        throw new Error(
-            resultado?.message
-            || 'El catálogo no tiene el formato esperado.'
-        );
-    }
-
-    const productos =
-        resultado.data.map(
-            normalizarProductoPosSeguro
-        );
-
-    if (
-        typeof cacheProductos
-        === 'function'
-        && db
-    ) {
-
-        await cacheProductos(
-            productos
-        );
-    }
-
-    console.info(
-        'Catálogo POS renovado:',
-        productos.length,
-        'productos'
-    );
-
-    return productos;
-}
-
-/*
- * Recalcula visualmente importes con valor undefined.
- */
-function repararTextosPrecioUndefined() {
-
-    document
-        .querySelectorAll(
-            '.price, .qty-price, .total, #ticketTotal, #modalTotal'
-        )
-        .forEach(
-            function (elemento) {
-
-                if (
-                    /undefined|nan/i.test(
-                        elemento.textContent
-                    )
-                ) {
-
-                    elemento.textContent =
-                        elemento.textContent
-                            .replace(
-                                /undefined/gi,
-                                '0.00'
-                            )
-                            .replace(
-                                /nan/gi,
-                                '0.00'
-                            );
-                }
-            }
-        );
-}
-
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
-
-        instalarNormalizacionIndexedDbPos();
-
-        instalarProteccionesCarritoPos();
-
-        normalizarColeccionesGlobalesPos();
-
-        /*
-         * Algunas funciones se crean en otros scripts.
-         * Una segunda ejecución garantiza que queden envueltas.
-         */
-        window.setTimeout(
-            function () {
-
-                instalarProteccionesCarritoPos();
-
-                normalizarColeccionesGlobalesPos();
-            },
-            500
-        );
-    }
-);
-
-window.addEventListener(
-    'load',
-    function () {
-
-        window.setTimeout(
-            async function () {
-
-                try {
-
-                    await limpiarCatalogoViejoMotorola();
-
-                    await recargarCatalogoPosSeguro();
-
-                    instalarNormalizacionIndexedDbPos();
-
-                    instalarProteccionesCarritoPos();
-
-                    normalizarColeccionesGlobalesPos();
-
-                    repararTextosPrecioUndefined();
-
-                    if (
-                        typeof buscarProductos
-                        === 'function'
-                    ) {
-
-                        const input =
-                            document.getElementById(
-                                'searchInput'
-                            );
-
-                        if (
-                            input
-                            && input.value.trim()
-                        ) {
-
-                            await buscarProductos();
-                        }
-                    }
-
-                    if (
-                        typeof renderTicket
-                        === 'function'
-                    ) {
-
-                        renderTicket();
-
-                    } else if (
-                        typeof actualizarTicket
-                        === 'function'
-                    ) {
-
-                        actualizarTicket();
-
-                    } else if (
-                        typeof renderizarTicket
-                        === 'function'
-                    ) {
-
-                        renderizarTicket();
-                    }
-
-                } catch (error) {
-
-                    console.error(
-                        'Error renovando catálogo POS',
-                        error
-                    );
-
-                    if (
-                        typeof mostrarToast
-                        === 'function'
-                    ) {
-
-                        mostrarToast(
-                            error.message,
-                            'error'
-                        );
-                    }
-                }
-            },
-            900
-        );
-    }
-);
-
-/*
- * Observa cambios visuales para impedir que vuelva a mostrarse
- * "undefined" por una plantilla antigua.
- */
-const observadorPrecioPos =
-    new MutationObserver(
-        function () {
-
-            repararTextosPrecioUndefined();
-        }
-    );
-
-window.addEventListener(
-    'load',
-    function () {
-
-        observadorPrecioPos.observe(
-            document.body,
-            {
-                childList: true,
-                subtree: true,
-                characterData: true
-            }
-        );
-    }
-);
-
-</script>
-
-
-<script id="abarroteFixCobroCeroV2">
-(function () {
+<script th:inline="javascript">
     'use strict';
 
-    const MARCA = '[ABARROTE-PRECIO-V2]';
+    /*
+     * ==========================================================
+     * ESTADO ÚNICO DEL POS
+     * ==========================================================
+     *
+     * No existen wrappers de fetch.
+     * No existen listeners duplicados.
+     * No existen parches de compatibilidad superpuestos.
+     */
+
+    const estadoPos = {
+        productos: [],
+        productosVisibles: [],
+        carrito: [],
+        categoriaActiva: '',
+        procesandoBusqueda: false,
+        procesandoVenta: false,
+        ultimoCodigo: '',
+        ultimoEscaneoEn: 0
+    };
+
+    const elementos = {
+        searchInput:
+            document.getElementById('searchInput'),
+
+        btnBuscar:
+            document.getElementById('btnBuscar'),
+
+        btnTodos:
+            document.getElementById('btnTodos'),
+
+        productos:
+            document.getElementById('productos'),
+
+        categorias:
+            document.getElementById('categorias'),
+
+        estado:
+            document.getElementById('estado'),
+
+        ticketItems:
+            document.getElementById('ticketItems'),
+
+        totalTicket:
+            document.getElementById('totalTicket'),
+
+        btnCobrar:
+            document.getElementById('btnCobrar'),
+
+        btnCancelarVenta:
+            document.getElementById('btnCancelarVenta'),
+
+        modalCobro:
+            document.getElementById('modalCobro'),
+
+        modalTotal:
+            document.getElementById('modalTotal'),
+
+        inputPago:
+            document.getElementById('inputPago'),
+
+        cambio:
+            document.getElementById('cambio'),
+
+        btnCerrarCobro:
+            document.getElementById('btnCerrarCobro'),
+
+        btnConfirmarVenta:
+            document.getElementById('btnConfirmarVenta')
+    };
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
 
     function numeroSeguro(valor) {
 
@@ -3719,30 +777,36 @@ window.addEventListener(
             : NaN;
     }
 
-    function obtenerPrecioProducto(producto) {
+    function dinero(valor) {
 
-        if (
-            !producto
-            || typeof producto !== 'object'
-        ) {
-            return NaN;
-        }
+        const numero = numeroSeguro(valor);
+
+        return new Intl.NumberFormat(
+            'es-MX',
+            {
+                style: 'currency',
+                currency: 'MXN'
+            }
+        ).format(
+            Number.isFinite(numero)
+                ? numero
+                : 0
+        );
+    }
+
+    function obtenerPrecio(producto) {
 
         const candidatos = [
-            producto.precioVenta,
-            producto.precio_venta,
-            producto.precio,
-            producto.precioUnitario,
-            producto.precio_unitario,
-            producto.salePrice,
-            producto.producto?.precioVenta,
-            producto.producto?.precio,
-            producto.producto?.precioUnitario
+            producto?.precioVenta,
+            producto?.precio_venta,
+            producto?.precio,
+            producto?.precioUnitario
         ];
 
         for (const candidato of candidatos) {
 
-            const precio = numeroSeguro(candidato);
+            const precio =
+                numeroSeguro(candidato);
 
             if (
                 Number.isFinite(precio)
@@ -3755,708 +819,1594 @@ window.addEventListener(
         return NaN;
     }
 
-    function normalizarProducto(producto) {
+    function obtenerStock(producto) {
 
-        if (
-            !producto
-            || typeof producto !== 'object'
-        ) {
-            return producto;
-        }
+        const valor =
+            producto?.stock
+            ?? producto?.existencia
+            ?? producto?.cantidadDisponible
+            ?? 0;
 
-        const precio = obtenerPrecioProducto(producto);
+        const stock =
+            Number(valor);
 
-        const stock = Number(
-            producto.stock
-            ?? producto.existencia
-            ?? producto.cantidadDisponible
-            ?? 0
-        );
-
-        if (
-            Number.isFinite(precio)
-            && precio > 0
-        ) {
-            producto.precioVenta = precio;
-            producto.precio_venta = precio;
-            producto.precio = precio;
-            producto.precioUnitario = precio;
-            producto.precio_unitario = precio;
-        }
-
-        producto.stock = Number.isFinite(stock)
-            ? stock
+        return Number.isFinite(stock)
+            ? Math.max(0, Math.trunc(stock))
             : 0;
-
-        producto.existencia = producto.stock;
-
-        return producto;
     }
 
-    function normalizarArticuloVenta(articulo) {
+    function obtenerCategoria(producto) {
 
         if (
-            !articulo
-            || typeof articulo !== 'object'
+            producto?.categoria
+            && typeof producto.categoria === 'object'
         ) {
-            return articulo;
-        }
-
-        const productoOrigen =
-            articulo.producto
-            && typeof articulo.producto === 'object'
-                ? articulo.producto
-                : articulo;
-
-        normalizarProducto(productoOrigen);
-
-        const precio = obtenerPrecioProducto(
-            articulo
-        );
-
-        const precioProducto = obtenerPrecioProducto(
-            productoOrigen
-        );
-
-        const precioFinal =
-            Number.isFinite(precio)
-            && precio > 0
-                ? precio
-                : precioProducto;
-
-        const cantidad = Number(
-            articulo.cantidad
-            ?? articulo.qty
-            ?? articulo.unidades
-            ?? 1
-        );
-
-        const cantidadFinal =
-            Number.isFinite(cantidad)
-            && cantidad > 0
-                ? cantidad
-                : 1;
-
-        if (
-            Number.isFinite(precioFinal)
-            && precioFinal > 0
-        ) {
-            articulo.precioVenta = precioFinal;
-            articulo.precio = precioFinal;
-            articulo.precioUnitario = precioFinal;
-            articulo.precio_unitario = precioFinal;
-
-            articulo.subtotal =
-                Number(
-                    (
-                        precioFinal
-                        * cantidadFinal
-                    ).toFixed(2)
-                );
-
-            articulo.importe =
-                articulo.subtotal;
-        }
-
-        articulo.cantidad =
-            cantidadFinal;
-
-        if (
-            articulo.producto
-            && typeof articulo.producto === 'object'
-        ) {
-            normalizarProducto(
-                articulo.producto
-            );
-        }
-
-        return articulo;
-    }
-
-    function obtenerColeccionesVenta() {
-
-        const nombres = [
-            'carrito',
-            'ticket',
-            'itemsVenta',
-            'detallesVenta',
-            'productosVenta',
-            'ventaItems',
-            'cart',
-            'items'
-        ];
-
-        const colecciones = [];
-
-        for (const nombre of nombres) {
-
-            try {
-
-                const valor = window[nombre];
-
-                if (
-                    Array.isArray(valor)
-                    && !colecciones.includes(valor)
-                ) {
-                    colecciones.push(valor);
-                }
-
-            } catch (error) {
-                console.debug(
-                    MARCA,
-                    'No fue posible leer',
-                    nombre
-                );
-            }
-        }
-
-        return colecciones;
-    }
-
-    function normalizarCarritosGlobales() {
-
-        const colecciones =
-            obtenerColeccionesVenta();
-
-        for (const coleccion of colecciones) {
-
-            for (
-                let indice = 0;
-                indice < coleccion.length;
-                indice++
-            ) {
-                coleccion[indice] =
-                    normalizarArticuloVenta(
-                        coleccion[indice]
-                    );
-            }
-        }
-
-        return colecciones;
-    }
-
-    function calcularTotalColeccion(
-        coleccion
-    ) {
-
-        return coleccion.reduce(
-            function (
-                total,
-                articulo
-            ) {
-
-                normalizarArticuloVenta(
-                    articulo
-                );
-
-                const precio =
-                    obtenerPrecioProducto(
-                        articulo
-                    );
-
-                const cantidad =
-                    Number(
-                        articulo.cantidad
-                        ?? 1
-                    );
-
-                if (
-                    !Number.isFinite(precio)
-                    || precio <= 0
-                ) {
-                    return total;
-                }
-
-                return total
-                    + precio
-                    * (
-                        Number.isFinite(cantidad)
-                        && cantidad > 0
-                            ? cantidad
-                            : 1
-                    );
-            },
-            0
-        );
-    }
-
-    function validarCarritoAntesDeCobrar() {
-
-        const colecciones =
-            normalizarCarritosGlobales();
-
-        const coleccion =
-            colecciones.find(
-                lista => lista.length > 0
-            );
-
-        if (!coleccion) {
             return {
-                valido: true,
-                total: 0
-            };
-        }
+                id:
+                    String(
+                        producto.categoria.id
+                        ?? producto.categoria.nombre
+                        ?? ''
+                    ),
 
-        const invalidos =
-            coleccion.filter(
-                function (articulo) {
-
-                    const precio =
-                        obtenerPrecioProducto(
-                            articulo
-                        );
-
-                    return !Number.isFinite(precio)
-                        || precio <= 0;
-                }
-            );
-
-        if (invalidos.length > 0) {
-
-            const nombres =
-                invalidos
-                    .map(
-                        articulo =>
-                            articulo.nombre
-                            ?? articulo.producto?.nombre
-                            ?? 'Producto sin nombre'
+                nombre:
+                    String(
+                        producto.categoria.nombre
+                        ?? 'Sin categoría'
                     )
-                    .join(', ');
-
-            return {
-                valido: false,
-                total: 0,
-                mensaje:
-                    'No se puede cobrar. '
-                    + 'Producto sin precio válido: '
-                    + nombres
             };
         }
 
-        const total =
-            calcularTotalColeccion(
-                coleccion
-            );
+        const nombre =
+            producto?.categoriaNombre
+            ?? producto?.nombreCategoria
+            ?? producto?.categoria
+            ?? 'Sin categoría';
 
-        if (
-            !Number.isFinite(total)
-            || total <= 0
-        ) {
-            return {
-                valido: false,
-                total: 0,
-                mensaje:
-                    'No se puede cobrar porque el total es cero.'
-            };
-        }
+        const id =
+            producto?.categoriaId
+            ?? nombre;
 
         return {
-            valido: true,
-            total:
-                Number(
-                    total.toFixed(2)
-                )
+            id: String(id ?? ''),
+            nombre: String(nombre)
         };
     }
 
-    function mostrarErrorPrecio(
-        mensaje
-    ) {
-
-        console.error(
-            MARCA,
-            mensaje
-        );
+    function normalizarProducto(origen) {
 
         if (
-            typeof window.mostrarToast
-            === 'function'
+            !origen
+            || typeof origen !== 'object'
         ) {
-            window.mostrarToast(
-                mensaje,
+            return null;
+        }
+
+        const precio =
+            obtenerPrecio(origen);
+
+        const id =
+            Number(
+                origen.id
+                ?? origen.productoId
+            );
+
+        if (
+            !Number.isFinite(id)
+            || id <= 0
+        ) {
+            return null;
+        }
+
+        const categoria =
+            obtenerCategoria(origen);
+
+        return {
+            id: id,
+
+            nombre:
+                String(
+                    origen.nombre
+                    ?? origen.productoNombre
+                    ?? 'Producto sin nombre'
+                ),
+
+            codigoBarras:
+                String(
+                    origen.codigoBarras
+                    ?? origen.codigo_barras
+                    ?? ''
+                ).trim(),
+
+            precioVenta:
+                Number.isFinite(precio)
+                    ? precio
+                    : 0,
+
+            stock:
+                obtenerStock(origen),
+
+            categoriaId:
+                categoria.id,
+
+            categoriaNombre:
+                categoria.nombre
+        };
+    }
+
+    function extraerDataApi(json) {
+
+        if (Array.isArray(json)) {
+            return json;
+        }
+
+        if (
+            json
+            && Array.isArray(json.data)
+        ) {
+            return json.data;
+        }
+
+        return [];
+    }
+
+    function mostrarEstado(
+        mensaje,
+        tipo = 'info',
+        duracion = 3500
+    ) {
+
+        elementos.estado.textContent =
+            mensaje;
+
+        elementos.estado.className =
+            `estado visible ${tipo}`;
+
+        window.clearTimeout(
+            mostrarEstado.timeoutId
+        );
+
+        if (duracion > 0) {
+
+            mostrarEstado.timeoutId =
+                window.setTimeout(
+                    function () {
+                        elementos.estado.className =
+                            'estado';
+                    },
+                    duracion
+                );
+        }
+    }
+
+    async function leerRespuesta(response) {
+
+        const texto =
+            await response.text();
+
+        if (!texto) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(texto);
+
+        } catch (error) {
+            throw new Error(
+                'El servidor regresó una respuesta no válida.'
+            );
+        }
+    }
+
+    async function cargarTodosLosProductos(
+        mostrarMensaje = true
+    ) {
+
+        if (mostrarMensaje) {
+            mostrarEstado(
+                'Cargando catálogo…',
+                'info',
+                0
+            );
+        }
+
+        try {
+
+            const response =
+                await fetch(
+                    '/api/ventas/productos',
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    }
+                );
+
+            const json =
+                await leerRespuesta(response);
+
+            if (!response.ok) {
+
+                throw new Error(
+                    json?.message
+                    ?? json?.mensaje
+                    ?? `Error HTTP ${response.status}`
+                );
+            }
+
+            const productos =
+                extraerDataApi(json)
+                    .map(normalizarProducto)
+                    .filter(Boolean);
+
+            estadoPos.productos =
+                productos;
+
+            estadoPos.productosVisibles =
+                productos;
+
+            estadoPos.categoriaActiva =
+                '';
+
+            renderizarCategorias();
+
+            seleccionarCategoriaVisual('');
+
+            renderizarProductos(
+                productos
+            );
+
+            mostrarEstado(
+                `${productos.length} productos disponibles`,
+                'ok'
+            );
+
+            return productos;
+
+        } catch (error) {
+
+            console.error(
+                '[POS] Error cargando productos:',
+                error
+            );
+
+            estadoPos.productos = [];
+            estadoPos.productosVisibles = [];
+
+            renderizarProductos([]);
+
+            mostrarEstado(
+                `No fue posible cargar el catálogo: ${error.message}`,
+                'error',
+                0
+            );
+
+            return [];
+        }
+    }
+
+    function renderizarCategorias() {
+
+        const mapa =
+            new Map();
+
+        for (
+            const producto
+            of estadoPos.productos
+        ) {
+
+            const id =
+                producto.categoriaId
+                || producto.categoriaNombre;
+
+            const nombre =
+                producto.categoriaNombre
+                || 'Sin categoría';
+
+            if (!mapa.has(id)) {
+                mapa.set(id, nombre);
+            }
+        }
+
+        let html = `
+            <button
+                class="categoria activa"
+                type="button"
+                data-categoria="">
+                Todos
+            </button>
+        `;
+
+        for (
+            const [id, nombre]
+            of mapa.entries()
+        ) {
+
+            html += `
+                <button
+                    class="categoria"
+                    type="button"
+                    data-categoria="${escaparHtml(id)}">
+                    ${escaparHtml(nombre)}
+                </button>
+            `;
+        }
+
+        elementos.categorias.innerHTML =
+            html;
+    }
+
+    function seleccionarCategoriaVisual(
+        categoriaId
+    ) {
+
+        elementos.categorias
+            .querySelectorAll('.categoria')
+            .forEach(
+                function (boton) {
+
+                    boton.classList.toggle(
+                        'activa',
+                        boton.dataset.categoria
+                            === String(categoriaId ?? '')
+                    );
+                }
+            );
+    }
+
+    function filtrarCategoria(
+        categoriaId
+    ) {
+
+        estadoPos.categoriaActiva =
+            String(categoriaId ?? '');
+
+        seleccionarCategoriaVisual(
+            estadoPos.categoriaActiva
+        );
+
+        elementos.searchInput.value = '';
+
+        if (!estadoPos.categoriaActiva) {
+
+            estadoPos.productosVisibles =
+                [...estadoPos.productos];
+
+        } else {
+
+            estadoPos.productosVisibles =
+                estadoPos.productos.filter(
+                    producto =>
+                        String(producto.categoriaId)
+                        === estadoPos.categoriaActiva
+                );
+        }
+
+        renderizarProductos(
+            estadoPos.productosVisibles
+        );
+
+        enfocarBuscador();
+    }
+
+    function renderizarProductos(
+        productos
+    ) {
+
+        if (
+            !Array.isArray(productos)
+            || productos.length === 0
+        ) {
+
+            elementos.productos.innerHTML = `
+                <div class="ticket-vacio">
+                    No se encontraron productos
+                </div>
+            `;
+
+            return;
+        }
+
+        elementos.productos.innerHTML =
+            productos.map(
+                function (producto) {
+
+                    const precioValido =
+                        Number.isFinite(
+                            producto.precioVenta
+                        )
+                        && producto.precioVenta > 0;
+
+                    const disponible =
+                        producto.stock > 0
+                        && precioValido;
+
+                    const leyenda =
+                        !precioValido
+                            ? 'Sin precio válido'
+                            : producto.stock <= 0
+                                ? 'Sin existencia'
+                                : `Existencia: ${producto.stock}`;
+
+                    return `
+                        <button
+                            class="producto"
+                            type="button"
+                            data-producto-id="${producto.id}"
+                            ${disponible ? '' : 'disabled'}>
+
+                            <div class="producto-nombre">
+                                ${escaparHtml(producto.nombre)}
+                            </div>
+
+                            <div class="producto-codigo">
+                                ${escaparHtml(
+                                    producto.codigoBarras
+                                    || 'Sin código'
+                                )}
+                            </div>
+
+                            <div class="producto-precio">
+                                ${precioValido
+                                    ? dinero(producto.precioVenta)
+                                    : '$0.00'}
+                            </div>
+
+                            <div class="producto-stock">
+                                ${escaparHtml(leyenda)}
+                            </div>
+
+                        </button>
+                    `;
+                }
+            ).join('');
+    }
+
+    function normalizarTexto(valor) {
+
+        return String(valor ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function pareceCodigoBarras(
+        consulta
+    ) {
+
+        return /^[0-9]{6,50}$/.test(
+            String(consulta).trim()
+        );
+    }
+
+    async function buscarProductos() {
+
+        if (estadoPos.procesandoBusqueda) {
+            return;
+        }
+
+        const consulta =
+            elementos.searchInput.value
+                .trim();
+
+        if (!consulta) {
+
+            await mostrarTodos();
+
+            return;
+        }
+
+        estadoPos.procesandoBusqueda =
+            true;
+
+        try {
+
+            /*
+             * Primero se busca en el catálogo ya cargado.
+             * Así el scanner no produce dos peticiones ni dos altas.
+             */
+
+            const consultaNormalizada =
+                normalizarTexto(consulta);
+
+            const porCodigo =
+                estadoPos.productos.find(
+                    producto =>
+                        producto.codigoBarras
+                        === consulta
+                );
+
+            if (porCodigo) {
+
+                agregarProducto(
+                    porCodigo,
+                    true
+                );
+
+                limpiarBuscador();
+
+                return;
+            }
+
+            const coincidenciasLocales =
+                estadoPos.productos.filter(
+                    function (producto) {
+
+                        return normalizarTexto(
+                            producto.nombre
+                        ).includes(
+                            consultaNormalizada
+                        )
+                        || String(
+                            producto.codigoBarras
+                        ).includes(consulta);
+                    }
+                );
+
+            /*
+             * Un código numérico introducido por scanner debe agregar
+             * exactamente un producto o mostrar que no existe.
+             */
+            if (pareceCodigoBarras(consulta)) {
+
+                if (
+                    coincidenciasLocales.length === 1
+                ) {
+
+                    agregarProducto(
+                        coincidenciasLocales[0],
+                        true
+                    );
+
+                } else {
+
+                    mostrarEstado(
+                        `No existe un producto con código ${consulta}`,
+                        'error'
+                    );
+                }
+
+                limpiarBuscador();
+
+                return;
+            }
+
+            /*
+             * Para búsqueda por nombre se muestran resultados,
+             * sin agregar automáticamente.
+             */
+            if (
+                coincidenciasLocales.length > 0
+            ) {
+
+                estadoPos.productosVisibles =
+                    coincidenciasLocales;
+
+                renderizarProductos(
+                    coincidenciasLocales
+                );
+
+                mostrarEstado(
+                    `${coincidenciasLocales.length} coincidencia(s)`,
+                    'ok'
+                );
+
+                seleccionarCategoriaVisual(
+                    '__ninguna__'
+                );
+
+                return;
+            }
+
+            /*
+             * Solo como respaldo se consulta el endpoint de búsqueda.
+             */
+            const response =
+                await fetch(
+                    '/api/ventas/buscar?q='
+                    + encodeURIComponent(consulta),
+                    {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    }
+                );
+
+            const json =
+                await leerRespuesta(response);
+
+            if (!response.ok) {
+
+                throw new Error(
+                    json?.message
+                    ?? json?.mensaje
+                    ?? `Error HTTP ${response.status}`
+                );
+            }
+
+            const productos =
+                extraerDataApi(json)
+                    .map(normalizarProducto)
+                    .filter(Boolean);
+
+            estadoPos.productosVisibles =
+                productos;
+
+            renderizarProductos(
+                productos
+            );
+
+            seleccionarCategoriaVisual(
+                '__ninguna__'
+            );
+
+            if (productos.length === 0) {
+
+                mostrarEstado(
+                    `No se encontraron productos para "${consulta}"`,
+                    'error'
+                );
+
+            } else {
+
+                mostrarEstado(
+                    `${productos.length} coincidencia(s)`,
+                    'ok'
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                '[POS] Error buscando productos:',
+                error
+            );
+
+            mostrarEstado(
+                `Error de búsqueda: ${error.message}`,
+                'error'
+            );
+
+        } finally {
+
+            estadoPos.procesandoBusqueda =
+                false;
+
+            enfocarBuscador();
+        }
+    }
+
+    async function mostrarTodos() {
+
+        elementos.searchInput.value = '';
+
+        estadoPos.categoriaActiva = '';
+
+        if (
+            !Array.isArray(estadoPos.productos)
+            || estadoPos.productos.length === 0
+        ) {
+
+            await cargarTodosLosProductos();
+
+            return;
+        }
+
+        estadoPos.productosVisibles =
+            [...estadoPos.productos];
+
+        seleccionarCategoriaVisual('');
+
+        renderizarProductos(
+            estadoPos.productosVisibles
+        );
+
+        mostrarEstado(
+            `${estadoPos.productos.length} productos disponibles`,
+            'ok'
+        );
+
+        enfocarBuscador();
+    }
+
+    function agregarProducto(
+        producto,
+        vieneDeEscaner = false
+    ) {
+
+        const normalizado =
+            normalizarProducto(producto);
+
+        if (!normalizado) {
+
+            mostrarEstado(
+                'El producto recibido no es válido.',
+                'error'
+            );
+
+            return false;
+        }
+
+        if (
+            !Number.isFinite(
+                normalizado.precioVenta
+            )
+            || normalizado.precioVenta <= 0
+        ) {
+
+            mostrarEstado(
+                `${normalizado.nombre} no tiene precio de venta válido.`,
+                'error'
+            );
+
+            return false;
+        }
+
+        if (normalizado.stock <= 0) {
+
+            mostrarEstado(
+                `${normalizado.nombre} no tiene existencia.`,
+                'error'
+            );
+
+            return false;
+        }
+
+        const existente =
+            estadoPos.carrito.find(
+                item =>
+                    item.id === normalizado.id
+            );
+
+        if (existente) {
+
+            if (
+                existente.cantidad + 1
+                > normalizado.stock
+            ) {
+
+                mostrarEstado(
+                    `No hay más existencia disponible de ${normalizado.nombre}.`,
+                    'error'
+                );
+
+                return false;
+            }
+
+            existente.cantidad += 1;
+
+        } else {
+
+            /*
+             * Solo aquí se agrega una línea nueva al ticket.
+             * No se agrega nada antes de validar ID, precio y stock.
+             */
+            estadoPos.carrito.push({
+                id: normalizado.id,
+                nombre: normalizado.nombre,
+                codigoBarras:
+                    normalizado.codigoBarras,
+                precioVenta:
+                    normalizado.precioVenta,
+                cantidad: 1,
+                stock:
+                    normalizado.stock
+            });
+        }
+
+        renderizarTicket();
+
+        mostrarEstado(
+            `${normalizado.nombre} agregado al ticket`,
+            'ok',
+            vieneDeEscaner ? 1800 : 2500
+        );
+
+        return true;
+    }
+
+    function modificarCantidad(
+        productoId,
+        cambio
+    ) {
+
+        const item =
+            estadoPos.carrito.find(
+                producto =>
+                    producto.id === productoId
+            );
+
+        if (!item) {
+            return;
+        }
+
+        const nuevaCantidad =
+            item.cantidad + cambio;
+
+        if (nuevaCantidad <= 0) {
+
+            eliminarDelTicket(
+                productoId
+            );
+
+            return;
+        }
+
+        if (
+            nuevaCantidad > item.stock
+        ) {
+
+            mostrarEstado(
+                `Existencia máxima disponible: ${item.stock}`,
                 'error'
             );
 
             return;
         }
 
-        alert(mensaje);
+        item.cantidad =
+            nuevaCantidad;
+
+        renderizarTicket();
     }
 
-    /*
-     * Corrige cualquier JSON que llegue desde los endpoints
-     * de productos o ventas.
-     */
-    if (!window.__abarroteFetchCobroCeroV2) {
+    function eliminarDelTicket(
+        productoId
+    ) {
 
-        window.__abarroteFetchCobroCeroV2 =
-            true;
+        estadoPos.carrito =
+            estadoPos.carrito.filter(
+                producto =>
+                    producto.id !== productoId
+            );
 
-        const fetchOriginal =
-            window.fetch.bind(window);
+        renderizarTicket();
+    }
 
-        window.fetch =
-            async function (
-                recurso,
-                opciones
+    function calcularTotal() {
+
+        return estadoPos.carrito.reduce(
+            function (
+                total,
+                item
             ) {
 
-                let opcionesFinales =
-                    opciones
-                        ? { ...opciones }
-                        : {};
-
-                const url =
-                    typeof recurso === 'string'
-                        ? recurso
-                        : recurso?.url || '';
-
-                const metodo =
-                    String(
-                        opcionesFinales.method
-                        ?? 'GET'
-                    ).toUpperCase();
-
-                const esPeticionVenta =
-                    metodo !== 'GET'
-                    && (
-                        url.includes(
-                            '/api/ventas'
-                        )
-                        || url.includes(
-                            '/ventas'
-                        )
+                const precio =
+                    numeroSeguro(
+                        item.precioVenta
                     );
 
+                const cantidad =
+                    Number(item.cantidad);
+
                 if (
-                    esPeticionVenta
-                    && opcionesFinales.body
-                    && typeof opcionesFinales.body === 'string'
+                    !Number.isFinite(precio)
+                    || precio <= 0
+                    || !Number.isInteger(cantidad)
+                    || cantidad <= 0
                 ) {
+                    return total;
+                }
 
-                    try {
+                return total
+                    + precio * cantidad;
+            },
+            0
+        );
+    }
 
-                        const payload =
-                            JSON.parse(
-                                opcionesFinales.body
-                            );
+    function validarCarrito() {
 
-                        const listas = [
-                            'detalles',
-                            'items',
-                            'productos',
-                            'detalleVenta',
-                            'ventaDetalles'
-                        ];
+        if (estadoPos.carrito.length === 0) {
 
-                        for (const propiedad of listas) {
+            return {
+                valido: false,
+                mensaje:
+                    'El ticket está vacío.'
+            };
+        }
 
-                            if (
-                                Array.isArray(
-                                    payload[propiedad]
-                                )
-                            ) {
-                                payload[propiedad] =
-                                    payload[propiedad].map(
-                                        normalizarArticuloVenta
-                                    );
-                            }
-                        }
+        for (
+            const item
+            of estadoPos.carrito
+        ) {
 
-                        const resultado =
-                            validarCarritoAntesDeCobrar();
+            if (
+                !Number.isFinite(
+                    numeroSeguro(
+                        item.precioVenta
+                    )
+                )
+                || numeroSeguro(
+                    item.precioVenta
+                ) <= 0
+            ) {
 
-                        if (!resultado.valido) {
+                return {
+                    valido: false,
+                    mensaje:
+                        `${item.nombre} tiene precio inválido.`
+                };
+            }
 
-                            mostrarErrorPrecio(
-                                resultado.mensaje
-                            );
+            if (
+                !Number.isInteger(
+                    item.cantidad
+                )
+                || item.cantidad <= 0
+            ) {
 
-                            throw new Error(
-                                resultado.mensaje
-                            );
-                        }
+                return {
+                    valido: false,
+                    mensaje:
+                        `${item.nombre} tiene cantidad inválida.`
+                };
+            }
+        }
 
-                        if (resultado.total > 0) {
-                            payload.total =
-                                resultado.total;
+        const total =
+            calcularTotal();
 
-                            payload.totalVenta =
-                                resultado.total;
+        if (
+            !Number.isFinite(total)
+            || total <= 0
+        ) {
 
-                            payload.importeTotal =
-                                resultado.total;
-                        }
+            return {
+                valido: false,
+                mensaje:
+                    'El total de la venta debe ser mayor que cero.'
+            };
+        }
 
-                        opcionesFinales.body =
-                            JSON.stringify(
-                                payload
-                            );
+        return {
+            valido: true,
+            total: Number(total.toFixed(2))
+        };
+    }
 
-                        console.info(
-                            MARCA,
-                            'Venta normalizada antes de enviarse:',
-                            payload
-                        );
+    function renderizarTicket() {
 
-                    } catch (error) {
+        if (estadoPos.carrito.length === 0) {
 
-                        if (
-                            error.message
-                            && error.message.includes(
-                                'No se puede cobrar'
-                            )
-                        ) {
-                            throw error;
-                        }
+            elementos.ticketItems.innerHTML = `
+                <div class="ticket-vacio">
+                    Agrega productos al ticket
+                </div>
+            `;
 
-                        console.warn(
-                            MARCA,
-                            'El body de venta no pudo normalizarse:',
-                            error
-                        );
+        } else {
+
+            elementos.ticketItems.innerHTML =
+                estadoPos.carrito.map(
+                    function (item) {
+
+                        const subtotal =
+                            item.precioVenta
+                            * item.cantidad;
+
+                        return `
+                            <div class="ticket-item">
+
+                                <div class="ticket-item-superior">
+
+                                    <div class="ticket-item-nombre">
+                                        ${escaparHtml(item.nombre)}
+                                    </div>
+
+                                    <div class="ticket-item-precio">
+                                        ${dinero(subtotal)}
+                                    </div>
+
+                                </div>
+
+                                <div class="ticket-controles">
+
+                                    <button
+                                        type="button"
+                                        data-accion="restar"
+                                        data-producto-id="${item.id}">
+                                        −
+                                    </button>
+
+                                    <span class="cantidad">
+                                        ${item.cantidad}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        data-accion="sumar"
+                                        data-producto-id="${item.id}">
+                                        +
+                                    </button>
+
+                                    <span>
+                                        ${dinero(item.precioVenta)}
+                                        c/u
+                                    </span>
+
+                                    <button
+                                        class="eliminar"
+                                        type="button"
+                                        data-accion="eliminar"
+                                        data-producto-id="${item.id}">
+                                        ✕
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        `;
                     }
-                }
+                ).join('');
+        }
 
-                const response =
-                    await fetchOriginal(
-                        recurso,
-                        opcionesFinales
-                    );
+        const total =
+            calcularTotal();
 
-                const esRespuestaProductos =
-                    url.includes(
-                        '/api/ventas/productos'
-                    )
-                    || url.includes(
-                        '/api/productos'
-                    );
+        elementos.totalTicket.textContent =
+            dinero(total);
 
-                if (!esRespuestaProductos) {
-                    return response;
-                }
+        elementos.btnCobrar.disabled =
+            !validarCarrito().valido;
+    }
 
-                const contentType =
-                    response.headers.get(
-                        'content-type'
-                    ) || '';
+    function abrirCobro() {
 
-                if (
-                    !contentType.includes(
-                        'application/json'
-                    )
-                ) {
-                    return response;
-                }
+        const validacion =
+            validarCarrito();
 
-                const texto =
-                    await response
-                        .clone()
-                        .text();
+        if (!validacion.valido) {
 
-                let json;
+            mostrarEstado(
+                validacion.mensaje,
+                'error'
+            );
 
-                try {
-                    json = JSON.parse(texto);
+            return;
+        }
 
-                } catch (error) {
-                    return response;
-                }
+        elementos.modalTotal.textContent =
+            dinero(validacion.total);
 
-                if (Array.isArray(json)) {
-                    json =
-                        json.map(
-                            normalizarProducto
-                        );
+        elementos.inputPago.value =
+            validacion.total.toFixed(2);
 
-                } else if (
-                    json
-                    && Array.isArray(json.data)
-                ) {
-                    json.data =
-                        json.data.map(
-                            normalizarProducto
-                        );
+        actualizarCambio();
 
-                } else if (
-                    json
-                    && json.data
-                    && typeof json.data === 'object'
-                ) {
-                    json.data =
-                        normalizarProducto(
-                            json.data
-                        );
-                }
+        elementos.modalCobro.classList.add(
+            'visible'
+        );
 
-                return new Response(
-                    JSON.stringify(json),
+        window.setTimeout(
+            function () {
+
+                elementos.inputPago.focus();
+                elementos.inputPago.select();
+
+            },
+            100
+        );
+    }
+
+    function cerrarCobro() {
+
+        elementos.modalCobro.classList.remove(
+            'visible'
+        );
+
+        elementos.inputPago.value = '';
+
+        elementos.cambio.textContent =
+            '$0.00';
+
+        enfocarBuscador();
+    }
+
+    function actualizarCambio() {
+
+        const total =
+            calcularTotal();
+
+        const recibido =
+            numeroSeguro(
+                elementos.inputPago.value
+            );
+
+        const cambio =
+            Number.isFinite(recibido)
+                ? Math.max(
+                    0,
+                    recibido - total
+                )
+                : 0;
+
+        elementos.cambio.textContent =
+            dinero(cambio);
+    }
+
+    async function confirmarVenta() {
+
+        if (estadoPos.procesandoVenta) {
+            return;
+        }
+
+        const validacion =
+            validarCarrito();
+
+        if (!validacion.valido) {
+
+            mostrarEstado(
+                validacion.mensaje,
+                'error'
+            );
+
+            cerrarCobro();
+
+            return;
+        }
+
+        const pago =
+            numeroSeguro(
+                elementos.inputPago.value
+            );
+
+        if (
+            !Number.isFinite(pago)
+            || pago < validacion.total
+        ) {
+
+            mostrarEstado(
+                'El efectivo recibido es insuficiente.',
+                'error'
+            );
+
+            elementos.inputPago.focus();
+
+            return;
+        }
+
+        /*
+         * El backend calcula precio y total desde la base de datos.
+         * El frontend únicamente envía productoId y cantidad.
+         */
+        const payload = {
+            items:
+                estadoPos.carrito.map(
+                    item => ({
+                        productoId:
+                            item.id,
+
+                        cantidad:
+                            item.cantidad
+                    })
+                )
+        };
+
+        estadoPos.procesandoVenta =
+            true;
+
+        elementos.btnConfirmarVenta.disabled =
+            true;
+
+        elementos.btnConfirmarVenta.textContent =
+            'Procesando…';
+
+        try {
+
+            const response =
+                await fetch(
+                    '/api/ventas/registrar',
                     {
-                        status:
-                            response.status,
+                        method: 'POST',
 
-                        statusText:
-                            response.statusText,
+                        headers: {
+                            'Accept':
+                                'application/json',
 
-                        headers:
-                            response.headers
+                            'Content-Type':
+                                'application/json'
+                        },
+
+                        credentials:
+                            'same-origin',
+
+                        body:
+                            JSON.stringify(payload)
                     }
                 );
-            };
+
+            const json =
+                await leerRespuesta(response);
+
+            if (!response.ok) {
+
+                throw new Error(
+                    json?.message
+                    ?? json?.mensaje
+                    ?? json?.error
+                    ?? `Error HTTP ${response.status}`
+                );
+            }
+
+            const venta =
+                json?.data
+                ?? json;
+
+            const folio =
+                venta?.id
+                ? ` Folio: ${venta.id}.`
+                : '';
+
+            estadoPos.carrito = [];
+
+            renderizarTicket();
+
+            cerrarCobro();
+
+            mostrarEstado(
+                `Venta registrada correctamente.${folio}`,
+                'ok',
+                6000
+            );
+
+            /*
+             * Recarga catálogo para reflejar existencias nuevas.
+             */
+            await cargarTodosLosProductos(
+                false
+            );
+
+        } catch (error) {
+
+            console.error(
+                '[POS] Error registrando venta:',
+                error
+            );
+
+            mostrarEstado(
+                `No fue posible registrar la venta: ${error.message}`,
+                'error',
+                0
+            );
+
+        } finally {
+
+            estadoPos.procesandoVenta =
+                false;
+
+            elementos.btnConfirmarVenta.disabled =
+                false;
+
+            elementos.btnConfirmarVenta.textContent =
+                'Confirmar venta';
+        }
+    }
+
+    function cancelarTicket() {
+
+        if (estadoPos.carrito.length === 0) {
+
+            enfocarBuscador();
+
+            return;
+        }
+
+        const confirmar =
+            window.confirm(
+                '¿Deseas cancelar todo el ticket?'
+            );
+
+        if (!confirmar) {
+            return;
+        }
+
+        estadoPos.carrito = [];
+
+        renderizarTicket();
+
+        mostrarEstado(
+            'Ticket cancelado.',
+            'info'
+        );
+
+        enfocarBuscador();
+    }
+
+    function limpiarBuscador() {
+
+        elementos.searchInput.value = '';
+
+        enfocarBuscador();
+    }
+
+    function enfocarBuscador() {
+
+        window.setTimeout(
+            function () {
+
+                if (
+                    !elementos.modalCobro
+                        .classList
+                        .contains('visible')
+                ) {
+                    elementos.searchInput.focus();
+                }
+
+            },
+            50
+        );
     }
 
     /*
-     * Intercepta el clic antes de que la función original de
-     * cobrar construya la petición.
+     * ==========================================================
+     * EVENTOS ÚNICOS
+     * ==========================================================
      */
-    document.addEventListener(
+
+    elementos.btnBuscar.addEventListener(
+        'click',
+        buscarProductos
+    );
+
+    elementos.btnTodos.addEventListener(
+        'click',
+        mostrarTodos
+    );
+
+    elementos.searchInput.addEventListener(
+        'keydown',
+        function (evento) {
+
+            if (evento.key !== 'Enter') {
+                return;
+            }
+
+            evento.preventDefault();
+            evento.stopPropagation();
+
+            /*
+             * Protección contra Enter duplicado del scanner.
+             */
+            const valor =
+                elementos.searchInput.value.trim();
+
+            const ahora =
+                Date.now();
+
+            if (
+                valor
+                && valor === estadoPos.ultimoCodigo
+                && ahora - estadoPos.ultimoEscaneoEn < 700
+            ) {
+
+                elementos.searchInput.value = '';
+
+                return;
+            }
+
+            estadoPos.ultimoCodigo =
+                valor;
+
+            estadoPos.ultimoEscaneoEn =
+                ahora;
+
+            buscarProductos();
+        }
+    );
+
+    elementos.categorias.addEventListener(
         'click',
         function (evento) {
 
-            const elemento =
+            const boton =
                 evento.target.closest(
-                    'button, a, input[type="button"], input[type="submit"]'
+                    '[data-categoria]'
                 );
 
-            if (!elemento) {
+            if (!boton) {
                 return;
             }
 
-            const texto =
-                (
-                    elemento.textContent
-                    || elemento.value
-                    || ''
-                )
-                .trim()
-                .toLowerCase();
-
-            const idClase =
-                (
-                    (elemento.id || '')
-                    + ' '
-                    + (elemento.className || '')
-                )
-                .toLowerCase();
-
-            const pareceCobro =
-                texto.includes('cobrar')
-                || texto.includes('confirmar venta')
-                || texto.includes('finalizar venta')
-                || texto.includes('procesar pago')
-                || idClase.includes('cobrar')
-                || idClase.includes('checkout')
-                || idClase.includes('confirmar-venta');
-
-            if (!pareceCobro) {
-                return;
-            }
-
-            const resultado =
-                validarCarritoAntesDeCobrar();
-
-            console.info(
-                MARCA,
-                'Validación previa al cobro:',
-                resultado
+            filtrarCategoria(
+                boton.dataset.categoria
             );
-
-            if (!resultado.valido) {
-
-                evento.preventDefault();
-                evento.stopImmediatePropagation();
-
-                mostrarErrorPrecio(
-                    resultado.mensaje
-                );
-
-                return false;
-            }
-        },
-        true
+        }
     );
 
-    /*
-     * Normalización periódica. Esto también corrige productos
-     * obtenidos desde IndexedDB después de cargar la página.
-     */
-    function ejecutarNormalizacion() {
+    elementos.productos.addEventListener(
+        'click',
+        function (evento) {
 
-        normalizarCarritosGlobales();
-
-        const nombresCatalogo = [
-            'productos',
-            'productosCache',
-            'catalogoProductos',
-            'resultadosBusqueda'
-        ];
-
-        for (const nombre of nombresCatalogo) {
-
-            try {
-
-                const lista =
-                    window[nombre];
-
-                if (Array.isArray(lista)) {
-
-                    for (
-                        let indice = 0;
-                        indice < lista.length;
-                        indice++
-                    ) {
-                        lista[indice] =
-                            normalizarProducto(
-                                lista[indice]
-                            );
-                    }
-                }
-
-            } catch (error) {
-                console.debug(
-                    MARCA,
-                    'Catálogo no disponible:',
-                    nombre
+            const boton =
+                evento.target.closest(
+                    '[data-producto-id]'
                 );
+
+            if (!boton) {
+                return;
+            }
+
+            const productoId =
+                Number(
+                    boton.dataset.productoId
+                );
+
+            const producto =
+                estadoPos.productosVisibles.find(
+                    item =>
+                        item.id === productoId
+                )
+                ?? estadoPos.productos.find(
+                    item =>
+                        item.id === productoId
+                );
+
+            if (!producto) {
+
+                mostrarEstado(
+                    'El producto seleccionado ya no está disponible.',
+                    'error'
+                );
+
+                return;
+            }
+
+            agregarProducto(producto);
+
+            enfocarBuscador();
+        }
+    );
+
+    elementos.ticketItems.addEventListener(
+        'click',
+        function (evento) {
+
+            const boton =
+                evento.target.closest(
+                    '[data-accion]'
+                );
+
+            if (!boton) {
+                return;
+            }
+
+            const productoId =
+                Number(
+                    boton.dataset.productoId
+                );
+
+            switch (boton.dataset.accion) {
+
+                case 'sumar':
+                    modificarCantidad(
+                        productoId,
+                        1
+                    );
+                    break;
+
+                case 'restar':
+                    modificarCantidad(
+                        productoId,
+                        -1
+                    );
+                    break;
+
+                case 'eliminar':
+                    eliminarDelTicket(
+                        productoId
+                    );
+                    break;
+            }
+
+            enfocarBuscador();
+        }
+    );
+
+    elementos.btnCobrar.addEventListener(
+        'click',
+        abrirCobro
+    );
+
+    elementos.btnCancelarVenta.addEventListener(
+        'click',
+        cancelarTicket
+    );
+
+    elementos.inputPago.addEventListener(
+        'input',
+        actualizarCambio
+    );
+
+    elementos.inputPago.addEventListener(
+        'keydown',
+        function (evento) {
+
+            if (evento.key === 'Enter') {
+
+                evento.preventDefault();
+
+                confirmarVenta();
             }
         }
-    }
+    );
+
+    elementos.btnCerrarCobro.addEventListener(
+        'click',
+        cerrarCobro
+    );
+
+    elementos.btnConfirmarVenta.addEventListener(
+        'click',
+        confirmarVenta
+    );
+
+    elementos.modalCobro.addEventListener(
+        'click',
+        function (evento) {
+
+            if (
+                evento.target
+                === elementos.modalCobro
+            ) {
+                cerrarCobro();
+            }
+        }
+    );
 
     document.addEventListener(
-        'DOMContentLoaded',
-        ejecutarNormalizacion
+        'keydown',
+        function (evento) {
+
+            if (
+                evento.key === 'Escape'
+                && elementos.modalCobro
+                    .classList
+                    .contains('visible')
+            ) {
+                cerrarCobro();
+            }
+        }
     );
 
     window.addEventListener(
-        'load',
-        function () {
+        'pageshow',
+        function (evento) {
 
-            ejecutarNormalizacion();
+            /*
+             * Evita recuperar un ticket visual obsoleto desde bfcache.
+             */
+            if (evento.persisted) {
+                cargarTodosLosProductos();
+            }
 
-            window.setInterval(
-                ejecutarNormalizacion,
-                1000
-            );
+            enfocarBuscador();
         }
     );
 
-    window.obtenerPrecioProducto =
-        obtenerPrecioProducto;
+    /*
+     * Inicio.
+     */
+    document.addEventListener(
+        'DOMContentLoaded',
+        async function () {
 
-    window.normalizarProductoPos =
-        normalizarProducto;
+            renderizarTicket();
 
-    window.normalizarArticuloVenta =
-        normalizarArticuloVenta;
+            await cargarTodosLosProductos();
 
-    window.validarCarritoAntesDeCobrar =
-        validarCarritoAntesDeCobrar;
+            enfocarBuscador();
 
-    console.info(
-        MARCA,
-        'Corrección de cobro cero instalada.'
+            console.info(
+                '[POS] POS limpio iniciado correctamente.'
+            );
+        }
     );
-})();
 </script>
 
 </body>
