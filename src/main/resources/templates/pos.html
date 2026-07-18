@@ -226,7 +226,196 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.error { background: #ef4444; color: #fff; }
         .toast.warning { background: #f59e0b; color: #1a1a2e; }
-    </style>
+    
+        /* ================================================== */
+        /* ESCÁNER DE CÓDIGO DE BARRAS                        */
+        /* ================================================== */
+
+        .scanner-button {
+            min-width: 54px;
+            padding: 0.8rem 1rem;
+            border: 2px solid #4ade80;
+            border-radius: 8px;
+            background: #16213e;
+            color: #4ade80;
+            font-size: 1.15rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .scanner-button:hover {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+
+        .scanner-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: rgba(3, 7, 18, 0.97);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .scanner-overlay.active {
+            display: flex;
+        }
+
+        .scanner-panel {
+            width: 100%;
+            max-width: 560px;
+            max-height: 96vh;
+            overflow-y: auto;
+            background: #111827;
+            border: 1px solid #334155;
+            border-radius: 18px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.65);
+        }
+
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .scanner-header h2 {
+            margin: 0;
+            color: #4ade80;
+            font-size: 1.15rem;
+        }
+
+        .scanner-close {
+            width: 42px;
+            height: 42px;
+            border: 1px solid #ef4444;
+            border-radius: 50%;
+            background: transparent;
+            color: #ef4444;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .scanner-body {
+            padding: 1rem;
+        }
+
+        #barcodeReader {
+            width: 100%;
+            overflow: hidden;
+            border-radius: 14px;
+            background: #000;
+        }
+
+        #barcodeReader video {
+            object-fit: cover !important;
+            border-radius: 14px;
+        }
+
+        .scanner-guide {
+            margin-top: 0.9rem;
+            color: #cbd5e1;
+            text-align: center;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .scanner-status {
+            min-height: 46px;
+            margin-top: 0.9rem;
+            padding: 0.8rem;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            background: #0f172a;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .scanner-status.success {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.12);
+            color: #86efac;
+        }
+
+        .scanner-status.error {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+        }
+
+        .scanner-actions {
+            display: flex;
+            gap: 0.7rem;
+            margin-top: 1rem;
+        }
+
+        .scanner-actions button {
+            flex: 1;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 9px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .scanner-retry {
+            background: #4ade80;
+            color: #1a1a2e;
+        }
+
+        .scanner-cancel {
+            background: #374151;
+            color: #fff;
+        }
+
+        @media (max-width: 760px) {
+
+            .pos-container {
+                grid-template-columns: 1fr;
+                overflow-y: auto;
+            }
+
+            .products-panel {
+                min-height: 100vh;
+            }
+
+            .ticket-panel {
+                min-height: 70vh;
+            }
+
+            .search-box {
+                flex-wrap: wrap;
+            }
+
+            .search-box input {
+                min-width: 0;
+                width: calc(100% - 64px);
+            }
+
+            .search-box > button:not(.scanner-button) {
+                width: 100%;
+            }
+
+            .scanner-panel {
+                max-width: none;
+                max-height: 100vh;
+                border-radius: 14px;
+            }
+        }
+
+</style>
+
+    <!-- ABARROTE_ESCANER_MOTOROLA_V1 -->
+    <script
+            src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+            defer>
+    </script>
+
 </head>
 <body>
 <div
@@ -286,8 +475,31 @@
             </div>
             
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Buscar producto..." autofocus>
-                <button onclick="buscarProductos()">Buscar</button>
+
+                <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="🔍 Buscar o escanear producto..."
+                        autocomplete="off"
+                        inputmode="search"
+                        autofocus
+                        onclick="abrirEscanerDesdeCampo(event)">
+
+                <button
+                        type="button"
+                        class="scanner-button"
+                        title="Abrir cámara para escanear"
+                        aria-label="Abrir cámara para escanear"
+                        onclick="abrirEscanerCodigo()">
+                    📷
+                </button>
+
+                <button
+                        type="button"
+                        onclick="buscarProductos()">
+                    Buscar
+                </button>
+
             </div>
             <div class="search-results" id="searchResults">
                 <div style="color: #888; text-align: center; padding: 3rem;">Escribe para buscar productos o selecciona una categoría...</div>
@@ -326,6 +538,75 @@
             </div>
         </div>
     </div>
+
+    <!-- ==================================================== -->
+    <!-- ESCÁNER MOTOROLA / CÁMARA MÓVIL                      -->
+    <!-- ==================================================== -->
+
+    <div
+            class="scanner-overlay"
+            id="scannerOverlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="scannerTitle">
+
+        <div class="scanner-panel">
+
+            <div class="scanner-header">
+
+                <h2 id="scannerTitle">
+                    📷 Escanear código de barras
+                </h2>
+
+                <button
+                        type="button"
+                        class="scanner-close"
+                        onclick="cerrarEscanerCodigo()"
+                        aria-label="Cerrar escáner">
+                    ✕
+                </button>
+
+            </div>
+
+            <div class="scanner-body">
+
+                <div id="barcodeReader"></div>
+
+                <p class="scanner-guide">
+                    Coloca el código de barras dentro del recuadro.
+                    Mantén el teléfono estable y evita reflejos.
+                </p>
+
+                <div
+                        class="scanner-status"
+                        id="scannerStatus">
+                    Preparando cámara trasera…
+                </div>
+
+                <div class="scanner-actions">
+
+                    <button
+                            type="button"
+                            class="scanner-retry"
+                            onclick="reiniciarEscanerCodigo()">
+                        🔄 Reintentar
+                    </button>
+
+                    <button
+                            type="button"
+                            class="scanner-cancel"
+                            onclick="cerrarEscanerCodigo()">
+                        Cancelar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
     <div class="toast" id="toast"></div>
     <script>
         // ============================================================
@@ -1153,5 +1434,964 @@
         }).catch(err => console.error('❌ Error IndexedDB:', err));
     </script>
 <script th:src="@{/js/mobile-logout.js}"></script>
+
+    <script>
+    // ============================================================
+    // ABARROTE CLOUD III - ESCÁNER MOTOROLA Y CÁMARA MÓVIL
+    // ============================================================
+
+    let abarroteQrScanner = null;
+    let abarroteScannerActivo = false;
+    let abarroteProcesandoCodigo = false;
+    let abarroteUltimoCodigo = '';
+    let abarroteUltimaLectura = 0;
+    let abarroteClickInputAnterior = 0;
+
+    const ABARROTE_FORMATOS_CODIGO = [
+        'EAN_13',
+        'EAN_8',
+        'UPC_A',
+        'UPC_E',
+        'CODE_128',
+        'CODE_39',
+        'ITF'
+    ];
+
+    function abarroteEsDispositivoMovil() {
+
+        return window.matchMedia(
+            '(max-width: 900px)'
+        ).matches
+        || /Android|iPhone|iPad|iPod|Mobile/i.test(
+            navigator.userAgent
+        );
+    }
+
+    function abrirEscanerDesdeCampo(event) {
+
+        /*
+         * El autofocus inicial no abre la cámara.
+         * Solamente se abre por un toque real del usuario.
+         *
+         * En equipos Motorola con lector físico, el cursor
+         * permanece disponible para recibir el código como teclado.
+         */
+
+        if (!abarroteEsDispositivoMovil()) {
+            return;
+        }
+
+        if (!event || event.isTrusted !== true) {
+            return;
+        }
+
+        const ahora = Date.now();
+
+        if (ahora - abarroteClickInputAnterior < 700) {
+            return;
+        }
+
+        abarroteClickInputAnterior = ahora;
+
+        abrirEscanerCodigo();
+    }
+
+    async function abrirEscanerCodigo() {
+
+        if (abarroteScannerActivo) {
+            return;
+        }
+
+        const overlay =
+            document.getElementById(
+                'scannerOverlay'
+            );
+
+        const status =
+            document.getElementById(
+                'scannerStatus'
+            );
+
+        overlay.classList.add(
+            'active'
+        );
+
+        document.body.style.overflow =
+            'hidden';
+
+        status.className =
+            'scanner-status';
+
+        status.textContent =
+            'Solicitando permiso para utilizar la cámara trasera…';
+
+        abarroteScannerActivo = true;
+        abarroteProcesandoCodigo = false;
+
+        if (typeof Html5Qrcode === 'undefined') {
+
+            mostrarEstadoEscaner(
+                'No fue posible cargar el lector. Verifica tu conexión a Internet y vuelve a intentarlo.',
+                'error'
+            );
+
+            abarroteScannerActivo = false;
+            return;
+        }
+
+        try {
+
+            if (abarroteQrScanner) {
+
+                try {
+                    await abarroteQrScanner.clear();
+                } catch (ignorar) {
+                    console.debug(
+                        'Lector anterior ya estaba limpio'
+                    );
+                }
+            }
+
+            abarroteQrScanner =
+                new Html5Qrcode(
+                    'barcodeReader',
+                    {
+                        verbose: false,
+                        formatsToSupport:
+                            obtenerFormatosHtml5QrCode()
+                    }
+                );
+
+            const configuracion = {
+                fps: 12,
+                qrbox: function (
+                    viewfinderWidth,
+                    viewfinderHeight
+                ) {
+
+                    const ancho =
+                        Math.floor(
+                            viewfinderWidth * 0.88
+                        );
+
+                    const alto =
+                        Math.max(
+                            100,
+                            Math.floor(
+                                viewfinderHeight * 0.30
+                            )
+                        );
+
+                    return {
+                        width: ancho,
+                        height: alto
+                    };
+                },
+                aspectRatio: 1.333334,
+                disableFlip: true
+            };
+
+            await abarroteQrScanner.start(
+                {
+                    facingMode: {
+                        exact: 'environment'
+                    }
+                },
+                configuracion,
+                procesarLecturaCamara,
+                function () {
+                    /*
+                     * Los errores intermedios de lectura son normales
+                     * mientras el usuario apunta la cámara.
+                     */
+                }
+            );
+
+            mostrarEstadoEscaner(
+                'Cámara activa. Apunta al código de barras.',
+                ''
+            );
+
+        } catch (errorCamaraTrasera) {
+
+            console.warn(
+                'No se pudo abrir facingMode exact environment',
+                errorCamaraTrasera
+            );
+
+            try {
+
+                if (abarroteQrScanner) {
+                    try {
+                        await abarroteQrScanner.clear();
+                    } catch (ignorar) {
+                    }
+                }
+
+                abarroteQrScanner =
+                    new Html5Qrcode(
+                        'barcodeReader',
+                        {
+                            verbose: false,
+                            formatsToSupport:
+                                obtenerFormatosHtml5QrCode()
+                        }
+                    );
+
+                await abarroteQrScanner.start(
+                    {
+                        facingMode: 'environment'
+                    },
+                    {
+                        fps: 10,
+                        qrbox: {
+                            width: 300,
+                            height: 130
+                        },
+                        disableFlip: true
+                    },
+                    procesarLecturaCamara,
+                    function () {
+                    }
+                );
+
+                mostrarEstadoEscaner(
+                    'Cámara activa. Apunta al código de barras.',
+                    ''
+                );
+
+            } catch (errorFinal) {
+
+                console.error(
+                    'Error abriendo cámara',
+                    errorFinal
+                );
+
+                abarroteScannerActivo = false;
+
+                mostrarEstadoEscaner(
+                    obtenerMensajeErrorCamara(
+                        errorFinal
+                    ),
+                    'error'
+                );
+            }
+        }
+    }
+
+    function obtenerFormatosHtml5QrCode() {
+
+        if (typeof Html5QrcodeSupportedFormats === 'undefined') {
+            return undefined;
+        }
+
+        const mapa = {
+            EAN_13:
+                Html5QrcodeSupportedFormats.EAN_13,
+
+            EAN_8:
+                Html5QrcodeSupportedFormats.EAN_8,
+
+            UPC_A:
+                Html5QrcodeSupportedFormats.UPC_A,
+
+            UPC_E:
+                Html5QrcodeSupportedFormats.UPC_E,
+
+            CODE_128:
+                Html5QrcodeSupportedFormats.CODE_128,
+
+            CODE_39:
+                Html5QrcodeSupportedFormats.CODE_39,
+
+            ITF:
+                Html5QrcodeSupportedFormats.ITF
+        };
+
+        return ABARROTE_FORMATOS_CODIGO
+            .map(
+                nombre => mapa[nombre]
+            )
+            .filter(
+                valor => valor !== undefined
+            );
+    }
+
+    async function procesarLecturaCamara(
+        decodedText
+    ) {
+
+        const codigo =
+            normalizarCodigoEscaneado(
+                decodedText
+            );
+
+        if (!codigo) {
+            return;
+        }
+
+        const ahora =
+            Date.now();
+
+        if (
+            abarroteProcesandoCodigo
+            || (
+                codigo === abarroteUltimoCodigo
+                && ahora - abarroteUltimaLectura < 2500
+            )
+        ) {
+            return;
+        }
+
+        abarroteProcesandoCodigo = true;
+        abarroteUltimoCodigo = codigo;
+        abarroteUltimaLectura = ahora;
+
+        mostrarEstadoEscaner(
+            'Código detectado: ' + codigo,
+            'success'
+        );
+
+        confirmarLecturaFisica();
+
+        await detenerCamaraEscaner();
+
+        const input =
+            document.getElementById(
+                'searchInput'
+            );
+
+        input.value =
+            codigo;
+
+        await buscarYAgregarCodigoEscaneado(
+            codigo
+        );
+
+        await cerrarEscanerCodigo();
+
+        abarroteProcesandoCodigo = false;
+    }
+
+    function normalizarCodigoEscaneado(
+        valor
+    ) {
+
+        return String(
+            valor == null
+                ? ''
+                : valor
+        )
+            .trim()
+            .replace(
+                /[\r\n\t]/g,
+                ''
+            );
+    }
+
+    async function buscarYAgregarCodigoEscaneado(
+        codigo
+    ) {
+
+        try {
+
+            const response =
+                await fetch(
+                    '/api/ventas/buscar?q='
+                    + encodeURIComponent(
+                        codigo
+                    ),
+                    {
+                        headers: {
+                            'Accept':
+                                'application/json'
+                        }
+                    }
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    'El servidor respondió '
+                    + response.status
+                );
+            }
+
+            const resultado =
+                await response.json();
+
+            const productos =
+                resultado
+                && resultado.success
+                && Array.isArray(
+                    resultado.data
+                )
+                    ? resultado.data
+                    : [];
+
+            const productoExacto =
+                productos.find(
+                    function (producto) {
+
+                        return normalizarCodigoEscaneado(
+                            producto.codigoBarras
+                        ) === codigo;
+                    }
+                );
+
+            if (!productoExacto) {
+
+                if (
+                    typeof buscarProductos
+                    === 'function'
+                ) {
+
+                    await buscarProductos();
+                }
+
+                mostrarToastEscaner(
+                    'No se encontró un producto con el código '
+                    + codigo,
+                    'warning'
+                );
+
+                enfocarBuscador();
+                return;
+            }
+
+            const existencia =
+                Number(
+                    productoExacto.stock
+                    ?? productoExacto.existencia
+                    ?? 0
+                );
+
+            if (
+                !Number.isFinite(
+                    existencia
+                )
+                || existencia <= 0
+            ) {
+
+                mostrarToastEscaner(
+                    productoExacto.nombre
+                    + ' no tiene existencia disponible',
+                    'error'
+                );
+
+                if (
+                    typeof buscarProductos
+                    === 'function'
+                ) {
+
+                    await buscarProductos();
+                }
+
+                enfocarBuscador();
+                return;
+            }
+
+            const agregado =
+                agregarProductoCompatible(
+                    productoExacto
+                );
+
+            if (!agregado) {
+
+                /*
+                 * Si el nombre de la función del carrito cambia,
+                 * mostramos el producto en pantalla sin romper el POS.
+                 */
+                if (
+                    typeof buscarProductos
+                    === 'function'
+                ) {
+
+                    await buscarProductos();
+                }
+
+                mostrarToastEscaner(
+                    'Producto encontrado: '
+                    + productoExacto.nombre,
+                    ''
+                );
+
+            } else {
+
+                mostrarToastEscaner(
+                    '✅ '
+                    + productoExacto.nombre
+                    + ' agregado al ticket',
+                    ''
+                );
+
+                const input =
+                    document.getElementById(
+                        'searchInput'
+                    );
+
+                input.value = '';
+            }
+
+            enfocarBuscador();
+
+        } catch (error) {
+
+            console.error(
+                'Error procesando código escaneado',
+                error
+            );
+
+            mostrarToastEscaner(
+                'No fue posible buscar el código: '
+                + error.message,
+                'error'
+            );
+
+            if (
+                typeof buscarProductos
+                === 'function'
+            ) {
+
+                await buscarProductos();
+            }
+
+            enfocarBuscador();
+        }
+    }
+
+    function agregarProductoCompatible(
+        producto
+    ) {
+
+        /*
+         * Compatibilidad con los nombres más habituales.
+         * Solo se ejecutará una función si realmente existe.
+         */
+
+        if (
+            typeof agregarAlTicket
+            === 'function'
+        ) {
+
+            agregarAlTicket(
+                producto
+            );
+
+            return true;
+        }
+
+        if (
+            typeof agregarProducto
+            === 'function'
+        ) {
+
+            agregarProducto(
+                producto
+            );
+
+            return true;
+        }
+
+        if (
+            typeof agregarAlCarrito
+            === 'function'
+        ) {
+
+            agregarAlCarrito(
+                producto
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    async function detenerCamaraEscaner() {
+
+        if (!abarroteQrScanner) {
+            return;
+        }
+
+        try {
+
+            const estado =
+                abarroteQrScanner.getState
+                    ? abarroteQrScanner.getState()
+                    : null;
+
+            /*
+             * Los estados 2 y 3 corresponden normalmente
+             * a cámara activa o pausada.
+             */
+            if (
+                estado === 2
+                || estado === 3
+                || abarroteScannerActivo
+            ) {
+
+                await abarroteQrScanner.stop();
+            }
+
+        } catch (error) {
+
+            console.debug(
+                'La cámara ya estaba detenida',
+                error
+            );
+        }
+
+        try {
+
+            await abarroteQrScanner.clear();
+
+        } catch (error) {
+
+            console.debug(
+                'El lector ya estaba limpio',
+                error
+            );
+        }
+
+        abarroteQrScanner = null;
+    }
+
+    async function cerrarEscanerCodigo() {
+
+        await detenerCamaraEscaner();
+
+        const overlay =
+            document.getElementById(
+                'scannerOverlay'
+            );
+
+        if (overlay) {
+
+            overlay.classList.remove(
+                'active'
+            );
+        }
+
+        document.body.style.overflow =
+            '';
+
+        abarroteScannerActivo = false;
+        abarroteProcesandoCodigo = false;
+
+        enfocarBuscador();
+    }
+
+    async function reiniciarEscanerCodigo() {
+
+        await detenerCamaraEscaner();
+
+        abarroteScannerActivo = false;
+        abarroteProcesandoCodigo = false;
+
+        await abrirEscanerCodigo();
+    }
+
+    function mostrarEstadoEscaner(
+        mensaje,
+        tipo
+    ) {
+
+        const status =
+            document.getElementById(
+                'scannerStatus'
+            );
+
+        if (!status) {
+            return;
+        }
+
+        status.className =
+            'scanner-status'
+            + (
+                tipo
+                    ? ' ' + tipo
+                    : ''
+            );
+
+        status.textContent =
+            mensaje;
+    }
+
+    function obtenerMensajeErrorCamara(
+        error
+    ) {
+
+        const nombre =
+            error
+            && error.name
+                ? error.name
+                : '';
+
+        if (
+            nombre === 'NotAllowedError'
+            || String(error).includes(
+                'Permission'
+            )
+        ) {
+
+            return 'Permiso de cámara rechazado. Abre los permisos del navegador y permite usar la cámara.';
+        }
+
+        if (
+            nombre === 'NotFoundError'
+        ) {
+
+            return 'No se encontró una cámara disponible en este dispositivo.';
+        }
+
+        if (
+            nombre === 'NotReadableError'
+        ) {
+
+            return 'La cámara está siendo utilizada por otra aplicación. Ciérrala y vuelve a intentar.';
+        }
+
+        if (
+            location.protocol !== 'https:'
+            && location.hostname !== 'localhost'
+        ) {
+
+            return 'La cámara requiere una conexión HTTPS.';
+        }
+
+        return 'No fue posible iniciar la cámara. Puedes escribir o utilizar el lector físico Motorola.';
+    }
+
+    function confirmarLecturaFisica() {
+
+        if (
+            navigator.vibrate
+        ) {
+
+            navigator.vibrate(
+                [80, 40, 120]
+            );
+        }
+
+        try {
+
+            const contexto =
+                new (
+                    window.AudioContext
+                    || window.webkitAudioContext
+                )();
+
+            const oscilador =
+                contexto.createOscillator();
+
+            const ganancia =
+                contexto.createGain();
+
+            oscilador.type =
+                'sine';
+
+            oscilador.frequency.value =
+                1250;
+
+            ganancia.gain.value =
+                0.08;
+
+            oscilador.connect(
+                ganancia
+            );
+
+            ganancia.connect(
+                contexto.destination
+            );
+
+            oscilador.start();
+
+            oscilador.stop(
+                contexto.currentTime
+                + 0.11
+            );
+
+        } catch (error) {
+
+            console.debug(
+                'Audio de confirmación no disponible',
+                error
+            );
+        }
+    }
+
+    function mostrarToastEscaner(
+        mensaje,
+        tipo
+    ) {
+
+        if (
+            typeof mostrarToast
+            === 'function'
+        ) {
+
+            mostrarToast(
+                mensaje,
+                tipo
+            );
+
+            return;
+        }
+
+        const toast =
+            document.getElementById(
+                'toast'
+            );
+
+        if (!toast) {
+            return;
+        }
+
+        toast.textContent =
+            mensaje;
+
+        toast.className =
+            'toast show'
+            + (
+                tipo
+                    ? ' ' + tipo
+                    : ''
+            );
+
+        window.setTimeout(
+            function () {
+
+                toast.className =
+                    'toast';
+            },
+            2600
+        );
+    }
+
+    function enfocarBuscador() {
+
+        window.setTimeout(
+            function () {
+
+                const input =
+                    document.getElementById(
+                        'searchInput'
+                    );
+
+                if (input) {
+
+                    input.focus();
+                    input.select();
+                }
+            },
+            180
+        );
+    }
+
+    /*
+     * Compatibilidad con lector físico Motorola/Zebra.
+     *
+     * Estos lectores suelen escribir el código como teclado
+     * y enviar Enter al final. El código se busca y agrega
+     * automáticamente sin abrir la cámara.
+     */
+    document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+
+            const input =
+                document.getElementById(
+                    'searchInput'
+                );
+
+            if (!input) {
+                return;
+            }
+
+            input.addEventListener(
+                'keydown',
+                async function (event) {
+
+                    if (event.key !== 'Enter') {
+                        return;
+                    }
+
+                    const codigo =
+                        normalizarCodigoEscaneado(
+                            input.value
+                        );
+
+                    if (!codigo) {
+                        return;
+                    }
+
+                    /*
+                     * Los códigos de barras comerciales suelen
+                     * tener al menos seis caracteres.
+                     * Una búsqueda corta se conserva como texto.
+                     */
+                    if (codigo.length < 6) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+
+                    await buscarYAgregarCodigoEscaneado(
+                        codigo
+                    );
+                },
+                true
+            );
+
+            const overlay =
+                document.getElementById(
+                    'scannerOverlay'
+                );
+
+            overlay.addEventListener(
+                'click',
+                function (event) {
+
+                    if (event.target === overlay) {
+                        cerrarEscanerCodigo();
+                    }
+                }
+            );
+
+            document.addEventListener(
+                'keydown',
+                function (event) {
+
+                    if (
+                        event.key === 'Escape'
+                        && abarroteScannerActivo
+                    ) {
+
+                        cerrarEscanerCodigo();
+                    }
+                }
+            );
+        }
+    );
+
+    window.addEventListener(
+        'pagehide',
+        function () {
+
+            detenerCamaraEscaner();
+        }
+    );
+
+    window.addEventListener(
+        'beforeunload',
+        function () {
+
+            detenerCamaraEscaner();
+        }
+    );
+    </script>
+
 </body>
 </html>
