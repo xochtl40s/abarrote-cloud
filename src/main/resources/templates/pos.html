@@ -3673,5 +3673,791 @@ window.addEventListener(
 
 </script>
 
+
+<script id="abarroteFixCobroCeroV2">
+(function () {
+    'use strict';
+
+    const MARCA = '[ABARROTE-PRECIO-V2]';
+
+    function numeroSeguro(valor) {
+
+        if (
+            typeof valor === 'number'
+            && Number.isFinite(valor)
+        ) {
+            return valor;
+        }
+
+        if (
+            valor === null
+            || valor === undefined
+            || valor === ''
+        ) {
+            return NaN;
+        }
+
+        let texto = String(valor)
+            .trim()
+            .replace(/\s/g, '')
+            .replace(/[^\d,.-]/g, '');
+
+        if (
+            texto.includes(',')
+            && texto.includes('.')
+        ) {
+            texto = texto.replace(/,/g, '');
+
+        } else if (texto.includes(',')) {
+            texto = texto.replace(',', '.');
+        }
+
+        const numero = Number(texto);
+
+        return Number.isFinite(numero)
+            ? numero
+            : NaN;
+    }
+
+    function obtenerPrecioProducto(producto) {
+
+        if (
+            !producto
+            || typeof producto !== 'object'
+        ) {
+            return NaN;
+        }
+
+        const candidatos = [
+            producto.precioVenta,
+            producto.precio_venta,
+            producto.precio,
+            producto.precioUnitario,
+            producto.precio_unitario,
+            producto.salePrice,
+            producto.producto?.precioVenta,
+            producto.producto?.precio,
+            producto.producto?.precioUnitario
+        ];
+
+        for (const candidato of candidatos) {
+
+            const precio = numeroSeguro(candidato);
+
+            if (
+                Number.isFinite(precio)
+                && precio > 0
+            ) {
+                return precio;
+            }
+        }
+
+        return NaN;
+    }
+
+    function normalizarProducto(producto) {
+
+        if (
+            !producto
+            || typeof producto !== 'object'
+        ) {
+            return producto;
+        }
+
+        const precio = obtenerPrecioProducto(producto);
+
+        const stock = Number(
+            producto.stock
+            ?? producto.existencia
+            ?? producto.cantidadDisponible
+            ?? 0
+        );
+
+        if (
+            Number.isFinite(precio)
+            && precio > 0
+        ) {
+            producto.precioVenta = precio;
+            producto.precio_venta = precio;
+            producto.precio = precio;
+            producto.precioUnitario = precio;
+            producto.precio_unitario = precio;
+        }
+
+        producto.stock = Number.isFinite(stock)
+            ? stock
+            : 0;
+
+        producto.existencia = producto.stock;
+
+        return producto;
+    }
+
+    function normalizarArticuloVenta(articulo) {
+
+        if (
+            !articulo
+            || typeof articulo !== 'object'
+        ) {
+            return articulo;
+        }
+
+        const productoOrigen =
+            articulo.producto
+            && typeof articulo.producto === 'object'
+                ? articulo.producto
+                : articulo;
+
+        normalizarProducto(productoOrigen);
+
+        const precio = obtenerPrecioProducto(
+            articulo
+        );
+
+        const precioProducto = obtenerPrecioProducto(
+            productoOrigen
+        );
+
+        const precioFinal =
+            Number.isFinite(precio)
+            && precio > 0
+                ? precio
+                : precioProducto;
+
+        const cantidad = Number(
+            articulo.cantidad
+            ?? articulo.qty
+            ?? articulo.unidades
+            ?? 1
+        );
+
+        const cantidadFinal =
+            Number.isFinite(cantidad)
+            && cantidad > 0
+                ? cantidad
+                : 1;
+
+        if (
+            Number.isFinite(precioFinal)
+            && precioFinal > 0
+        ) {
+            articulo.precioVenta = precioFinal;
+            articulo.precio = precioFinal;
+            articulo.precioUnitario = precioFinal;
+            articulo.precio_unitario = precioFinal;
+
+            articulo.subtotal =
+                Number(
+                    (
+                        precioFinal
+                        * cantidadFinal
+                    ).toFixed(2)
+                );
+
+            articulo.importe =
+                articulo.subtotal;
+        }
+
+        articulo.cantidad =
+            cantidadFinal;
+
+        if (
+            articulo.producto
+            && typeof articulo.producto === 'object'
+        ) {
+            normalizarProducto(
+                articulo.producto
+            );
+        }
+
+        return articulo;
+    }
+
+    function obtenerColeccionesVenta() {
+
+        const nombres = [
+            'carrito',
+            'ticket',
+            'itemsVenta',
+            'detallesVenta',
+            'productosVenta',
+            'ventaItems',
+            'cart',
+            'items'
+        ];
+
+        const colecciones = [];
+
+        for (const nombre of nombres) {
+
+            try {
+
+                const valor = window[nombre];
+
+                if (
+                    Array.isArray(valor)
+                    && !colecciones.includes(valor)
+                ) {
+                    colecciones.push(valor);
+                }
+
+            } catch (error) {
+                console.debug(
+                    MARCA,
+                    'No fue posible leer',
+                    nombre
+                );
+            }
+        }
+
+        return colecciones;
+    }
+
+    function normalizarCarritosGlobales() {
+
+        const colecciones =
+            obtenerColeccionesVenta();
+
+        for (const coleccion of colecciones) {
+
+            for (
+                let indice = 0;
+                indice < coleccion.length;
+                indice++
+            ) {
+                coleccion[indice] =
+                    normalizarArticuloVenta(
+                        coleccion[indice]
+                    );
+            }
+        }
+
+        return colecciones;
+    }
+
+    function calcularTotalColeccion(
+        coleccion
+    ) {
+
+        return coleccion.reduce(
+            function (
+                total,
+                articulo
+            ) {
+
+                normalizarArticuloVenta(
+                    articulo
+                );
+
+                const precio =
+                    obtenerPrecioProducto(
+                        articulo
+                    );
+
+                const cantidad =
+                    Number(
+                        articulo.cantidad
+                        ?? 1
+                    );
+
+                if (
+                    !Number.isFinite(precio)
+                    || precio <= 0
+                ) {
+                    return total;
+                }
+
+                return total
+                    + precio
+                    * (
+                        Number.isFinite(cantidad)
+                        && cantidad > 0
+                            ? cantidad
+                            : 1
+                    );
+            },
+            0
+        );
+    }
+
+    function validarCarritoAntesDeCobrar() {
+
+        const colecciones =
+            normalizarCarritosGlobales();
+
+        const coleccion =
+            colecciones.find(
+                lista => lista.length > 0
+            );
+
+        if (!coleccion) {
+            return {
+                valido: true,
+                total: 0
+            };
+        }
+
+        const invalidos =
+            coleccion.filter(
+                function (articulo) {
+
+                    const precio =
+                        obtenerPrecioProducto(
+                            articulo
+                        );
+
+                    return !Number.isFinite(precio)
+                        || precio <= 0;
+                }
+            );
+
+        if (invalidos.length > 0) {
+
+            const nombres =
+                invalidos
+                    .map(
+                        articulo =>
+                            articulo.nombre
+                            ?? articulo.producto?.nombre
+                            ?? 'Producto sin nombre'
+                    )
+                    .join(', ');
+
+            return {
+                valido: false,
+                total: 0,
+                mensaje:
+                    'No se puede cobrar. '
+                    + 'Producto sin precio válido: '
+                    + nombres
+            };
+        }
+
+        const total =
+            calcularTotalColeccion(
+                coleccion
+            );
+
+        if (
+            !Number.isFinite(total)
+            || total <= 0
+        ) {
+            return {
+                valido: false,
+                total: 0,
+                mensaje:
+                    'No se puede cobrar porque el total es cero.'
+            };
+        }
+
+        return {
+            valido: true,
+            total:
+                Number(
+                    total.toFixed(2)
+                )
+        };
+    }
+
+    function mostrarErrorPrecio(
+        mensaje
+    ) {
+
+        console.error(
+            MARCA,
+            mensaje
+        );
+
+        if (
+            typeof window.mostrarToast
+            === 'function'
+        ) {
+            window.mostrarToast(
+                mensaje,
+                'error'
+            );
+
+            return;
+        }
+
+        alert(mensaje);
+    }
+
+    /*
+     * Corrige cualquier JSON que llegue desde los endpoints
+     * de productos o ventas.
+     */
+    if (!window.__abarroteFetchCobroCeroV2) {
+
+        window.__abarroteFetchCobroCeroV2 =
+            true;
+
+        const fetchOriginal =
+            window.fetch.bind(window);
+
+        window.fetch =
+            async function (
+                recurso,
+                opciones
+            ) {
+
+                let opcionesFinales =
+                    opciones
+                        ? { ...opciones }
+                        : {};
+
+                const url =
+                    typeof recurso === 'string'
+                        ? recurso
+                        : recurso?.url || '';
+
+                const metodo =
+                    String(
+                        opcionesFinales.method
+                        ?? 'GET'
+                    ).toUpperCase();
+
+                const esPeticionVenta =
+                    metodo !== 'GET'
+                    && (
+                        url.includes(
+                            '/api/ventas'
+                        )
+                        || url.includes(
+                            '/ventas'
+                        )
+                    );
+
+                if (
+                    esPeticionVenta
+                    && opcionesFinales.body
+                    && typeof opcionesFinales.body === 'string'
+                ) {
+
+                    try {
+
+                        const payload =
+                            JSON.parse(
+                                opcionesFinales.body
+                            );
+
+                        const listas = [
+                            'detalles',
+                            'items',
+                            'productos',
+                            'detalleVenta',
+                            'ventaDetalles'
+                        ];
+
+                        for (const propiedad of listas) {
+
+                            if (
+                                Array.isArray(
+                                    payload[propiedad]
+                                )
+                            ) {
+                                payload[propiedad] =
+                                    payload[propiedad].map(
+                                        normalizarArticuloVenta
+                                    );
+                            }
+                        }
+
+                        const resultado =
+                            validarCarritoAntesDeCobrar();
+
+                        if (!resultado.valido) {
+
+                            mostrarErrorPrecio(
+                                resultado.mensaje
+                            );
+
+                            throw new Error(
+                                resultado.mensaje
+                            );
+                        }
+
+                        if (resultado.total > 0) {
+                            payload.total =
+                                resultado.total;
+
+                            payload.totalVenta =
+                                resultado.total;
+
+                            payload.importeTotal =
+                                resultado.total;
+                        }
+
+                        opcionesFinales.body =
+                            JSON.stringify(
+                                payload
+                            );
+
+                        console.info(
+                            MARCA,
+                            'Venta normalizada antes de enviarse:',
+                            payload
+                        );
+
+                    } catch (error) {
+
+                        if (
+                            error.message
+                            && error.message.includes(
+                                'No se puede cobrar'
+                            )
+                        ) {
+                            throw error;
+                        }
+
+                        console.warn(
+                            MARCA,
+                            'El body de venta no pudo normalizarse:',
+                            error
+                        );
+                    }
+                }
+
+                const response =
+                    await fetchOriginal(
+                        recurso,
+                        opcionesFinales
+                    );
+
+                const esRespuestaProductos =
+                    url.includes(
+                        '/api/ventas/productos'
+                    )
+                    || url.includes(
+                        '/api/productos'
+                    );
+
+                if (!esRespuestaProductos) {
+                    return response;
+                }
+
+                const contentType =
+                    response.headers.get(
+                        'content-type'
+                    ) || '';
+
+                if (
+                    !contentType.includes(
+                        'application/json'
+                    )
+                ) {
+                    return response;
+                }
+
+                const texto =
+                    await response
+                        .clone()
+                        .text();
+
+                let json;
+
+                try {
+                    json = JSON.parse(texto);
+
+                } catch (error) {
+                    return response;
+                }
+
+                if (Array.isArray(json)) {
+                    json =
+                        json.map(
+                            normalizarProducto
+                        );
+
+                } else if (
+                    json
+                    && Array.isArray(json.data)
+                ) {
+                    json.data =
+                        json.data.map(
+                            normalizarProducto
+                        );
+
+                } else if (
+                    json
+                    && json.data
+                    && typeof json.data === 'object'
+                ) {
+                    json.data =
+                        normalizarProducto(
+                            json.data
+                        );
+                }
+
+                return new Response(
+                    JSON.stringify(json),
+                    {
+                        status:
+                            response.status,
+
+                        statusText:
+                            response.statusText,
+
+                        headers:
+                            response.headers
+                    }
+                );
+            };
+    }
+
+    /*
+     * Intercepta el clic antes de que la función original de
+     * cobrar construya la petición.
+     */
+    document.addEventListener(
+        'click',
+        function (evento) {
+
+            const elemento =
+                evento.target.closest(
+                    'button, a, input[type="button"], input[type="submit"]'
+                );
+
+            if (!elemento) {
+                return;
+            }
+
+            const texto =
+                (
+                    elemento.textContent
+                    || elemento.value
+                    || ''
+                )
+                .trim()
+                .toLowerCase();
+
+            const idClase =
+                (
+                    (elemento.id || '')
+                    + ' '
+                    + (elemento.className || '')
+                )
+                .toLowerCase();
+
+            const pareceCobro =
+                texto.includes('cobrar')
+                || texto.includes('confirmar venta')
+                || texto.includes('finalizar venta')
+                || texto.includes('procesar pago')
+                || idClase.includes('cobrar')
+                || idClase.includes('checkout')
+                || idClase.includes('confirmar-venta');
+
+            if (!pareceCobro) {
+                return;
+            }
+
+            const resultado =
+                validarCarritoAntesDeCobrar();
+
+            console.info(
+                MARCA,
+                'Validación previa al cobro:',
+                resultado
+            );
+
+            if (!resultado.valido) {
+
+                evento.preventDefault();
+                evento.stopImmediatePropagation();
+
+                mostrarErrorPrecio(
+                    resultado.mensaje
+                );
+
+                return false;
+            }
+        },
+        true
+    );
+
+    /*
+     * Normalización periódica. Esto también corrige productos
+     * obtenidos desde IndexedDB después de cargar la página.
+     */
+    function ejecutarNormalizacion() {
+
+        normalizarCarritosGlobales();
+
+        const nombresCatalogo = [
+            'productos',
+            'productosCache',
+            'catalogoProductos',
+            'resultadosBusqueda'
+        ];
+
+        for (const nombre of nombresCatalogo) {
+
+            try {
+
+                const lista =
+                    window[nombre];
+
+                if (Array.isArray(lista)) {
+
+                    for (
+                        let indice = 0;
+                        indice < lista.length;
+                        indice++
+                    ) {
+                        lista[indice] =
+                            normalizarProducto(
+                                lista[indice]
+                            );
+                    }
+                }
+
+            } catch (error) {
+                console.debug(
+                    MARCA,
+                    'Catálogo no disponible:',
+                    nombre
+                );
+            }
+        }
+    }
+
+    document.addEventListener(
+        'DOMContentLoaded',
+        ejecutarNormalizacion
+    );
+
+    window.addEventListener(
+        'load',
+        function () {
+
+            ejecutarNormalizacion();
+
+            window.setInterval(
+                ejecutarNormalizacion,
+                1000
+            );
+        }
+    );
+
+    window.obtenerPrecioProducto =
+        obtenerPrecioProducto;
+
+    window.normalizarProductoPos =
+        normalizarProducto;
+
+    window.normalizarArticuloVenta =
+        normalizarArticuloVenta;
+
+    window.validarCarritoAntesDeCobrar =
+        validarCarritoAntesDeCobrar;
+
+    console.info(
+        MARCA,
+        'Corrección de cobro cero instalada.'
+    );
+})();
+</script>
+
 </body>
 </html>
