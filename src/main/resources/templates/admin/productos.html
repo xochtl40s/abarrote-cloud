@@ -204,6 +204,148 @@
 
 </style>
 
+
+<style>
+
+.buscador-productos-scanner {
+    width: min(100%, 430px);
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) 48px 42px;
+    gap: 0.45rem;
+    align-items: stretch;
+}
+
+.buscador-productos-scanner .form-control {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.btn-scanner-busqueda,
+.btn-limpiar-busqueda {
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.btn-scanner-busqueda {
+    border: 1px solid #4ade80;
+    background: rgba(74, 222, 128, 0.12);
+    color: #4ade80;
+}
+
+.btn-scanner-busqueda:hover {
+    background: #4ade80;
+    color: #0f172a;
+}
+
+.btn-limpiar-busqueda {
+    border: 1px solid #64748b;
+    background: rgba(100, 116, 139, 0.12);
+    color: #cbd5e1;
+}
+
+.btn-limpiar-busqueda:hover {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.scanner-busqueda-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 150000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(2, 6, 23, 0.96);
+}
+
+.scanner-busqueda-overlay.active {
+    display: flex;
+}
+
+.scanner-busqueda-panel {
+    width: 100%;
+    max-width: 560px;
+    max-height: 96vh;
+    overflow-y: auto;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    background: #111827;
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.75);
+}
+
+.scanner-busqueda-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #334155;
+}
+
+.scanner-busqueda-header h2 {
+    margin: 0;
+    color: #4ade80;
+    font-size: 1.15rem;
+}
+
+.scanner-busqueda-cerrar {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #ef4444;
+    border-radius: 50%;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+}
+
+.scanner-busqueda-body {
+    padding: 1rem;
+}
+
+#scannerBusquedaReader {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+}
+
+#scannerBusquedaReader video {
+    object-fit: cover !important;
+}
+
+.scanner-busqueda-estado {
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.scanner-busqueda-estado.success {
+    border-color: #22c55e;
+    color: #86efac;
+}
+
+.scanner-busqueda-estado.error {
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+@media (max-width: 760px) {
+
+    .buscador-productos-scanner {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) 48px 42px;
+    }
+}
+
+</style>
+
 <body>
 
 <div class="wrapper">
@@ -598,12 +740,37 @@
                     Lista de Productos
                 </span>
 
-                <input
-                        type="text"
-                        class="form-control"
-                        style="width:250px;"
-                        placeholder="🔍 Buscar..."
-                        onkeyup="filtrarProductos(this.value)">
+                
+<div class="buscador-productos-scanner">
+    <!-- ABARROTE_BUSCADOR_PRODUCTOS_SCANNER_V2 -->
+
+    <input
+            type="text"
+            class="form-control"
+            id="buscarProductosInput"
+            placeholder="🔍 Buscar nombre, código o categoría..."
+            autocomplete="off"
+            inputmode="search"
+            oninput="filtrarProductos(this.value)"
+            onclick="abrirScannerBusquedaDesdeCampo(event)">
+
+    <button
+            type="button"
+            class="btn-scanner-busqueda"
+            title="Escanear código de barras"
+            onclick="abrirScannerBusquedaProducto()">
+        📷
+    </button>
+
+    <button
+            type="button"
+            class="btn-limpiar-busqueda"
+            title="Limpiar búsqueda"
+            onclick="limpiarBusquedaProductos()">
+        ✕
+    </button>
+</div>
+
 
             </div>
 
@@ -875,6 +1042,74 @@
 
 </div>
 
+
+
+<div
+        id="scannerBusquedaOverlay"
+        class="scanner-busqueda-overlay">
+
+    <div class="scanner-busqueda-panel">
+
+        <div class="scanner-busqueda-header">
+
+            <h2>📷 Buscar producto por código</h2>
+
+            <button
+                    type="button"
+                    class="scanner-busqueda-cerrar"
+                    onclick="cerrarScannerBusquedaProducto()">
+                ✕
+            </button>
+
+        </div>
+
+        <div class="scanner-busqueda-body">
+
+            <div id="scannerBusquedaReader"></div>
+
+            <p style="
+                margin-top:0.8rem;
+                color:#cbd5e1;
+                text-align:center;
+            ">
+                Coloca el código de barras dentro del recuadro.
+            </p>
+
+            <div
+                    id="scannerBusquedaEstado"
+                    class="scanner-busqueda-estado">
+                Preparando cámara trasera…
+            </div>
+
+            <div style="
+                display:flex;
+                gap:0.7rem;
+                margin-top:1rem;
+            ">
+
+                <button
+                        type="button"
+                        class="btn btn-primary"
+                        style="flex:1;"
+                        onclick="reiniciarScannerBusquedaProducto()">
+                    🔄 Reintentar
+                </button>
+
+                <button
+                        type="button"
+                        class="btn btn-cancel"
+                        style="flex:1;"
+                        onclick="cerrarScannerBusquedaProducto()">
+                    Cancelar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
 <script>
 
@@ -2503,6 +2738,345 @@ window.addEventListener(
 
         detenerScannerProducto();
     }
+);
+
+</script>
+
+
+<script
+        src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js">
+</script>
+
+<script>
+
+let scannerBusquedaProducto = null;
+let scannerBusquedaProductoActivo = false;
+let scannerBusquedaProductoProcesando = false;
+let ultimoToqueBusquedaProducto = 0;
+
+function esMovilBusquedaProducto() {
+
+    return window.matchMedia(
+        '(max-width: 900px)'
+    ).matches
+    || /Android|iPhone|iPad|Mobile/i.test(
+        navigator.userAgent
+    );
+}
+
+function abrirScannerBusquedaDesdeCampo(event) {
+
+    if (!esMovilBusquedaProducto()) {
+        return;
+    }
+
+    if (!event || event.isTrusted !== true) {
+        return;
+    }
+
+    const ahora = Date.now();
+
+    if (ahora - ultimoToqueBusquedaProducto < 800) {
+        return;
+    }
+
+    ultimoToqueBusquedaProducto = ahora;
+
+    abrirScannerBusquedaProducto();
+}
+
+async function abrirScannerBusquedaProducto() {
+
+    if (scannerBusquedaProductoActivo) {
+        return;
+    }
+
+    const overlay =
+        document.getElementById(
+            'scannerBusquedaOverlay'
+        );
+
+    overlay.classList.add(
+        'active'
+    );
+
+    document.body.style.overflow =
+        'hidden';
+
+    scannerBusquedaProductoActivo = true;
+    scannerBusquedaProductoProcesando = false;
+
+    cambiarEstadoBusquedaScanner(
+        'Solicitando permiso para la cámara trasera…',
+        ''
+    );
+
+    if (typeof Html5Qrcode === 'undefined') {
+
+        scannerBusquedaProductoActivo = false;
+
+        cambiarEstadoBusquedaScanner(
+            'No se cargó el lector de códigos.',
+            'error'
+        );
+
+        return;
+    }
+
+    try {
+
+        scannerBusquedaProducto =
+            new Html5Qrcode(
+                'scannerBusquedaReader',
+                {
+                    verbose: false,
+                    formatsToSupport:
+                        obtenerFormatosBusquedaProducto()
+                }
+            );
+
+        await scannerBusquedaProducto.start(
+            {
+                facingMode: 'environment'
+            },
+            {
+                fps: 12,
+                qrbox: function (ancho, alto) {
+
+                    return {
+                        width:
+                            Math.floor(ancho * 0.88),
+
+                        height:
+                            Math.max(
+                                100,
+                                Math.floor(alto * 0.28)
+                            )
+                    };
+                },
+                disableFlip: true
+            },
+            procesarCodigoBusquedaProducto,
+            function () {
+            }
+        );
+
+        cambiarEstadoBusquedaScanner(
+            'Cámara activa. Apunta al código.',
+            ''
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Error abriendo cámara de búsqueda',
+            error
+        );
+
+        scannerBusquedaProductoActivo = false;
+
+        cambiarEstadoBusquedaScanner(
+            mensajeErrorBusquedaProducto(error),
+            'error'
+        );
+    }
+}
+
+function obtenerFormatosBusquedaProducto() {
+
+    if (
+        typeof Html5QrcodeSupportedFormats
+        === 'undefined'
+    ) {
+        return undefined;
+    }
+
+    return [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.ITF
+    ].filter(
+        formato =>
+            formato !== undefined
+    );
+}
+
+async function procesarCodigoBusquedaProducto(
+    codigoLeido
+) {
+
+    if (scannerBusquedaProductoProcesando) {
+        return;
+    }
+
+    const codigo =
+        String(codigoLeido || '')
+            .trim()
+            .replace(/[\r\n\t]/g, '');
+
+    if (!codigo) {
+        return;
+    }
+
+    scannerBusquedaProductoProcesando = true;
+
+    cambiarEstadoBusquedaScanner(
+        'Código detectado: ' + codigo,
+        'success'
+    );
+
+    if (navigator.vibrate) {
+        navigator.vibrate([80, 40, 120]);
+    }
+
+    const input =
+        document.getElementById(
+            'buscarProductosInput'
+        );
+
+    input.value = codigo;
+
+    await cerrarScannerBusquedaProducto();
+
+    filtrarProductos(codigo);
+
+    input.focus();
+    input.select();
+}
+
+async function detenerScannerBusquedaProducto() {
+
+    if (!scannerBusquedaProducto) {
+        return;
+    }
+
+    try {
+        await scannerBusquedaProducto.stop();
+    } catch (error) {
+    }
+
+    try {
+        await scannerBusquedaProducto.clear();
+    } catch (error) {
+    }
+
+    scannerBusquedaProducto = null;
+}
+
+async function cerrarScannerBusquedaProducto() {
+
+    await detenerScannerBusquedaProducto();
+
+    document.getElementById(
+        'scannerBusquedaOverlay'
+    ).classList.remove(
+        'active'
+    );
+
+    document.body.style.overflow = '';
+
+    scannerBusquedaProductoActivo = false;
+    scannerBusquedaProductoProcesando = false;
+}
+
+async function reiniciarScannerBusquedaProducto() {
+
+    await cerrarScannerBusquedaProducto();
+
+    await abrirScannerBusquedaProducto();
+}
+
+function cambiarEstadoBusquedaScanner(
+    mensaje,
+    tipo
+) {
+
+    const elemento =
+        document.getElementById(
+            'scannerBusquedaEstado'
+        );
+
+    elemento.className =
+        'scanner-busqueda-estado'
+        + (tipo ? ' ' + tipo : '');
+
+    elemento.textContent = mensaje;
+}
+
+function mensajeErrorBusquedaProducto(error) {
+
+    if (
+        error?.name === 'NotAllowedError'
+        || String(error).includes('Permission')
+    ) {
+        return 'Permiso de cámara rechazado.';
+    }
+
+    if (error?.name === 'NotFoundError') {
+        return 'No se encontró una cámara.';
+    }
+
+    if (error?.name === 'NotReadableError') {
+        return 'Otra aplicación está usando la cámara.';
+    }
+
+    return 'No fue posible abrir la cámara.';
+}
+
+function limpiarBusquedaProductos() {
+
+    const input =
+        document.getElementById(
+            'buscarProductosInput'
+        );
+
+    input.value = '';
+
+    filtrarProductos('');
+
+    input.focus();
+}
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const input =
+            document.getElementById(
+                'buscarProductosInput'
+            );
+
+        if (!input) {
+            return;
+        }
+
+        input.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                filtrarProductos(
+                    input.value
+                );
+
+                input.select();
+            }
+        );
+    }
+);
+
+window.addEventListener(
+    'pagehide',
+    detenerScannerBusquedaProducto
 );
 
 </script>
