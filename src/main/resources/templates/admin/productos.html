@@ -5,6 +5,205 @@
     <style th:replace="~{layout :: styles}"></style>
 </head>
 
+
+<!-- ABARROTE_PRODUCTOS_SCANNER_CATEGORIA_V1 -->
+
+<style>
+
+.codigo-barras-control {
+    display: flex;
+    gap: 0.55rem;
+    align-items: stretch;
+}
+
+.codigo-barras-control .form-control {
+    flex: 1;
+    min-width: 0;
+}
+
+.btn-scanner-producto {
+    min-width: 52px;
+    padding: 0.65rem;
+    border: 1px solid #4ade80;
+    border-radius: 8px;
+    background: #16213e;
+    color: #4ade80;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.btn-scanner-producto:hover {
+    background: #4ade80;
+    color: #0f172a;
+}
+
+.campo-ayuda-producto {
+    display: block;
+    margin-top: 0.35rem;
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.categoria-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    align-items: stretch;
+}
+
+.btn-categoria-rapida {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #60a5fa;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.12);
+    color: #93c5fd;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.btn-categoria-rapida:hover {
+    background: #3b82f6;
+    color: #ffffff;
+}
+
+.producto-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(2, 6, 23, 0.92);
+}
+
+.producto-modal-overlay.active {
+    display: flex;
+}
+
+.producto-modal {
+    width: 100%;
+    max-width: 540px;
+    max-height: 95vh;
+    overflow-y: auto;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    background: #111827;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+}
+
+.producto-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #334155;
+}
+
+.producto-modal-header h2 {
+    margin: 0;
+    color: #4ade80;
+    font-size: 1.15rem;
+}
+
+.producto-modal-cerrar {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #ef4444;
+    border-radius: 50%;
+    background: transparent;
+    color: #ef4444;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.producto-modal-body {
+    padding: 1.2rem;
+}
+
+.producto-modal-acciones {
+    display: flex;
+    gap: 0.7rem;
+    margin-top: 1rem;
+}
+
+.producto-modal-acciones button {
+    flex: 1;
+}
+
+#scannerProductoReader {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000000;
+}
+
+#scannerProductoReader video {
+    object-fit: cover !important;
+    border-radius: 12px;
+}
+
+.scanner-producto-estado {
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.scanner-producto-estado.success {
+    border-color: #22c55e;
+    color: #86efac;
+}
+
+.scanner-producto-estado.error {
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+.categoria-rapida-mensaje {
+    display: none;
+    margin-top: 0.8rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+}
+
+.categoria-rapida-mensaje.success {
+    display: block;
+    border: 1px solid #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    color: #86efac;
+}
+
+.categoria-rapida-mensaje.error {
+    display: block;
+    border: 1px solid #ef4444;
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+}
+
+@media (max-width: 720px) {
+
+    .categoria-control {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-categoria-rapida {
+        width: 100%;
+    }
+
+    .producto-modal {
+        max-width: none;
+        max-height: 100vh;
+    }
+}
+
+</style>
+
 <body>
 
 <div class="wrapper">
@@ -233,10 +432,31 @@
                             Código de Barras
                         </label>
 
-                        <input
-                                type="text"
-                                class="form-control"
-                                id="codigoBarras">
+                        <div class="codigo-barras-control">
+
+                            <input
+                                    type="text"
+                                    class="form-control"
+                                    id="codigoBarras"
+                                    autocomplete="off"
+                                    inputmode="numeric"
+                                    placeholder="Escanea o escribe el código"
+                                    onclick="abrirScannerProductoDesdeCampo(event)">
+
+                            <button
+                                    type="button"
+                                    class="btn-scanner-producto"
+                                    onclick="abrirScannerProducto()"
+                                    title="Escanear código con la cámara"
+                                    aria-label="Escanear código con la cámara">
+                                📷
+                            </button>
+
+                        </div>
+
+                        <small class="campo-ayuda-producto">
+                            En Motorola puedes usar la cámara o el lector físico.
+                        </small>
 
                     </div>
 
@@ -316,21 +536,32 @@
                             Categoría
                         </label>
 
-                        <select
-                                class="form-control"
-                                id="categoriaId">
+                        <div class="categoria-control">
 
-                            <option value="">
-                                Sin categoría
-                            </option>
+                            <select
+                                    class="form-control"
+                                    id="categoriaId">
 
-                            <option
-                                    th:each="cat : ${categorias}"
-                                    th:value="${cat.id}"
-                                    th:text="${cat.nombre}">
-                            </option>
+                                <option value="">
+                                    Sin categoría
+                                </option>
 
-                        </select>
+                                <option
+                                        th:each="cat : ${categorias}"
+                                        th:value="${cat.id}"
+                                        th:text="${cat.nombre}">
+                                </option>
+
+                            </select>
+
+                            <button
+                                    type="button"
+                                    class="btn-categoria-rapida"
+                                    onclick="abrirModalCategoriaRapida()">
+                                ➕ Nueva categoría
+                            </button>
+
+                        </div>
 
                     </div>
 
@@ -480,6 +711,170 @@
     </div>
 
 </div>
+
+
+<!-- ====================================================== -->
+<!-- MODAL ESCÁNER DE PRODUCTO                              -->
+<!-- ====================================================== -->
+
+<div
+        id="scannerProductoOverlay"
+        class="producto-modal-overlay"
+        role="dialog"
+        aria-modal="true">
+
+    <div class="producto-modal">
+
+        <div class="producto-modal-header">
+
+            <h2>
+                📷 Escanear código de barras
+            </h2>
+
+            <button
+                    type="button"
+                    class="producto-modal-cerrar"
+                    onclick="cerrarScannerProducto()">
+                ✕
+            </button>
+
+        </div>
+
+        <div class="producto-modal-body">
+
+            <div id="scannerProductoReader"></div>
+
+            <p
+                    style="
+                        margin-top:0.8rem;
+                        color:#cbd5e1;
+                        text-align:center;
+                        line-height:1.5;
+                    ">
+                Coloca el código dentro del recuadro.
+                Mantén la cámara estable y evita reflejos.
+            </p>
+
+            <div
+                    id="scannerProductoEstado"
+                    class="scanner-producto-estado">
+                Preparando cámara trasera…
+            </div>
+
+            <div class="producto-modal-acciones">
+
+                <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="reiniciarScannerProducto()">
+                    🔄 Reintentar
+                </button>
+
+                <button
+                        type="button"
+                        class="btn btn-cancel"
+                        onclick="cerrarScannerProducto()">
+                    Cancelar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ====================================================== -->
+<!-- MODAL ALTA RÁPIDA DE CATEGORÍA                         -->
+<!-- ====================================================== -->
+
+<div
+        id="categoriaRapidaOverlay"
+        class="producto-modal-overlay"
+        role="dialog"
+        aria-modal="true">
+
+    <div class="producto-modal">
+
+        <div class="producto-modal-header">
+
+            <h2>
+                🏷️ Nueva categoría
+            </h2>
+
+            <button
+                    type="button"
+                    class="producto-modal-cerrar"
+                    onclick="cerrarModalCategoriaRapida()">
+                ✕
+            </button>
+
+        </div>
+
+        <div class="producto-modal-body">
+
+            <div class="form-group">
+
+                <label for="categoriaRapidaNombre">
+                    Nombre *
+                </label>
+
+                <input
+                        type="text"
+                        id="categoriaRapidaNombre"
+                        class="form-control"
+                        maxlength="100"
+                        placeholder="Ejemplo: Ferretería">
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="categoriaRapidaDescripcion">
+                    Descripción
+                </label>
+
+                <textarea
+                        id="categoriaRapidaDescripcion"
+                        class="form-control"
+                        maxlength="255"
+                        rows="3"
+                        placeholder="Describe qué productos pertenecen a esta categoría">
+                </textarea>
+
+            </div>
+
+            <div
+                    id="categoriaRapidaMensaje"
+                    class="categoria-rapida-mensaje">
+            </div>
+
+            <div class="producto-modal-acciones">
+
+                <button
+                        type="button"
+                        id="btnGuardarCategoriaRapida"
+                        class="btn btn-primary"
+                        onclick="guardarCategoriaRapida()">
+                    💾 Crear y seleccionar
+                </button>
+
+                <button
+                        type="button"
+                        class="btn btn-cancel"
+                        onclick="cerrarModalCategoriaRapida()">
+                    Cancelar
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 <script>
 
@@ -1159,6 +1554,957 @@ function escaparHtml(texto) {
 <script
         defer
         th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+
+<script
+        src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js">
+</script>
+
+<script>
+
+let scannerProductoInstancia = null;
+let scannerProductoActivo = false;
+let scannerProductoProcesando = false;
+let ultimoToqueCodigoBarras = 0;
+
+/* ========================================================= */
+/* ESCÁNER DE CÓDIGO DE BARRAS                              */
+/* ========================================================= */
+
+function esDispositivoMovilProductos() {
+
+    return window.matchMedia(
+        '(max-width: 900px)'
+    ).matches
+    || /Android|iPhone|iPad|iPod|Mobile/i.test(
+        navigator.userAgent
+    );
+}
+
+function abrirScannerProductoDesdeCampo(
+    event
+) {
+
+    /*
+     * El lector físico Motorola puede escribir directamente
+     * en el campo sin abrir cámara.
+     *
+     * La cámara se abre únicamente con un toque real.
+     */
+
+    if (!esDispositivoMovilProductos()) {
+        return;
+    }
+
+    if (!event || event.isTrusted !== true) {
+        return;
+    }
+
+    const ahora =
+        Date.now();
+
+    if (
+        ahora - ultimoToqueCodigoBarras
+        < 800
+    ) {
+        return;
+    }
+
+    ultimoToqueCodigoBarras =
+        ahora;
+
+    abrirScannerProducto();
+}
+
+async function abrirScannerProducto() {
+
+    if (scannerProductoActivo) {
+        return;
+    }
+
+    const overlay =
+        document.getElementById(
+            'scannerProductoOverlay'
+        );
+
+    overlay.classList.add(
+        'active'
+    );
+
+    document.body.style.overflow =
+        'hidden';
+
+    scannerProductoActivo = true;
+    scannerProductoProcesando = false;
+
+    cambiarEstadoScannerProducto(
+        'Solicitando permiso para utilizar la cámara trasera…',
+        ''
+    );
+
+    if (
+        typeof Html5Qrcode
+        === 'undefined'
+    ) {
+
+        scannerProductoActivo =
+            false;
+
+        cambiarEstadoScannerProducto(
+            'No se cargó el lector. Verifica la conexión a Internet.',
+            'error'
+        );
+
+        return;
+    }
+
+    try {
+
+        scannerProductoInstancia =
+            new Html5Qrcode(
+                'scannerProductoReader',
+                {
+                    verbose: false,
+                    formatsToSupport:
+                        obtenerFormatosScannerProducto()
+                }
+            );
+
+        await scannerProductoInstancia.start(
+            {
+                facingMode: {
+                    exact: 'environment'
+                }
+            },
+            {
+                fps: 12,
+                qrbox: function (
+                    ancho,
+                    alto
+                ) {
+
+                    return {
+                        width:
+                            Math.floor(
+                                ancho * 0.88
+                            ),
+
+                        height:
+                            Math.max(
+                                100,
+                                Math.floor(
+                                    alto * 0.28
+                                )
+                            )
+                    };
+                },
+                aspectRatio: 1.333334,
+                disableFlip: true
+            },
+            procesarCodigoProducto,
+            function () {
+                /*
+                 * Los intentos fallidos mientras se apunta
+                 * la cámara son normales.
+                 */
+            }
+        );
+
+        cambiarEstadoScannerProducto(
+            'Cámara activa. Apunta al código de barras.',
+            ''
+        );
+
+    } catch (errorTrasera) {
+
+        console.warn(
+            'No se abrió la cámara trasera exacta',
+            errorTrasera
+        );
+
+        try {
+
+            await limpiarScannerProducto();
+
+            scannerProductoInstancia =
+                new Html5Qrcode(
+                    'scannerProductoReader',
+                    {
+                        verbose: false,
+                        formatsToSupport:
+                            obtenerFormatosScannerProducto()
+                    }
+                );
+
+            await scannerProductoInstancia.start(
+                {
+                    facingMode:
+                        'environment'
+                },
+                {
+                    fps: 10,
+                    qrbox: {
+                        width: 300,
+                        height: 130
+                    },
+                    disableFlip: true
+                },
+                procesarCodigoProducto,
+                function () {
+                }
+            );
+
+            cambiarEstadoScannerProducto(
+                'Cámara activa. Apunta al código de barras.',
+                ''
+            );
+
+        } catch (errorFinal) {
+
+            console.error(
+                'No fue posible abrir la cámara',
+                errorFinal
+            );
+
+            scannerProductoActivo =
+                false;
+
+            cambiarEstadoScannerProducto(
+                mensajeErrorCamaraProducto(
+                    errorFinal
+                ),
+                'error'
+            );
+        }
+    }
+}
+
+function obtenerFormatosScannerProducto() {
+
+    if (
+        typeof Html5QrcodeSupportedFormats
+        === 'undefined'
+    ) {
+        return undefined;
+    }
+
+    return [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.ITF
+    ].filter(
+        formato =>
+            formato !== undefined
+    );
+}
+
+async function procesarCodigoProducto(
+    codigoLeido
+) {
+
+    if (scannerProductoProcesando) {
+        return;
+    }
+
+    const codigo =
+        String(
+            codigoLeido || ''
+        )
+            .trim()
+            .replace(
+                /[\r\n\t]/g,
+                ''
+            );
+
+    if (!codigo) {
+        return;
+    }
+
+    scannerProductoProcesando =
+        true;
+
+    cambiarEstadoScannerProducto(
+        'Código detectado: ' + codigo,
+        'success'
+    );
+
+    confirmarLecturaProducto();
+
+    const input =
+        document.getElementById(
+            'codigoBarras'
+        );
+
+    input.value =
+        codigo;
+
+    await detenerScannerProducto();
+
+    window.setTimeout(
+        async function () {
+
+            await cerrarScannerProducto();
+
+            input.focus();
+            input.select();
+
+            verificarCodigoProductoExistente(
+                codigo
+            );
+
+        },
+        350
+    );
+}
+
+async function verificarCodigoProductoExistente(
+    codigo
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                '/api/productos/codigo/'
+                + encodeURIComponent(
+                    codigo
+                )
+            );
+
+        if (response.ok) {
+
+            const resultado =
+                await response.json();
+
+            if (
+                resultado
+                && resultado.success
+                && resultado.data
+            ) {
+
+                alert(
+                    '⚠️ Este código ya pertenece al producto: '
+                    + resultado.data.nombre
+                );
+            }
+        }
+
+    } catch (error) {
+
+        /*
+         * Que el producto no exista es el caso esperado
+         * durante una alta nueva.
+         */
+        console.debug(
+            'Código disponible o consulta sin coincidencia',
+            error
+        );
+    }
+}
+
+async function detenerScannerProducto() {
+
+    if (!scannerProductoInstancia) {
+        return;
+    }
+
+    try {
+
+        await scannerProductoInstancia.stop();
+
+    } catch (error) {
+
+        console.debug(
+            'La cámara ya estaba detenida',
+            error
+        );
+    }
+
+    try {
+
+        await scannerProductoInstancia.clear();
+
+    } catch (error) {
+
+        console.debug(
+            'El lector ya estaba limpio',
+            error
+        );
+    }
+
+    scannerProductoInstancia =
+        null;
+}
+
+async function limpiarScannerProducto() {
+
+    if (!scannerProductoInstancia) {
+        return;
+    }
+
+    try {
+        await scannerProductoInstancia.stop();
+    } catch (error) {
+    }
+
+    try {
+        await scannerProductoInstancia.clear();
+    } catch (error) {
+    }
+
+    scannerProductoInstancia =
+        null;
+}
+
+async function cerrarScannerProducto() {
+
+    await detenerScannerProducto();
+
+    const overlay =
+        document.getElementById(
+            'scannerProductoOverlay'
+        );
+
+    overlay.classList.remove(
+        'active'
+    );
+
+    document.body.style.overflow =
+        '';
+
+    scannerProductoActivo =
+        false;
+
+    scannerProductoProcesando =
+        false;
+}
+
+async function reiniciarScannerProducto() {
+
+    await cerrarScannerProducto();
+
+    await abrirScannerProducto();
+}
+
+function cambiarEstadoScannerProducto(
+    mensaje,
+    tipo
+) {
+
+    const elemento =
+        document.getElementById(
+            'scannerProductoEstado'
+        );
+
+    elemento.className =
+        'scanner-producto-estado'
+        + (
+            tipo
+                ? ' ' + tipo
+                : ''
+        );
+
+    elemento.textContent =
+        mensaje;
+}
+
+function mensajeErrorCamaraProducto(
+    error
+) {
+
+    const nombre =
+        error && error.name
+            ? error.name
+            : '';
+
+    if (
+        nombre === 'NotAllowedError'
+        || String(error).includes(
+            'Permission'
+        )
+    ) {
+
+        return 'Permiso de cámara rechazado. Permite la cámara en Chrome.';
+    }
+
+    if (
+        nombre === 'NotFoundError'
+    ) {
+
+        return 'No se encontró una cámara en este dispositivo.';
+    }
+
+    if (
+        nombre === 'NotReadableError'
+    ) {
+
+        return 'Otra aplicación está utilizando la cámara.';
+    }
+
+    if (
+        location.protocol !== 'https:'
+        && location.hostname !== 'localhost'
+    ) {
+
+        return 'La cámara requiere HTTPS.';
+    }
+
+    return 'No fue posible iniciar la cámara. También puedes escribir el código manualmente.';
+}
+
+function confirmarLecturaProducto() {
+
+    if (navigator.vibrate) {
+
+        navigator.vibrate(
+            [80, 40, 120]
+        );
+    }
+
+    try {
+
+        const contexto =
+            new (
+                window.AudioContext
+                || window.webkitAudioContext
+            )();
+
+        const oscilador =
+            contexto.createOscillator();
+
+        const ganancia =
+            contexto.createGain();
+
+        oscilador.frequency.value =
+            1250;
+
+        ganancia.gain.value =
+            0.08;
+
+        oscilador.connect(
+            ganancia
+        );
+
+        ganancia.connect(
+            contexto.destination
+        );
+
+        oscilador.start();
+
+        oscilador.stop(
+            contexto.currentTime
+            + 0.11
+        );
+
+    } catch (error) {
+
+        console.debug(
+            'Beep no disponible',
+            error
+        );
+    }
+}
+
+/* ========================================================= */
+/* ALTA RÁPIDA DE CATEGORÍA                                 */
+/* ========================================================= */
+
+function abrirModalCategoriaRapida() {
+
+    const overlay =
+        document.getElementById(
+            'categoriaRapidaOverlay'
+        );
+
+    overlay.classList.add(
+        'active'
+    );
+
+    document.body.style.overflow =
+        'hidden';
+
+    document.getElementById(
+        'categoriaRapidaNombre'
+    ).value = '';
+
+    document.getElementById(
+        'categoriaRapidaDescripcion'
+    ).value = '';
+
+    ocultarMensajeCategoriaRapida();
+
+    window.setTimeout(
+        function () {
+
+            document.getElementById(
+                'categoriaRapidaNombre'
+            ).focus();
+        },
+        150
+    );
+}
+
+function cerrarModalCategoriaRapida() {
+
+    document.getElementById(
+        'categoriaRapidaOverlay'
+    ).classList.remove(
+        'active'
+    );
+
+    document.body.style.overflow =
+        '';
+}
+
+async function guardarCategoriaRapida() {
+
+    const nombre =
+        document.getElementById(
+            'categoriaRapidaNombre'
+        ).value.trim();
+
+    const descripcion =
+        document.getElementById(
+            'categoriaRapidaDescripcion'
+        ).value.trim();
+
+    if (!nombre) {
+
+        mostrarMensajeCategoriaRapida(
+            'Escribe el nombre de la categoría.',
+            'error'
+        );
+
+        return;
+    }
+
+    const boton =
+        document.getElementById(
+            'btnGuardarCategoriaRapida'
+        );
+
+    boton.disabled =
+        true;
+
+    boton.textContent =
+        '⏳ Guardando…';
+
+    try {
+
+        const response =
+            await fetch(
+                '/api/categorias/rapida',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':
+                            'application/json',
+                        ...obtenerCsrfHeaders()
+                    },
+                    body: JSON.stringify(
+                        {
+                            nombre:
+                                nombre,
+
+                            descripcion:
+                                descripcion
+                        }
+                    )
+                }
+            );
+
+        let resultado;
+
+        try {
+
+            resultado =
+                await response.json();
+
+        } catch (errorJson) {
+
+            throw new Error(
+                'El servidor no devolvió una respuesta válida'
+            );
+        }
+
+        if (
+            !response.ok
+            || !resultado.success
+        ) {
+
+            throw new Error(
+                resultado.message
+                || 'No se pudo crear la categoría'
+            );
+        }
+
+        agregarCategoriaAlSelector(
+            resultado.data
+        );
+
+        mostrarMensajeCategoriaRapida(
+            resultado.message
+            || 'Categoría creada correctamente.',
+            'success'
+        );
+
+        window.setTimeout(
+            function () {
+
+                cerrarModalCategoriaRapida();
+
+                document.getElementById(
+                    'descripcion'
+                ).focus();
+            },
+            850
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Error creando categoría',
+            error
+        );
+
+        mostrarMensajeCategoriaRapida(
+            error.message,
+            'error'
+        );
+
+    } finally {
+
+        boton.disabled =
+            false;
+
+        boton.textContent =
+            '💾 Crear y seleccionar';
+    }
+}
+
+function agregarCategoriaAlSelector(
+    categoria
+) {
+
+    const select =
+        document.getElementById(
+            'categoriaId'
+        );
+
+    const valor =
+        String(
+            categoria.id
+        );
+
+    let opcion =
+        Array.from(
+            select.options
+        )
+        .find(
+            item =>
+                item.value === valor
+        );
+
+    if (!opcion) {
+
+        opcion =
+            document.createElement(
+                'option'
+            );
+
+        opcion.value =
+            valor;
+
+        opcion.textContent =
+            categoria.nombre;
+
+        select.appendChild(
+            opcion
+        );
+    }
+
+    select.value =
+        valor;
+
+    select.dispatchEvent(
+        new Event(
+            'change',
+            {
+                bubbles: true
+            }
+        )
+    );
+}
+
+function mostrarMensajeCategoriaRapida(
+    mensaje,
+    tipo
+) {
+
+    const elemento =
+        document.getElementById(
+            'categoriaRapidaMensaje'
+        );
+
+    elemento.className =
+        'categoria-rapida-mensaje '
+        + tipo;
+
+    elemento.textContent =
+        mensaje;
+}
+
+function ocultarMensajeCategoriaRapida() {
+
+    const elemento =
+        document.getElementById(
+            'categoriaRapidaMensaje'
+        );
+
+    elemento.className =
+        'categoria-rapida-mensaje';
+
+    elemento.textContent =
+        '';
+}
+
+/* ========================================================= */
+/* EVENTOS                                                   */
+/* ========================================================= */
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const campoCodigo =
+            document.getElementById(
+                'codigoBarras'
+            );
+
+        /*
+         * Lector físico Motorola:
+         * generalmente escribe el código como teclado
+         * y finaliza con Enter.
+         */
+        campoCodigo.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                const codigo =
+                    campoCodigo.value.trim();
+
+                if (codigo.length < 6) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                verificarCodigoProductoExistente(
+                    codigo
+                );
+
+                document.getElementById(
+                    'precioCompra'
+                ).focus();
+            }
+        );
+
+        document.getElementById(
+            'categoriaRapidaNombre'
+        ).addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Enter') {
+
+                    event.preventDefault();
+
+                    guardarCategoriaRapida();
+                }
+            }
+        );
+
+        const scannerOverlay =
+            document.getElementById(
+                'scannerProductoOverlay'
+            );
+
+        scannerOverlay.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    event.target
+                    === scannerOverlay
+                ) {
+
+                    cerrarScannerProducto();
+                }
+            }
+        );
+
+        const categoriaOverlay =
+            document.getElementById(
+                'categoriaRapidaOverlay'
+            );
+
+        categoriaOverlay.addEventListener(
+            'click',
+            function (event) {
+
+                if (
+                    event.target
+                    === categoriaOverlay
+                ) {
+
+                    cerrarModalCategoriaRapida();
+                }
+            }
+        );
+
+        document.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                if (scannerProductoActivo) {
+
+                    cerrarScannerProducto();
+                }
+
+                if (
+                    categoriaOverlay.classList.contains(
+                        'active'
+                    )
+                ) {
+
+                    cerrarModalCategoriaRapida();
+                }
+            }
+        );
+    }
+);
+
+window.addEventListener(
+    'pagehide',
+    function () {
+
+        detenerScannerProducto();
+    }
+);
+
 </script>
 
 </body>
