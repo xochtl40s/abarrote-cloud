@@ -614,7 +614,7 @@
         // ============================================================
         
         const DB_NAME = 'AbarrotePOS';
-        const DB_VERSION = 3;
+        const DB_VERSION = 4;
         let db;
         let categoriasCache = [];
         let categoriaActiva = null;
@@ -2734,6 +2734,939 @@ window.addEventListener(
                 }
             },
             1200
+        );
+    }
+);
+
+</script>
+
+
+<script id="abarrotePosPrecioUnificadoV1">
+
+/* ========================================================= */
+/* ABARROTE_POS_PRECIO_UNIFICADO_V1                          */
+/* ========================================================= */
+
+const ABARROTE_CATALOGO_VERSION =
+    'precio-pos-v1';
+
+const ABARROTE_CATALOGO_VERSION_KEY =
+    'abarrote_catalogo_version';
+
+/*
+ * Convierte valores como:
+ *
+ * 25
+ * 25.00
+ * "25.00"
+ * "$ 25.00"
+ * "25,00"
+ *
+ * a un Number válido.
+ */
+function convertirPrecioPos(
+    valor
+) {
+
+    if (
+        typeof valor === 'number'
+        && Number.isFinite(valor)
+    ) {
+        return valor;
+    }
+
+    if (
+        valor === null
+        || valor === undefined
+        || valor === ''
+    ) {
+        return NaN;
+    }
+
+    let texto =
+        String(valor)
+            .trim()
+            .replace(/\s/g, '')
+            .replace(/[^\d,.-]/g, '');
+
+    if (
+        texto.includes(',')
+        && texto.includes('.')
+    ) {
+
+        /*
+         * 1,234.56
+         */
+        texto =
+            texto.replace(/,/g, '');
+
+    } else if (
+        texto.includes(',')
+    ) {
+
+        /*
+         * 25,00
+         */
+        texto =
+            texto.replace(',', '.');
+    }
+
+    const numero =
+        Number(texto);
+
+    return Number.isFinite(numero)
+        ? numero
+        : NaN;
+}
+
+/*
+ * Unifica todas las variantes utilizadas históricamente
+ * por el POS.
+ *
+ * Después de normalizar:
+ *
+ * producto.precioVenta
+ * producto.precio
+ * producto.precioUnitario
+ *
+ * siempre contienen el mismo valor numérico.
+ */
+function normalizarProductoPosSeguro(
+    producto
+) {
+
+    const origen =
+        producto
+        && typeof producto === 'object'
+            ? producto
+            : {};
+
+    const precio =
+        convertirPrecioPos(
+            origen.precioVenta
+            ?? origen.precio
+            ?? origen.precioUnitario
+            ?? origen.salePrice
+            ?? origen.precio_venta
+        );
+
+    const stockNumero =
+        Number(
+            origen.stock
+            ?? origen.existencia
+            ?? origen.cantidad
+            ?? 0
+        );
+
+    const stockMinimoNumero =
+        Number(
+            origen.stockMinimo
+            ?? origen.stock_minimo
+            ?? 0
+        );
+
+    return {
+        ...origen,
+
+        id:
+            origen.id,
+
+        nombre:
+            String(
+                origen.nombre
+                ?? origen.productoNombre
+                ?? 'Producto sin nombre'
+            ),
+
+        codigoBarras:
+            String(
+                origen.codigoBarras
+                ?? origen.codigo
+                ?? origen.barcode
+                ?? ''
+            ),
+
+        precioVenta:
+            precio,
+
+        precio:
+            precio,
+
+        precioUnitario:
+            precio,
+
+        stock:
+            Number.isFinite(stockNumero)
+                ? stockNumero
+                : 0,
+
+        existencia:
+            Number.isFinite(stockNumero)
+                ? stockNumero
+                : 0,
+
+        stockMinimo:
+            Number.isFinite(stockMinimoNumero)
+                ? stockMinimoNumero
+                : 0,
+
+        categoriaNombre:
+            String(
+                origen.categoriaNombre
+                ?? origen.categoria
+                ?? 'Sin categoría'
+            )
+    };
+}
+
+function precioProductoPosValido(
+    producto
+) {
+
+    const normalizado =
+        normalizarProductoPosSeguro(
+            producto
+        );
+
+    return Number.isFinite(
+        normalizado.precioVenta
+    )
+    && normalizado.precioVenta > 0;
+}
+
+function formatearPrecioPos(
+    valor
+) {
+
+    const numero =
+        convertirPrecioPos(
+            valor
+        );
+
+    return Number.isFinite(numero)
+        ? numero.toFixed(2)
+        : '0.00';
+}
+
+/*
+ * Normaliza todos los productos de una respuesta ApiResponse.
+ */
+function normalizarRespuestaProductosPos(
+    respuesta
+) {
+
+    if (
+        !respuesta
+        || typeof respuesta !== 'object'
+    ) {
+        return respuesta;
+    }
+
+    if (
+        Array.isArray(
+            respuesta.data
+        )
+    ) {
+
+        return {
+            ...respuesta,
+
+            data:
+                respuesta.data.map(
+                    normalizarProductoPosSeguro
+                )
+        };
+    }
+
+    if (
+        respuesta.data
+        && typeof respuesta.data === 'object'
+    ) {
+
+        return {
+            ...respuesta,
+
+            data:
+                normalizarProductoPosSeguro(
+                    respuesta.data
+                )
+        };
+    }
+
+    return respuesta;
+}
+
+/*
+ * Intercepta únicamente endpoints del POS.
+ *
+ * Esto garantiza que el código original reciba los tres
+ * nombres de precio, aunque una función antigua use
+ * producto.precio y otra use producto.precioVenta.
+ */
+(function instalarFetchPosSeguro() {
+
+    if (
+        window.__abarroteFetchPrecioInstalado
+    ) {
+        return;
+    }
+
+    window.__abarroteFetchPrecioInstalado =
+        true;
+
+    const fetchOriginal =
+        window.fetch.bind(window);
+
+    window.fetch =
+        async function (
+            recurso,
+            opciones
+        ) {
+
+            const response =
+                await fetchOriginal(
+                    recurso,
+                    opciones
+                );
+
+            const url =
+                typeof recurso === 'string'
+                    ? recurso
+                    : recurso?.url || '';
+
+            const esCatalogoPos =
+                url.includes(
+                    '/api/ventas/productos'
+                )
+                || url.includes(
+                    '/api/ventas/buscar'
+                );
+
+            if (!esCatalogoPos) {
+                return response;
+            }
+
+            const contentType =
+                response.headers.get(
+                    'content-type'
+                ) || '';
+
+            const texto =
+                await response
+                    .clone()
+                    .text();
+
+            if (
+                response.redirected
+                || response.url.includes(
+                    '/login'
+                )
+                || contentType.includes(
+                    'text/html'
+                )
+                || texto.trim().startsWith(
+                    '<!DOCTYPE'
+                )
+                || texto.trim().startsWith(
+                    '<html'
+                )
+            ) {
+
+                throw new Error(
+                    'La sesión expiró. Vuelve a iniciar sesión.'
+                );
+            }
+
+            let json;
+
+            try {
+
+                json =
+                    JSON.parse(
+                        texto
+                    );
+
+            } catch (error) {
+
+                console.error(
+                    'Respuesta POS que no es JSON:',
+                    texto
+                );
+
+                throw new Error(
+                    'El servidor no devolvió un catálogo válido.'
+                );
+            }
+
+            const normalizada =
+                normalizarRespuestaProductosPos(
+                    json
+                );
+
+            return new Response(
+                JSON.stringify(
+                    normalizada
+                ),
+                {
+                    status:
+                        response.status,
+
+                    statusText:
+                        response.statusText,
+
+                    headers: {
+                        'Content-Type':
+                            'application/json;charset=UTF-8'
+                    }
+                }
+            );
+        };
+})();
+
+/*
+ * Reemplaza la lectura del catálogo local para que incluso
+ * productos guardados por versiones antiguas recuperen precio.
+ */
+function instalarNormalizacionIndexedDbPos() {
+
+    if (
+        typeof getProductosCache
+        !== 'function'
+    ) {
+        return;
+    }
+
+    if (
+        window.__abarroteGetProductosCacheOriginal
+    ) {
+        return;
+    }
+
+    window.__abarroteGetProductosCacheOriginal =
+        getProductosCache;
+
+    window.getProductosCache =
+        async function () {
+
+            const productos =
+                await window
+                    .__abarroteGetProductosCacheOriginal();
+
+            return Array.isArray(productos)
+                ? productos.map(
+                    normalizarProductoPosSeguro
+                )
+                : [];
+        };
+}
+
+/*
+ * Envuelve funciones conocidas para que ningún producto
+ * llegue sin precio al carrito.
+ */
+function envolverFuncionProductoPos(
+    nombreFuncion
+) {
+
+    const original =
+        window[nombreFuncion];
+
+    if (
+        typeof original !== 'function'
+        || original.__abarrotePrecioSeguro
+    ) {
+        return;
+    }
+
+    const envoltura =
+        function (...argumentos) {
+
+            if (
+                argumentos.length > 0
+                && argumentos[0]
+                && typeof argumentos[0] === 'object'
+            ) {
+
+                argumentos[0] =
+                    normalizarProductoPosSeguro(
+                        argumentos[0]
+                    );
+
+                if (
+                    !precioProductoPosValido(
+                        argumentos[0]
+                    )
+                ) {
+
+                    const nombre =
+                        argumentos[0].nombre
+                        || 'El producto';
+
+                    if (
+                        typeof mostrarToast
+                        === 'function'
+                    ) {
+
+                        mostrarToast(
+                            nombre
+                            + ' no tiene un precio de venta válido.',
+                            'error'
+                        );
+
+                    } else {
+
+                        alert(
+                            nombre
+                            + ' no tiene un precio de venta válido.'
+                        );
+                    }
+
+                    return;
+                }
+            }
+
+            return original.apply(
+                this,
+                argumentos
+            );
+        };
+
+    envoltura.__abarrotePrecioSeguro =
+        true;
+
+    window[nombreFuncion] =
+        envoltura;
+}
+
+function instalarProteccionesCarritoPos() {
+
+    [
+        'agregarProducto',
+        'agregarAlTicket',
+        'agregarAlCarrito',
+        'seleccionarProducto',
+        'agregarProductoAlTicket'
+    ].forEach(
+        envolverFuncionProductoPos
+    );
+}
+
+/*
+ * Repara productos que ya estén dentro de arrays globales.
+ */
+function normalizarColeccionesGlobalesPos() {
+
+    [
+        'productos',
+        'productosCache',
+        'catalogoProductos',
+        'resultadosBusqueda'
+    ].forEach(
+        function (nombre) {
+
+            if (
+                Array.isArray(
+                    window[nombre]
+                )
+            ) {
+
+                window[nombre] =
+                    window[nombre].map(
+                        normalizarProductoPosSeguro
+                    );
+            }
+        }
+    );
+
+    [
+        'ticket',
+        'carrito',
+        'ticketItems',
+        'itemsVenta'
+    ].forEach(
+        function (nombre) {
+
+            if (
+                !Array.isArray(
+                    window[nombre]
+                )
+            ) {
+                return;
+            }
+
+            window[nombre] =
+                window[nombre].map(
+                    function (item) {
+
+                        const normalizado =
+                            normalizarProductoPosSeguro(
+                                item
+                            );
+
+                        return {
+                            ...item,
+                            ...normalizado,
+
+                            cantidad:
+                                Number(
+                                    item.cantidad
+                                    ?? item.qty
+                                    ?? 1
+                                )
+                        };
+                    }
+                );
+        }
+    );
+}
+
+/*
+ * Limpia una sola vez el catálogo viejo del Motorola.
+ * No elimina ventas pendientes.
+ */
+async function limpiarCatalogoViejoMotorola() {
+
+    const versionGuardada =
+        localStorage.getItem(
+            ABARROTE_CATALOGO_VERSION_KEY
+        );
+
+    if (
+        versionGuardada
+        === ABARROTE_CATALOGO_VERSION
+    ) {
+        return;
+    }
+
+    try {
+
+        if (!db) {
+
+            await openDB();
+        }
+
+        const stores = [];
+
+        if (
+            db.objectStoreNames.contains(
+                'productos'
+            )
+        ) {
+            stores.push(
+                'productos'
+            );
+        }
+
+        if (
+            db.objectStoreNames.contains(
+                'categorias'
+            )
+        ) {
+            stores.push(
+                'categorias'
+            );
+        }
+
+        if (stores.length > 0) {
+
+            const transaccion =
+                db.transaction(
+                    stores,
+                    'readwrite'
+                );
+
+            stores.forEach(
+                function (storeName) {
+
+                    transaccion
+                        .objectStore(
+                            storeName
+                        )
+                        .clear();
+                }
+            );
+
+            await new Promise(
+                function (
+                    resolve,
+                    reject
+                ) {
+
+                    transaccion.oncomplete =
+                        resolve;
+
+                    transaccion.onerror =
+                        function () {
+
+                            reject(
+                                transaccion.error
+                            );
+                        };
+                }
+            );
+        }
+
+        localStorage.setItem(
+            ABARROTE_CATALOGO_VERSION_KEY,
+            ABARROTE_CATALOGO_VERSION
+        );
+
+        console.info(
+            'Catálogo viejo del POS eliminado.'
+        );
+
+    } catch (error) {
+
+        console.error(
+            'No fue posible limpiar el catálogo móvil',
+            error
+        );
+    }
+}
+
+/*
+ * Descarga y guarda nuevamente el catálogo.
+ */
+async function recargarCatalogoPosSeguro() {
+
+    if (!navigator.onLine) {
+        return;
+    }
+
+    const response =
+        await fetch(
+            '/api/ventas/productos?_='
+            + Date.now(),
+            {
+                method:
+                    'GET',
+
+                headers: {
+                    'Accept':
+                        'application/json',
+
+                    'Cache-Control':
+                        'no-cache'
+                },
+
+                cache:
+                    'no-store',
+
+                credentials:
+                    'same-origin'
+            }
+        );
+
+    const resultado =
+        await response.json();
+
+    if (
+        !resultado
+        || resultado.success !== true
+        || !Array.isArray(
+            resultado.data
+        )
+    ) {
+
+        throw new Error(
+            resultado?.message
+            || 'El catálogo no tiene el formato esperado.'
+        );
+    }
+
+    const productos =
+        resultado.data.map(
+            normalizarProductoPosSeguro
+        );
+
+    if (
+        typeof cacheProductos
+        === 'function'
+        && db
+    ) {
+
+        await cacheProductos(
+            productos
+        );
+    }
+
+    console.info(
+        'Catálogo POS renovado:',
+        productos.length,
+        'productos'
+    );
+
+    return productos;
+}
+
+/*
+ * Recalcula visualmente importes con valor undefined.
+ */
+function repararTextosPrecioUndefined() {
+
+    document
+        .querySelectorAll(
+            '.price, .qty-price, .total, #ticketTotal, #modalTotal'
+        )
+        .forEach(
+            function (elemento) {
+
+                if (
+                    /undefined|nan/i.test(
+                        elemento.textContent
+                    )
+                ) {
+
+                    elemento.textContent =
+                        elemento.textContent
+                            .replace(
+                                /undefined/gi,
+                                '0.00'
+                            )
+                            .replace(
+                                /nan/gi,
+                                '0.00'
+                            );
+                }
+            }
+        );
+}
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        instalarNormalizacionIndexedDbPos();
+
+        instalarProteccionesCarritoPos();
+
+        normalizarColeccionesGlobalesPos();
+
+        /*
+         * Algunas funciones se crean en otros scripts.
+         * Una segunda ejecución garantiza que queden envueltas.
+         */
+        window.setTimeout(
+            function () {
+
+                instalarProteccionesCarritoPos();
+
+                normalizarColeccionesGlobalesPos();
+            },
+            500
+        );
+    }
+);
+
+window.addEventListener(
+    'load',
+    function () {
+
+        window.setTimeout(
+            async function () {
+
+                try {
+
+                    await limpiarCatalogoViejoMotorola();
+
+                    await recargarCatalogoPosSeguro();
+
+                    instalarNormalizacionIndexedDbPos();
+
+                    instalarProteccionesCarritoPos();
+
+                    normalizarColeccionesGlobalesPos();
+
+                    repararTextosPrecioUndefined();
+
+                    if (
+                        typeof buscarProductos
+                        === 'function'
+                    ) {
+
+                        const input =
+                            document.getElementById(
+                                'searchInput'
+                            );
+
+                        if (
+                            input
+                            && input.value.trim()
+                        ) {
+
+                            await buscarProductos();
+                        }
+                    }
+
+                    if (
+                        typeof renderTicket
+                        === 'function'
+                    ) {
+
+                        renderTicket();
+
+                    } else if (
+                        typeof actualizarTicket
+                        === 'function'
+                    ) {
+
+                        actualizarTicket();
+
+                    } else if (
+                        typeof renderizarTicket
+                        === 'function'
+                    ) {
+
+                        renderizarTicket();
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        'Error renovando catálogo POS',
+                        error
+                    );
+
+                    if (
+                        typeof mostrarToast
+                        === 'function'
+                    ) {
+
+                        mostrarToast(
+                            error.message,
+                            'error'
+                        );
+                    }
+                }
+            },
+            900
+        );
+    }
+);
+
+/*
+ * Observa cambios visuales para impedir que vuelva a mostrarse
+ * "undefined" por una plantilla antigua.
+ */
+const observadorPrecioPos =
+    new MutationObserver(
+        function () {
+
+            repararTextosPrecioUndefined();
+        }
+    );
+
+window.addEventListener(
+    'load',
+    function () {
+
+        observadorPrecioPos.observe(
+            document.body,
+            {
+                childList: true,
+                subtree: true,
+                characterData: true
+            }
         );
     }
 );
