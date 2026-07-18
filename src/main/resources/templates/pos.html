@@ -614,7 +614,7 @@
         // ============================================================
         
         const DB_NAME = 'AbarrotePOS';
-        const DB_VERSION = 2;
+        const DB_VERSION = 3;
         let db;
         let categoriasCache = [];
         let categoriaActiva = null;
@@ -634,6 +634,41 @@
                     }
                     if (!db.objectStoreNames.contains('ventasPendientes')) {
                         db.createObjectStore('ventasPendientes', { keyPath: 'id', autoIncrement: true });
+                    }
+
+                    /*
+                     * ABARROTE_FIX_CATALOGO_MOVIL_V1
+                     *
+                     * Conservamos ventas pendientes, pero limpiamos
+                     * productos y categorías antiguas para que un
+                     * teléfono no siga mostrando objetos incompletos.
+                     */
+                    if (event.oldVersion < 3) {
+
+                        const transaccion =
+                            event.target.transaction;
+
+                        if (
+                            db.objectStoreNames.contains(
+                                'productos'
+                            )
+                        ) {
+
+                            transaccion
+                                .objectStore('productos')
+                                .clear();
+                        }
+
+                        if (
+                            db.objectStoreNames.contains(
+                                'categorias'
+                            )
+                        ) {
+
+                            transaccion
+                                .objectStore('categorias')
+                                .clear();
+                        }
                     }
                 };
             });
@@ -666,7 +701,7 @@
 
             for (const p of productos) {
                 await new Promise((resolve, reject) => {
-                    const req = store.put(p);
+                    const req = store.put(normalizarProductoPos(p));
                     req.onsuccess = () => resolve();
                     req.onerror = () => reject(req.error);
                 });
@@ -2392,6 +2427,318 @@
         }
     );
     </script>
+
+
+<script id="abarroteFixCatalogoMovilV1">
+
+/*
+ * Convierte cualquier variante anterior del producto
+ * al formato actual usado por el POS.
+ */
+function normalizarProductoPos(producto) {
+
+    const origen =
+        producto && typeof producto === 'object'
+            ? producto
+            : {};
+
+    const precioCandidato =
+        origen.precioVenta
+        ?? origen.precio
+        ?? origen.precioUnitario
+        ?? origen.salePrice
+        ?? origen.precio_venta;
+
+    const stockCandidato =
+        origen.stock
+        ?? origen.existencia
+        ?? origen.cantidad
+        ?? 0;
+
+    const precio =
+        Number(
+            String(
+                precioCandidato ?? 0
+            )
+                .replace(',', '.')
+                .replace(/[^\d.-]/g, '')
+        );
+
+    const stock =
+        Number(
+            stockCandidato ?? 0
+        );
+
+    return {
+        ...origen,
+
+        id:
+            origen.id,
+
+        nombre:
+            String(
+                origen.nombre
+                ?? origen.productoNombre
+                ?? 'Producto sin nombre'
+            ),
+
+        codigoBarras:
+            String(
+                origen.codigoBarras
+                ?? origen.codigo
+                ?? origen.barcode
+                ?? ''
+            ),
+
+        precioVenta:
+            Number.isFinite(precio)
+                ? precio
+                : 0,
+
+        stock:
+            Number.isFinite(stock)
+                ? stock
+                : 0,
+
+        stockMinimo:
+            Number(
+                origen.stockMinimo
+                ?? origen.stock_minimo
+                ?? 0
+            ),
+
+        categoriaNombre:
+            String(
+                origen.categoriaNombre
+                ?? origen.categoria
+                ?? 'Sin categoría'
+            )
+    };
+}
+
+/*
+ * Evita el clásico:
+ * SyntaxError: JSON Parse error / Unexpected token <
+ *
+ * Eso ocurre cuando una sesión expiró y el servidor
+ * devuelve HTML de login en lugar de JSON.
+ */
+async function leerRespuestaJsonPos(response) {
+
+    const contentType =
+        response.headers
+            .get('content-type')
+        || '';
+
+    const texto =
+        await response.text();
+
+    if (
+        response.redirected
+        || response.url.includes('/login')
+        || contentType.includes('text/html')
+        || texto.trim().startsWith('<!DOCTYPE')
+        || texto.trim().startsWith('<html')
+    ) {
+
+        throw new Error(
+            'La sesión expiró. Cierra sesión, vuelve a entrar y actualiza el catálogo.'
+        );
+    }
+
+    if (!response.ok) {
+
+        throw new Error(
+            'El servidor respondió con estado '
+            + response.status
+        );
+    }
+
+    try {
+
+        return JSON.parse(texto);
+
+    } catch (error) {
+
+        console.error(
+            'Respuesta no válida del POS:',
+            texto
+        );
+
+        throw new Error(
+            'El servidor no devolvió un JSON válido.'
+        );
+    }
+}
+
+/*
+ * Descarga siempre el catálogo nuevo, sin usar caché HTTP.
+ */
+async function actualizarCatalogoPosDesdeServidor() {
+
+    if (!navigator.onLine) {
+        return false;
+    }
+
+    const response =
+        await fetch(
+            '/api/ventas/productos?_='
+            + Date.now(),
+            {
+                method: 'GET',
+
+                headers: {
+                    'Accept':
+                        'application/json',
+
+                    'Cache-Control':
+                        'no-cache'
+                },
+
+                cache:
+                    'no-store',
+
+                credentials:
+                    'same-origin',
+
+                redirect:
+                    'follow'
+            }
+        );
+
+    const resultado =
+        await leerRespuestaJsonPos(
+            response
+        );
+
+    if (
+        !resultado
+        || resultado.success !== true
+        || !Array.isArray(resultado.data)
+    ) {
+
+        throw new Error(
+            resultado?.message
+            || 'El catálogo recibido no tiene el formato esperado.'
+        );
+    }
+
+    const productos =
+        resultado.data.map(
+            normalizarProductoPos
+        );
+
+    if (db) {
+
+        await cacheProductos(
+            productos
+        );
+    }
+
+    return productos;
+}
+
+/*
+ * Limpieza manual disponible desde consola y desde
+ * el arranque de esta nueva versión.
+ */
+async function limpiarCatalogoLocalPos() {
+
+    if (!db) {
+        return;
+    }
+
+    const transaccion =
+        db.transaction(
+            ['productos', 'categorias'],
+            'readwrite'
+        );
+
+    transaccion
+        .objectStore('productos')
+        .clear();
+
+    transaccion
+        .objectStore('categorias')
+        .clear();
+}
+
+/*
+ * Al abrir el POS, espera a que la aplicación original
+ * cree IndexedDB y después fuerza actualización.
+ */
+window.addEventListener(
+    'load',
+    function () {
+
+        window.setTimeout(
+            async function () {
+
+                try {
+
+                    if (!db) {
+
+                        await openDB();
+                    }
+
+                    const productos =
+                        await actualizarCatalogoPosDesdeServidor();
+
+                    console.info(
+                        'Catálogo móvil actualizado:',
+                        productos.length,
+                        'productos'
+                    );
+
+                    /*
+                     * La función original buscarProductos usa el
+                     * endpoint/caché actual. Ejecutarla de nuevo
+                     * refresca la vista sin duplicar lógica.
+                     */
+                    if (
+                        typeof buscarProductos
+                        === 'function'
+                    ) {
+
+                        const campo =
+                            document.getElementById(
+                                'searchInput'
+                            );
+
+                        if (
+                            campo
+                            && campo.value.trim()
+                        ) {
+
+                            await buscarProductos();
+                        }
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        'No fue posible actualizar el catálogo móvil',
+                        error
+                    );
+
+                    if (
+                        typeof mostrarToast
+                        === 'function'
+                    ) {
+
+                        mostrarToast(
+                            error.message,
+                            'error'
+                        );
+                    }
+                }
+            },
+            1200
+        );
+    }
+);
+
+</script>
 
 </body>
 </html>
