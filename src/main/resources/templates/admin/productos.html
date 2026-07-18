@@ -346,6 +346,143 @@
 
 </style>
 
+
+<style id="abarroteBuscadorScannerV3Styles">
+
+.buscador-v3 {
+    width: min(100%, 440px);
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) 52px 44px;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.buscador-v3 .form-control {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.btn-scanner-v3,
+.btn-limpiar-v3 {
+    min-height: 46px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.btn-scanner-v3 {
+    border: 2px solid #4ade80;
+    background: rgba(74, 222, 128, 0.14);
+    color: #4ade80;
+}
+
+.btn-scanner-v3:hover {
+    background: #4ade80;
+    color: #0f172a;
+}
+
+.btn-limpiar-v3 {
+    border: 1px solid #64748b;
+    background: rgba(100, 116, 139, 0.16);
+    color: #e2e8f0;
+}
+
+.btn-limpiar-v3:hover {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: white;
+}
+
+.scanner-busqueda-v3-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    padding: 16px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(2, 6, 23, 0.97);
+}
+
+.scanner-busqueda-v3-overlay.active {
+    display: flex;
+}
+
+.scanner-busqueda-v3-panel {
+    width: 100%;
+    max-width: 560px;
+    max-height: 96vh;
+    overflow-y: auto;
+    padding: 18px;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    background: #111827;
+}
+
+.scanner-busqueda-v3-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.scanner-busqueda-v3-header h2 {
+    margin: 0;
+    color: #4ade80;
+    font-size: 1.15rem;
+}
+
+.scanner-busqueda-v3-cerrar {
+    width: 42px;
+    height: 42px;
+    border: 1px solid #ef4444;
+    border-radius: 50%;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+}
+
+#scannerBusquedaV3Reader {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: black;
+}
+
+#scannerBusquedaV3Reader video {
+    object-fit: cover !important;
+}
+
+.scanner-busqueda-v3-estado {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #cbd5e1;
+    text-align: center;
+}
+
+.scanner-busqueda-v3-estado.error {
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+.scanner-busqueda-v3-estado.success {
+    border-color: #22c55e;
+    color: #86efac;
+}
+
+@media (max-width: 720px) {
+    .buscador-v3 {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) 52px 44px;
+    }
+}
+
+</style>
+
 <body>
 
 <div class="wrapper">
@@ -744,15 +881,41 @@
 <div class="buscador-productos-scanner">
     <!-- ABARROTE_BUSCADOR_PRODUCTOS_SCANNER_V2 -->
 
+    
+<!-- ABARROTE_BUSCADOR_SCANNER_V3 INICIO -->
+<div class="buscador-v3">
+
     <input
             type="text"
-            class="form-control"
             id="buscarProductosInput"
+            class="form-control"
             placeholder="🔍 Buscar nombre, código o categoría..."
             autocomplete="off"
             inputmode="search"
-            oninput="filtrarProductos(this.value)"
-            onclick="abrirScannerBusquedaDesdeCampo(event)">
+            oninput="filtrarProductos(this.value)">
+
+    <button
+            type="button"
+            id="btnScannerBusquedaV3"
+            class="btn-scanner-v3"
+            title="Escanear código de barras"
+            aria-label="Escanear código de barras"
+            onclick="abrirScannerBusquedaV3()">
+        📷
+    </button>
+
+    <button
+            type="button"
+            class="btn-limpiar-v3"
+            title="Limpiar búsqueda"
+            aria-label="Limpiar búsqueda"
+            onclick="limpiarBusquedaV3()">
+        ✕
+    </button>
+
+</div>
+<!-- ABARROTE_BUSCADOR_SCANNER_V3 FIN -->
+
 
     <button
             type="button"
@@ -1105,6 +1268,46 @@
 
             </div>
 
+        </div>
+
+    </div>
+
+</div>
+
+
+<div
+        id="scannerBusquedaV3Overlay"
+        class="scanner-busqueda-v3-overlay">
+
+    <div class="scanner-busqueda-v3-panel">
+
+        <div class="scanner-busqueda-v3-header">
+
+            <h2>📷 Buscar producto por código</h2>
+
+            <button
+                    type="button"
+                    class="scanner-busqueda-v3-cerrar"
+                    onclick="cerrarScannerBusquedaV3()">
+                ✕
+            </button>
+
+        </div>
+
+        <div id="scannerBusquedaV3Reader"></div>
+
+        <p style="
+            margin-top:12px;
+            color:#cbd5e1;
+            text-align:center;
+        ">
+            Coloca el código de barras dentro del recuadro.
+        </p>
+
+        <div
+                id="scannerBusquedaV3Estado"
+                class="scanner-busqueda-v3-estado">
+            Preparando cámara trasera…
         </div>
 
     </div>
@@ -3077,6 +3280,307 @@ document.addEventListener(
 window.addEventListener(
     'pagehide',
     detenerScannerBusquedaProducto
+);
+
+</script>
+
+
+<script id="abarroteBuscadorScannerV3Script">
+
+let scannerBusquedaV3 = null;
+let scannerBusquedaV3Activo = false;
+let scannerBusquedaV3Procesando = false;
+
+async function abrirScannerBusquedaV3() {
+
+    if (scannerBusquedaV3Activo) {
+        return;
+    }
+
+    const overlay =
+        document.getElementById(
+            'scannerBusquedaV3Overlay'
+        );
+
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    scannerBusquedaV3Activo = true;
+    scannerBusquedaV3Procesando = false;
+
+    estadoScannerBusquedaV3(
+        'Solicitando permiso para usar la cámara trasera…',
+        ''
+    );
+
+    if (typeof Html5Qrcode === 'undefined') {
+
+        scannerBusquedaV3Activo = false;
+
+        estadoScannerBusquedaV3(
+            'No se cargó la librería del escáner. Revisa la conexión.',
+            'error'
+        );
+
+        return;
+    }
+
+    try {
+
+        scannerBusquedaV3 =
+            new Html5Qrcode(
+                'scannerBusquedaV3Reader',
+                {
+                    verbose: false,
+                    formatsToSupport:
+                        formatosScannerBusquedaV3()
+                }
+            );
+
+        await scannerBusquedaV3.start(
+            {
+                facingMode: 'environment'
+            },
+            {
+                fps: 12,
+                qrbox: function (ancho, alto) {
+
+                    return {
+                        width:
+                            Math.floor(ancho * 0.88),
+
+                        height:
+                            Math.max(
+                                110,
+                                Math.floor(alto * 0.30)
+                            )
+                    };
+                },
+                disableFlip: true
+            },
+            procesarScannerBusquedaV3,
+            function () {
+            }
+        );
+
+        estadoScannerBusquedaV3(
+            'Cámara activa. Apunta al código de barras.',
+            ''
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Error de cámara',
+            error
+        );
+
+        scannerBusquedaV3Activo = false;
+
+        estadoScannerBusquedaV3(
+            mensajeCamaraBusquedaV3(error),
+            'error'
+        );
+    }
+}
+
+function formatosScannerBusquedaV3() {
+
+    if (
+        typeof Html5QrcodeSupportedFormats
+        === 'undefined'
+    ) {
+        return undefined;
+    }
+
+    return [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.ITF
+    ].filter(
+        function (formato) {
+            return formato !== undefined;
+        }
+    );
+}
+
+async function procesarScannerBusquedaV3(
+    codigoLeido
+) {
+
+    if (scannerBusquedaV3Procesando) {
+        return;
+    }
+
+    const codigo =
+        String(codigoLeido || '')
+            .trim()
+            .replace(/[\r\n\t]/g, '');
+
+    if (!codigo) {
+        return;
+    }
+
+    scannerBusquedaV3Procesando = true;
+
+    estadoScannerBusquedaV3(
+        'Código detectado: ' + codigo,
+        'success'
+    );
+
+    if (navigator.vibrate) {
+        navigator.vibrate([80, 40, 120]);
+    }
+
+    const input =
+        document.getElementById(
+            'buscarProductosInput'
+        );
+
+    input.value = codigo;
+
+    await cerrarScannerBusquedaV3();
+
+    filtrarProductos(codigo);
+
+    input.focus();
+    input.select();
+}
+
+async function detenerScannerBusquedaV3() {
+
+    if (!scannerBusquedaV3) {
+        return;
+    }
+
+    try {
+        await scannerBusquedaV3.stop();
+    } catch (error) {
+        console.debug(
+            'La cámara ya estaba detenida'
+        );
+    }
+
+    try {
+        await scannerBusquedaV3.clear();
+    } catch (error) {
+        console.debug(
+            'El lector ya estaba limpio'
+        );
+    }
+
+    scannerBusquedaV3 = null;
+}
+
+async function cerrarScannerBusquedaV3() {
+
+    await detenerScannerBusquedaV3();
+
+    document.getElementById(
+        'scannerBusquedaV3Overlay'
+    ).classList.remove('active');
+
+    document.body.style.overflow = '';
+
+    scannerBusquedaV3Activo = false;
+    scannerBusquedaV3Procesando = false;
+}
+
+function estadoScannerBusquedaV3(
+    mensaje,
+    tipo
+) {
+
+    const estado =
+        document.getElementById(
+            'scannerBusquedaV3Estado'
+        );
+
+    estado.className =
+        'scanner-busqueda-v3-estado'
+        + (tipo ? ' ' + tipo : '');
+
+    estado.textContent = mensaje;
+}
+
+function mensajeCamaraBusquedaV3(error) {
+
+    if (
+        error?.name === 'NotAllowedError'
+        || String(error).includes('Permission')
+    ) {
+        return 'Permiso de cámara rechazado. Permite la cámara en Chrome.';
+    }
+
+    if (error?.name === 'NotFoundError') {
+        return 'No se encontró una cámara disponible.';
+    }
+
+    if (error?.name === 'NotReadableError') {
+        return 'Otra aplicación está utilizando la cámara.';
+    }
+
+    return 'No fue posible iniciar la cámara.';
+}
+
+function limpiarBusquedaV3() {
+
+    const input =
+        document.getElementById(
+            'buscarProductosInput'
+        );
+
+    input.value = '';
+
+    filtrarProductos('');
+
+    input.focus();
+}
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const input =
+            document.getElementById(
+                'buscarProductosInput'
+            );
+
+        if (!input) {
+            console.error(
+                'No existe buscarProductosInput'
+            );
+
+            return;
+        }
+
+        input.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                filtrarProductos(
+                    input.value
+                );
+
+                input.select();
+            }
+        );
+    }
+);
+
+window.addEventListener(
+    'pagehide',
+    detenerScannerBusquedaV3
 );
 
 </script>
