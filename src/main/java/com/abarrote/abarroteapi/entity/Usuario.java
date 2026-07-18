@@ -1,6 +1,16 @@
 package com.abarrote.abarroteapi.entity;
 
-import jakarta.persistence.*;
+import com.abarrote.abarroteapi.multitenant.domain.Tenant;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -13,38 +23,38 @@ public class Usuario {
     private Long id;
 
     @NotBlank(
-            message = "El nombre no puede estar vacío"
+        message = "El nombre no puede estar vacío"
     )
     @Column(
-            nullable = false,
-            length = 120
+        nullable = false,
+        length = 120
     )
     private String nombre;
 
     @NotBlank(
-            message = "El nombre de usuario no puede estar vacío"
+        message = "El nombre de usuario no puede estar vacío"
     )
     @Size(
-            min = 4,
-            max = 20,
-            message = "El login debe tener entre 4 y 20 caracteres"
+        min = 4,
+        max = 20,
+        message = "El login debe tener entre 4 y 20 caracteres"
     )
     @Column(
-            nullable = false,
-            unique = true,
-            length = 20
+        nullable = false,
+        unique = true,
+        length = 20
     )
     private String username;
 
     @NotBlank(
-            message = "La contraseña es obligatoria"
+        message = "La contraseña es obligatoria"
     )
     @Column(nullable = false)
     private String password;
 
     @Column(
-            nullable = false,
-            length = 30
+        nullable = false,
+        length = 30
     )
     private String rol;
 
@@ -52,15 +62,38 @@ public class Usuario {
     private Boolean activo = true;
 
     /*
-     * Temporalmente nullable para permitir la migración de los
-     * usuarios que ya existen. El inicializador los asignará a MAT.
+     * Un usuario pertenece obligatoriamente a un tenant.
+     *
+     * El tenant determina el vertical que debe abrirse
+     * después del login:
+     *
+     * ABARROTES -> /admin o /pos
+     * GYM       -> /gym/dashboard
+     */
+    @ManyToOne(
+        fetch = FetchType.LAZY,
+        optional = false
+    )
+    @JoinColumn(
+        name = "tenant_id",
+        nullable = false,
+        foreignKey = @ForeignKey(
+            name = "fk_usuario_tenant"
+        )
+    )
+    private Tenant tenant;
+
+    /*
+     * Sucursal continúa siendo opcional porque un usuario
+     * Gym todavía no utiliza la estructura de sucursales
+     * heredada de Abarrote Cloud.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
-            name = "sucursal_id",
-            foreignKey = @ForeignKey(
-                    name = "fk_usuario_sucursal"
-            )
+        name = "sucursal_id",
+        foreignKey = @ForeignKey(
+            name = "fk_usuario_sucursal"
+        )
     )
     private Sucursal sucursal;
 
@@ -68,11 +101,11 @@ public class Usuario {
     }
 
     public Usuario(
-            String nombre,
-            String username,
-            String password,
-            String rol) {
-
+        String nombre,
+        String username,
+        String password,
+        String rol
+    ) {
         this.nombre = nombre;
         this.username = username;
         this.password = password;
@@ -84,9 +117,7 @@ public class Usuario {
         return id;
     }
 
-    public void setId(
-            Long id) {
-
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -94,9 +125,7 @@ public class Usuario {
         return nombre;
     }
 
-    public void setNombre(
-            String nombre) {
-
+    public void setNombre(String nombre) {
         this.nombre = nombre;
     }
 
@@ -104,9 +133,7 @@ public class Usuario {
         return username;
     }
 
-    public void setUsername(
-            String username) {
-
+    public void setUsername(String username) {
         this.username = username;
     }
 
@@ -114,9 +141,7 @@ public class Usuario {
         return password;
     }
 
-    public void setPassword(
-            String password) {
-
+    public void setPassword(String password) {
         this.password = password;
     }
 
@@ -124,9 +149,7 @@ public class Usuario {
         return rol;
     }
 
-    public void setRol(
-            String rol) {
-
+    public void setRol(String rol) {
         this.rol = rol;
     }
 
@@ -134,19 +157,23 @@ public class Usuario {
         return activo;
     }
 
-    public void setActivo(
-            Boolean activo) {
-
+    public void setActivo(Boolean activo) {
         this.activo = activo;
+    }
+
+    public Tenant getTenant() {
+        return tenant;
+    }
+
+    public void setTenant(Tenant tenant) {
+        this.tenant = tenant;
     }
 
     public Sucursal getSucursal() {
         return sucursal;
     }
 
-    public void setSucursal(
-            Sucursal sucursal) {
-
+    public void setSucursal(Sucursal sucursal) {
         this.sucursal = sucursal;
     }
 }

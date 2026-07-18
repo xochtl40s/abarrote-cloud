@@ -10,51 +10,61 @@ import java.util.Optional;
 
 @Repository
 public interface UsuarioRepository
-        extends JpaRepository<Usuario, Long> {
+    extends JpaRepository<Usuario, Long> {
 
     /*
-     * Carga el usuario y su sucursal en la misma consulta.
+     * Carga usuario, sucursal y tenant en la misma consulta.
      *
-     * Esto evita:
-     *
-     * could not initialize proxy [Sucursal] - no Session
-     *
-     * cuando open-in-view está deshabilitado en Render.
+     * Esto evita LazyInitializationException cuando
+     * open-in-view está deshabilitado.
      */
     @EntityGraph(
-            attributePaths = {
-                    "sucursal"
-            }
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
     )
     Optional<Usuario> findByUsernameIgnoreCase(
-            String username
+        String username
     );
 
     @EntityGraph(
-            attributePaths = {
-                    "sucursal"
-            }
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
     )
     Optional<Usuario> findConSucursalById(
-            Long id
+        Long id
     );
 
     @EntityGraph(
-            attributePaths = {
-                    "sucursal"
-            }
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
     )
     List<Usuario> findBySucursalIdOrderByNombreAsc(
-            Long sucursalId
+        Long sucursalId
     );
 
     @EntityGraph(
-            attributePaths = {
-                    "sucursal"
-            }
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
     )
     List<Usuario>
-    findBySucursalIdAndActivoTrueOrderByNombreAsc(
+        findBySucursalIdAndActivoTrueOrderByNombreAsc(
             Long sucursalId
+        );
+
+    @EntityGraph(
+        attributePaths = {
+            "tenant"
+        }
+    )
+    List<Usuario> findByTenantIdOrderByNombreAsc(
+        Long tenantId
     );
 }

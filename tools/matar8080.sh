@@ -1,11 +1,32 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-PID=$(lsof -t -i:8080)
+set -Eeuo pipefail
 
-if [ -z "$PID" ]; then
-    echo "✅ El puerto 8080 ya está libre."
-else
-    echo "🛑 Terminando proceso con PID: $PID"
-    kill -9 "$PID"
-    echo "✅ Puerto 8080 liberado."
+PORT="8080"
+
+echo "===================================="
+echo "COMMERCE CLOUD"
+echo "Deteniendo aplicación en puerto ${PORT}"
+echo "===================================="
+
+PIDS="$(fuser "${PORT}/tcp" 2>/dev/null || true)"
+
+if [ -z "$PIDS" ]; then
+    echo "No existe ninguna aplicación usando el puerto ${PORT}."
+    exit 0
 fi
+
+echo "PID detectado:${PIDS}"
+
+fuser -k "${PORT}/tcp" 2>/dev/null || true
+
+sleep 2
+
+if fuser "${PORT}/tcp" >/dev/null 2>&1; then
+    echo "ERROR: el puerto ${PORT} continúa ocupado."
+    lsof -i ":${PORT}" || true
+    exit 1
+fi
+
+echo "Aplicación detenida correctamente."
+echo "Puerto ${PORT} libre."

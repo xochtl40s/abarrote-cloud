@@ -1,34 +1,27 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html
+    lang="es"
+    xmlns:th="http://www.thymeleaf.org">
 
 <head>
 
     <meta charset="UTF-8">
 
     <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0">
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
     <meta
-            name="theme-color"
-            content="#16213e">
+        name="theme-color"
+        content="#101827">
 
-    <title>
-        Login - Abarrote Cloud
-    </title>
+    <title>Login | Commerce Cloud</title>
 
     <style>
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
-
-        html,
-        body {
-            width: 100%;
-            min-height: 100%;
         }
 
         body {
@@ -36,29 +29,33 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.25rem;
+            padding: 1.2rem;
             font-family:
-                    "Segoe UI",
-                    system-ui,
-                    -apple-system,
-                    BlinkMacSystemFont,
-                    sans-serif;
-            background: linear-gradient(
-                    135deg,
-                    #1a1a2e 0%,
-                    #16213e 50%,
-                    #0f3460 100%
-            );
+                "Segoe UI",
+                system-ui,
+                sans-serif;
+            background:
+                radial-gradient(
+                    circle at top left,
+                    rgba(37, 99, 235, 0.35),
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at bottom right,
+                    rgba(147, 51, 234, 0.25),
+                    transparent 35%
+                ),
+                #080d18;
         }
 
         .login-container {
             width: 100%;
-            max-width: 420px;
-            padding: clamp(1.4rem, 6vw, 3rem);
-            border: 1px solid #333;
-            border-radius: 20px;
-            background: #16213e;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            max-width: 430px;
+            padding: 2.5rem;
+            border: 1px solid #273449;
+            border-radius: 22px;
+            background: rgba(15, 23, 42, 0.94);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
         }
 
         .login-header {
@@ -66,52 +63,55 @@
             text-align: center;
         }
 
-        .login-header .logo {
-            margin-bottom: 0.4rem;
-            font-size: clamp(3rem, 12vw, 4rem);
+        .logo {
+            margin-bottom: 0.6rem;
+            font-size: 3.5rem;
         }
 
-        .login-header h1 {
-            color: #4ade80;
-            font-size: clamp(1.5rem, 7vw, 1.8rem);
-            font-weight: 700;
+        h1 {
+            color: #60a5fa;
+            font-size: 1.9rem;
         }
 
-        .login-header p {
-            margin-top: 0.3rem;
+        .subtitle {
+            margin-top: 0.35rem;
             color: #94a3b8;
-            font-size: 0.95rem;
         }
 
-        .alert-success,
-        .error-message {
+        .verticals {
+            margin-top: 0.8rem;
+            color: #cbd5e1;
+            font-size: 0.78rem;
+        }
+
+        .message {
             margin-bottom: 1rem;
-            padding: 0.85rem;
-            border-radius: 8px;
+            padding: 0.8rem;
+            border-radius: 9px;
             text-align: center;
             font-size: 0.9rem;
         }
 
-        .alert-success {
-            color: #4ade80;
-            border: 1px solid rgba(74, 222, 128, 0.3);
-            background: rgba(74, 222, 128, 0.1);
+        .success {
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            background: rgba(34, 197, 94, 0.1);
         }
 
-        .error-message {
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+        .error {
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.35);
             background: rgba(239, 68, 68, 0.1);
         }
 
         .form-group {
-            margin-bottom: 1.15rem;
+            margin-bottom: 1.1rem;
         }
 
-        .form-group label {
+        label {
             display: block;
-            margin-bottom: 0.5rem;
-            color: #94a3b8;
+            margin-bottom: 0.45rem;
+            color: #cbd5e1;
             font-size: 0.9rem;
             font-weight: 700;
         }
@@ -122,115 +122,66 @@
 
         .form-control {
             width: 100%;
-            min-height: 48px;
+            min-height: 50px;
             padding: 0.9rem 1rem;
-            border: 2px solid #333;
-            border-radius: 10px;
-            background: #1a1a2e;
-            color: white;
+            border: 2px solid #334155;
+            border-radius: 11px;
+            outline: none;
+            color: #f8fafc;
+            background: #111827;
             font-size: 16px;
-            transition: border-color 0.2s;
-        }
-
-        .password-wrapper .form-control {
-            padding-right: 3.2rem;
         }
 
         .form-control:focus {
-            outline: none;
-            border-color: #4ade80;
+            border-color: #60a5fa;
         }
 
-        .form-control::placeholder {
-            color: #64748b;
+        .password-wrapper .form-control {
+            padding-right: 3rem;
         }
 
         .toggle-password {
             position: absolute;
             top: 50%;
-            right: 10px;
-            width: 38px;
-            height: 38px;
+            right: 0.6rem;
             transform: translateY(-50%);
             border: none;
+            color: #cbd5e1;
             background: transparent;
-            color: #94a3b8;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             cursor: pointer;
-        }
-
-        .toggle-password:hover {
-            color: #4ade80;
         }
 
         .btn-login {
             width: 100%;
             min-height: 50px;
-            margin-top: 0.35rem;
-            padding: 0.9rem;
+            margin-top: 0.3rem;
             border: none;
-            border-radius: 10px;
-            background: linear-gradient(
+            border-radius: 11px;
+            color: white;
+            background:
+                linear-gradient(
                     135deg,
-                    #4ade80,
-                    #22c55e
-            );
-            color: #1a1a2e;
-            font-size: 1.05rem;
-            font-weight: 700;
+                    #2563eb,
+                    #7c3aed
+                );
+            font-size: 1rem;
+            font-weight: 800;
             cursor: pointer;
-            transition:
-                    transform 0.2s,
-                    box-shadow 0.2s;
         }
 
-        .btn-login:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(74, 222, 128, 0.3);
+        .footer {
+            margin-top: 1.4rem;
+            color: #64748b;
+            text-align: center;
+            font-size: 0.75rem;
         }
 
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        @media (max-width: 480px) {
-
-            body {
-                align-items: flex-start;
-                padding: 1rem;
-            }
-
+        @media (max-width: 500px) {
             .login-container {
-                margin-top: 4vh;
-                padding: 1.4rem;
-                border-radius: 16px;
-            }
-
-            .login-header {
-                margin-bottom: 1.5rem;
+                padding: 1.5rem;
             }
         }
-
-        @media (max-height: 620px) {
-
-            body {
-                align-items: flex-start;
-            }
-
-            .login-container {
-                margin-top: 1rem;
-                margin-bottom: 1rem;
-            }
-
-            .login-header .logo {
-                font-size: 2.6rem;
-            }
-
-            .login-header {
-                margin-bottom: 1.2rem;
-            }
-        }
-
     </style>
 
 </head>
@@ -239,37 +190,47 @@
 
 <div class="login-container">
 
-    <div class="login-header">
+    <header class="login-header">
 
         <div class="logo">
-            🏪
+            ☁️
         </div>
 
         <h1>
-            Abarrote Cloud
+            Commerce Cloud
         </h1>
 
-        <p>
-            Sistema de Punto de Venta
+        <p class="subtitle">
+            Una plataforma, múltiples negocios
         </p>
 
-    </div>
+        <p class="verticals">
+            🏪 Abarrotes · 🏋️ Gimnasios · Más verticales próximamente
+        </p>
+
+    </header>
 
     <div
-            th:if="${param.logout}"
-            class="alert-success">
+        th:if="${param.logout}"
+        class="message success">
         ✅ Has cerrado sesión correctamente
     </div>
 
     <div
-            th:if="${param.error}"
-            class="error-message">
+        th:if="${param.error}"
+        class="message error">
         ❌ Usuario o contraseña incorrectos
     </div>
 
+    <div
+        th:if="${param.sesionRequerida}"
+        class="message error">
+        🔒 Debes iniciar sesión
+    </div>
+
     <form
-            th:action="@{/login}"
-            method="post">
+        th:action="@{/login}"
+        method="post">
 
         <div class="form-group">
 
@@ -278,14 +239,14 @@
             </label>
 
             <input
-                    type="text"
-                    name="username"
-                    class="form-control"
-                    id="usernameInput"
-                    placeholder="Ingresa tu usuario"
-                    autocomplete="username"
-                    required
-                    autofocus>
+                id="usernameInput"
+                class="form-control"
+                type="text"
+                name="username"
+                placeholder="Ingresa tu usuario"
+                autocomplete="username"
+                required
+                autofocus>
 
         </div>
 
@@ -298,19 +259,19 @@
             <div class="password-wrapper">
 
                 <input
-                        type="password"
-                        name="password"
-                        class="form-control"
-                        id="passwordInput"
-                        placeholder="Ingresa tu contraseña"
-                        autocomplete="current-password"
-                        required>
+                    id="passwordInput"
+                    class="form-control"
+                    type="password"
+                    name="password"
+                    placeholder="Ingresa tu contraseña"
+                    autocomplete="current-password"
+                    required>
 
                 <button
-                        type="button"
-                        class="toggle-password"
-                        onclick="togglePassword()"
-                        aria-label="Mostrar u ocultar contraseña">
+                    type="button"
+                    class="toggle-password"
+                    onclick="togglePassword()"
+                    aria-label="Mostrar u ocultar contraseña">
                     👁️
                 </button>
 
@@ -319,43 +280,40 @@
         </div>
 
         <button
-                type="submit"
-                class="btn-login">
-            Iniciar Sesión
+            type="submit"
+            class="btn-login">
+            Entrar a Commerce Cloud
         </button>
 
     </form>
 
+    <div class="footer">
+        El sistema abrirá automáticamente el módulo de tu empresa.
+    </div>
+
 </div>
 
 <script>
-
     function togglePassword() {
-
         const input =
             document.getElementById(
-                'passwordInput'
+                "passwordInput"
             );
 
-        const boton =
+        const button =
             document.querySelector(
-                '.toggle-password'
+                ".toggle-password"
             );
 
-        if (input.type === 'password') {
-
-            input.type = 'text';
-            boton.textContent = '🙈';
-
+        if (input.type === "password") {
+            input.type = "text";
+            button.textContent = "🙈";
         } else {
-
-            input.type = 'password';
-            boton.textContent = '👁️';
+            input.type = "password";
+            button.textContent = "👁️";
         }
     }
-
 </script>
 
 </body>
-
 </html>
