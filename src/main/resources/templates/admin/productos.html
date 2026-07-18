@@ -483,6 +483,64 @@
 
 </style>
 
+
+<style id="abarroteBuscadorFinalStyles">
+
+.buscador-productos-final {
+    width: min(100%, 440px);
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) 52px 44px;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.buscador-productos-final .form-control {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.btn-scanner-busqueda-final,
+.btn-limpiar-busqueda-final {
+    min-height: 46px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.btn-scanner-busqueda-final {
+    border: 2px solid #4ade80;
+    background: rgba(74, 222, 128, 0.14);
+    color: #4ade80;
+}
+
+.btn-scanner-busqueda-final:hover {
+    background: #4ade80;
+    color: #0f172a;
+}
+
+.btn-limpiar-busqueda-final {
+    border: 1px solid #64748b;
+    background: rgba(100, 116, 139, 0.16);
+    color: #e2e8f0;
+}
+
+.btn-limpiar-busqueda-final:hover {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: #ffffff;
+}
+
+@media (max-width: 760px) {
+
+    .buscador-productos-final {
+        width: 100%;
+        grid-template-columns: minmax(0, 1fr) 52px 44px;
+    }
+}
+
+</style>
+
 <body>
 
 <div class="wrapper">
@@ -871,73 +929,51 @@
 
         <div class="card">
 
+            
             <div class="card-header">
 
                 <span class="card-title">
                     Lista de Productos
                 </span>
 
-                
-<div class="buscador-productos-scanner">
-    <!-- ABARROTE_BUSCADOR_PRODUCTOS_SCANNER_V2 -->
+                <!-- ABARROTE_BUSCADOR_FINAL_UNICO -->
 
-    
-<!-- ABARROTE_BUSCADOR_SCANNER_V3 INICIO -->
-<div class="buscador-v3">
+                <div class="buscador-productos-final">
 
-    <input
-            type="text"
-            id="buscarProductosInput"
-            class="form-control"
-            placeholder="🔍 Buscar nombre, código o categoría..."
-            autocomplete="off"
-            inputmode="search"
-            oninput="filtrarProductos(this.value)">
+                    <input
+                            type="text"
+                            class="form-control"
+                            id="buscarProductosInput"
+                            placeholder="🔍 Buscar nombre, código o categoría..."
+                            autocomplete="off"
+                            inputmode="search"
+                            oninput="filtrarProductos(this.value)">
 
-    <button
-            type="button"
-            id="btnScannerBusquedaV3"
-            class="btn-scanner-v3"
-            title="Escanear código de barras"
-            aria-label="Escanear código de barras"
-            onclick="abrirScannerBusquedaV3()">
-        📷
-    </button>
+                    <button
+                            type="button"
+                            id="btnScannerBusquedaFinal"
+                            class="btn-scanner-busqueda-final"
+                            title="Escanear código de barras"
+                            aria-label="Escanear código de barras"
+                            onclick="abrirScannerBusquedaFinal()">
+                        📷
+                    </button>
 
-    <button
-            type="button"
-            class="btn-limpiar-v3"
-            title="Limpiar búsqueda"
-            aria-label="Limpiar búsqueda"
-            onclick="limpiarBusquedaV3()">
-        ✕
-    </button>
+                    <button
+                            type="button"
+                            id="btnLimpiarBusquedaFinal"
+                            class="btn-limpiar-busqueda-final"
+                            title="Limpiar búsqueda"
+                            aria-label="Limpiar búsqueda"
+                            onclick="limpiarBusquedaFinal()">
+                        ✕
+                    </button>
 
-</div>
-<!-- ABARROTE_BUSCADOR_SCANNER_V3 FIN -->
-
-
-    <button
-            type="button"
-            class="btn-scanner-busqueda"
-            title="Escanear código de barras"
-            onclick="abrirScannerBusquedaProducto()">
-        📷
-    </button>
-
-    <button
-            type="button"
-            class="btn-limpiar-busqueda"
-            title="Limpiar búsqueda"
-            onclick="limpiarBusquedaProductos()">
-        ✕
-    </button>
-</div>
-
+                </div>
 
             </div>
 
-            <div class="table-container">
+<div class="table-container">
 
                 <table id="tablaProductos">
 
@@ -3581,6 +3617,106 @@ document.addEventListener(
 window.addEventListener(
     'pagehide',
     detenerScannerBusquedaV3
+);
+
+</script>
+
+
+<script id="abarroteBuscadorFinalScript">
+
+function abrirScannerBusquedaFinal() {
+
+    /*
+     * Utiliza la versión de escáner que ya esté instalada.
+     * Se comprueban en orden las versiones anteriores.
+     */
+
+    if (
+        typeof abrirScannerBusquedaV3
+        === 'function'
+    ) {
+
+        abrirScannerBusquedaV3();
+        return;
+    }
+
+    if (
+        typeof abrirScannerBusquedaProducto
+        === 'function'
+    ) {
+
+        abrirScannerBusquedaProducto();
+        return;
+    }
+
+    if (
+        typeof abrirScannerBusquedaUnico
+        === 'function'
+    ) {
+
+        abrirScannerBusquedaUnico();
+        return;
+    }
+
+    alert(
+        'No se encontró la función del escáner. '
+        + 'Actualiza la página con Ctrl + Shift + R.'
+    );
+}
+
+function limpiarBusquedaFinal() {
+
+    const input =
+        document.getElementById(
+            'buscarProductosInput'
+        );
+
+    if (!input) {
+        return;
+    }
+
+    input.value = '';
+
+    filtrarProductos('');
+
+    input.focus();
+}
+
+document.addEventListener(
+    'DOMContentLoaded',
+    function () {
+
+        const input =
+            document.getElementById(
+                'buscarProductosInput'
+            );
+
+        if (!input) {
+            return;
+        }
+
+        /*
+         * Compatible con el lector físico Motorola:
+         * escribe el código y envía Enter.
+         */
+        input.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key !== 'Enter') {
+                    return;
+                }
+
+                event.preventDefault();
+
+                filtrarProductos(
+                    input.value
+                );
+
+                input.select();
+            }
+        );
+    }
 );
 
 </script>
