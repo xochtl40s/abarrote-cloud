@@ -55,6 +55,17 @@ public class SecurityConfig {
                                  * Recursos públicos.
                                  */
                                 .requestMatchers(
+                            "/",
+                            "/inicio",
+                            "/commerce-cloud",
+                            "/productos",
+                            "/commerce/**",
+                            "/css/**",
+                            "/js/**",
+                            "/images/**",
+                            "/favicon.ico"
+                    ).permitAll()
+                    .requestMatchers(
                                         "/login",
                                         "/error",
                                         "/api/version",
