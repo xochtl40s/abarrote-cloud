@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html
+    lang="es"
+    xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Productos | Gym Cloud</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: sans-serif;
+            color: #f8fafc;
+            background: #09090b;
+        }
+
+        a {
+            color: #c084fc;
+        }
+
+        form,
+        table {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            background: #18181b;
+        }
+
+        input {
+            margin: 0.3rem;
+            padding: 0.7rem;
+            border: 1px solid #52525b;
+            border-radius: 8px;
+            color: white;
+            background: #27272a;
+        }
+
+        button {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        th,
+        td {
+            padding: 0.7rem;
+            border-bottom: 1px solid #3f3f46;
+            text-align: left;
+        }
+
+        .bajo {
+            color: #fca5a5;
+        }
+    
+        .excel-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 1.2rem;
+            border: 1px solid #6d28d9;
+            border-radius: 14px;
+            background: rgba(109, 40, 217, 0.12);
+        }
+
+        .excel-panel h2 {
+            margin: 0 0 0.35rem 0;
+        }
+
+        .excel-panel p {
+            margin: 0;
+            color: #cbd5e1;
+        }
+
+        .excel-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .excel-download {
+            display: inline-block;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            background: #6d28d9;
+        }
+
+        .excel-form {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: auto;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+
+        .excel-form input[type="file"] {
+            max-width: 260px;
+        }
+
+        .excel-message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .excel-success {
+            color: #bbf7d0;
+            border: 1px solid #16a34a;
+            background: rgba(22, 163, 74, 0.14);
+        }
+
+        .excel-error {
+            color: #fecaca;
+            border: 1px solid #dc2626;
+            background: rgba(220, 38, 38, 0.14);
+        }
+
+        @media (max-width: 800px) {
+            .excel-panel {
+                display: block;
+            }
+
+            .excel-actions {
+                margin-top: 1rem;
+            }
+
+            .excel-form {
+                display: block;
+            }
+
+            .excel-form input,
+            .excel-form button {
+                width: 100%;
+                margin: 0.3rem 0;
+            }
+        }
+
+</style>
+</head>
+
+<body>
+
+<a th:href="@{/gym/dashboard}">
+    ← Regresar al dashboard
+</a>
+
+<h1>Productos de Gym Cloud</h1>
+
+<div class="excel-panel">
+
+    <div>
+        <h2>📊 Carga masiva desde Excel</h2>
+
+        <p>
+            Descarga la plantilla, llena los datos
+            y carga el archivo en formato .xlsx.
+        </p>
+    </div>
+
+    <div class="excel-actions">
+
+        <a
+            class="excel-download"
+            href="/gym/plantillas/productos">
+            ⬇ Descargar Excel de muestra
+        </a>
+
+        <form
+            class="excel-form"
+            method="post"
+            enctype="multipart/form-data"
+            action="/gym/productos/importar">
+
+            <input
+                type="file"
+                name="archivo"
+                accept=".xlsx"
+                required>
+
+            <button type="submit">
+                ⬆ Cargar Excel
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<div
+    class="excel-message excel-success"
+    th:if="${excelExito}">
+
+    <strong th:text="${excelExito}"></strong>
+
+    <ul
+        th:if="${excelErrores != null
+            and !excelErrores.isEmpty()}">
+
+        <li
+            th:each="error : ${excelErrores}"
+            th:text="${error}">
+        </li>
+
+    </ul>
+
+</div>
+
+<div
+    class="excel-message excel-error"
+    th:if="${excelError}"
+    th:text="${excelError}">
+</div>
+
+
+<form
+    method="post"
+    th:action="@{/gym/productos}">
+
+    <h2>Alta de producto</h2>
+
+    <input
+        name="codigo"
+        placeholder="Código"
+        required>
+
+    <input
+        name="nombre"
+        placeholder="Nombre"
+        required>
+
+    <input
+        name="categoria"
+        placeholder="Categoría">
+
+    <input
+        name="descripcion"
+        placeholder="Descripción">
+
+    <input
+        name="precio"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder="Precio"
+        required>
+
+    <input
+        name="costo"
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder="Costo">
+
+    <input
+        name="existencia"
+        type="number"
+        min="0"
+        value="0"
+        placeholder="Existencia">
+
+    <input
+        name="stockMinimo"
+        type="number"
+        min="0"
+        value="0"
+        placeholder="Stock mínimo">
+
+    <button type="submit">
+        Guardar producto
+    </button>
+
+</form>
+
+<table>
+
+    <thead>
+    <tr>
+        <th>Código</th>
+        <th>Producto</th>
+        <th>Categoría</th>
+        <th>Precio</th>
+        <th>Existencia</th>
+        <th>Actualizar</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+    <tr th:each="producto : ${productos}">
+
+        <td th:text="${producto.codigo}"></td>
+
+        <td th:text="${producto.nombre}"></td>
+
+        <td th:text="${producto.categoria}"></td>
+
+        <td
+            th:text="${'$' + producto.precio}">
+        </td>
+
+        <td
+            th:classappend="${producto.stockBajo} ? 'bajo' : ''"
+            th:text="${producto.existencia}">
+        </td>
+
+        <td>
+
+            <form
+                method="post"
+                th:action="@{/gym/productos/existencia}">
+
+                <input
+                    type="hidden"
+                    name="productoId"
+                    th:value="${producto.id}">
+
+                <input
+                    type="number"
+                    name="existencia"
+                    min="0"
+                    th:value="${producto.existencia}">
+
+                <button type="submit">
+                    Actualizar
+                </button>
+
+            </form>
+
+        </td>
+
+    </tr>
+
+    </tbody>
+
+</table>
+
+</body>
+</html>

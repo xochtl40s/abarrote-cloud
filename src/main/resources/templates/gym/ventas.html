@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html
+    lang="es"
+    xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ventas | Gym Cloud</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: sans-serif;
+            color: white;
+            background: #09090b;
+        }
+
+        a {
+            color: #c084fc;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+            background: #18181b;
+        }
+
+        th,
+        td {
+            padding: 0.8rem;
+            border-bottom: 1px solid #3f3f46;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+<a th:href="@{/gym/dashboard}">
+    ← Regresar al dashboard
+</a>
+
+<h1>Últimas ventas</h1>
+
+<table>
+
+    <thead>
+    <tr>
+        <th>Folio</th>
+        <th>Fecha</th>
+        <th>Usuario</th>
+        <th>Método</th>
+        <th>Total</th>
+    </tr>
+    </thead>
+
+    <tbody>
+
+    <tr th:each="venta : ${ventas}">
+
+        <td th:text="${venta.id}"></td>
+
+        <td th:text="${venta.fechaVenta}"></td>
+
+        <td th:text="${venta.usuarioUsername}"></td>
+
+        <td th:text="${venta.metodoPago}"></td>
+
+        <td th:text="${'$' + venta.total}"></td>
+
+    </tr>
+
+    </tbody>
+
+</table>
+
+</body>
+</html>

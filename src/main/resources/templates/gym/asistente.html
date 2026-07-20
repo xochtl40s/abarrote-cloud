@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html
+    lang="es"
+    xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>Asistente IA | Gym Cloud</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            font-family:
+                "Segoe UI",
+                system-ui,
+                sans-serif;
+            color: #f8fafc;
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(109, 40, 217, 0.30),
+                    transparent 35%
+                ),
+                #09090b;
+        }
+
+        a {
+            color: #c084fc;
+        }
+
+        .container {
+            width: min(950px, 100%);
+            margin: 0 auto;
+        }
+
+        .assistant {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border: 1px solid #3f3f46;
+            border-radius: 18px;
+            background: #18181b;
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1rem 0;
+        }
+
+        .examples button {
+            padding: 0.65rem 0.8rem;
+            border: 1px solid #6d28d9;
+            border-radius: 999px;
+            color: #e9d5ff;
+            background: rgba(109, 40, 217, 0.15);
+            cursor: pointer;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 1rem;
+            border: 1px solid #52525b;
+            border-radius: 12px;
+            outline: none;
+            resize: vertical;
+            color: white;
+            background: #27272a;
+            font-size: 1rem;
+        }
+
+        .send {
+            margin-top: 0.8rem;
+            padding: 0.85rem 1.2rem;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 800;
+            background:
+                linear-gradient(
+                    135deg,
+                    #7c3aed,
+                    #2563eb
+                );
+            cursor: pointer;
+        }
+
+        .response {
+            display: none;
+            margin-top: 1.4rem;
+            padding: 1.2rem;
+            border: 1px solid #3f3f46;
+            border-radius: 14px;
+            background: #111113;
+        }
+
+        .response.visible {
+            display: block;
+        }
+
+        .category {
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 999px;
+            color: #ddd6fe;
+            background: #5b21b6;
+            font-size: 0.75rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: #d4d4d8;
+        }
+
+        .error {
+            color: #fca5a5;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <a th:href="@{/gym/dashboard}">
+        ← Regresar al dashboard
+    </a>
+
+    <h1>
+        🤖 Asistente IA Gym Cloud
+    </h1>
+
+    <p>
+        Analiza clientes, membresías, vencimientos,
+        ventas e inventario del gimnasio actual.
+    </p>
+
+    <section class="assistant">
+
+        <div class="examples">
+
+            <button
+                type="button"
+                onclick="usarPregunta(
+                    'Dame un resumen del gimnasio'
+                )">
+                Resumen general
+            </button>
+
+            <button
+                type="button"
+                onclick="usarPregunta(
+                    '¿Quiénes vencen en los próximos 5 días?'
+                )">
+                Próximos vencimientos
+            </button>
+
+            <button
+                type="button"
+                onclick="usarPregunta(
+                    'Muéstrame clientes sin membresía activa'
+                )">
+                Sin membresía
+            </button>
+
+            <button
+                type="button"
+                onclick="usarPregunta(
+                    '¿Qué productos tienen stock bajo?'
+                )">
+                Stock bajo
+            </button>
+
+            <button
+                type="button"
+                onclick="usarPregunta(
+                    'Dame el resumen de ventas'
+                )">
+                Ventas
+            </button>
+
+        </div>
+
+        <textarea
+            id="pregunta"
+            placeholder="Ejemplo: ¿Qué clientes deben renovar su membresía durante los próximos cinco días?">
+        </textarea>
+
+        <button
+            class="send"
+            type="button"
+            onclick="preguntar()">
+            Consultar datos reales
+        </button>
+
+        <div
+            id="respuesta"
+            class="response">
+
+            <span
+                id="categoria"
+                class="category">
+            </span>
+
+            <h2 id="mensaje"></h2>
+
+            <ul id="detalles"></ul>
+
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+
+    function usarPregunta(texto) {
+        document.getElementById(
+            'pregunta'
+        ).value = texto;
+    }
+
+    async function preguntar() {
+
+        const pregunta =
+            document.getElementById(
+                'pregunta'
+            ).value.trim();
+
+        const responseBox =
+            document.getElementById(
+                'respuesta'
+            );
+
+        const mensaje =
+            document.getElementById(
+                'mensaje'
+            );
+
+        const categoria =
+            document.getElementById(
+                'categoria'
+            );
+
+        const detalles =
+            document.getElementById(
+                'detalles'
+            );
+
+        if (!pregunta) {
+            alert('Escribe una pregunta.');
+            return;
+        }
+
+        responseBox.classList.add(
+            'visible'
+        );
+
+        mensaje.className = '';
+
+        mensaje.textContent =
+            'Consultando PostgreSQL...';
+
+        categoria.textContent =
+            'PROCESANDO';
+
+        detalles.innerHTML = '';
+
+        try {
+
+            const response = await fetch(
+                '/gym/api/asistente',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':
+                            'application/json'
+                    },
+                    body: JSON.stringify({
+                        pregunta
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    'No fue posible consultar el asistente.'
+                );
+            }
+
+            const data =
+                await response.json();
+
+            categoria.textContent =
+                data.categoria;
+
+            mensaje.textContent =
+                data.respuesta;
+
+            detalles.innerHTML = '';
+
+            if (
+                data.detalles
+                && data.detalles.length > 0
+            ) {
+                data.detalles.forEach(
+                    detalle => {
+
+                        const li =
+                            document.createElement(
+                                'li'
+                            );
+
+                        li.textContent =
+                            detalle;
+
+                        detalles.appendChild(li);
+                    }
+                );
+            } else {
+
+                const li =
+                    document.createElement('li');
+
+                li.textContent =
+                    'No se encontraron registros para mostrar.';
+
+                detalles.appendChild(li);
+            }
+
+        } catch (error) {
+
+            categoria.textContent =
+                'ERROR';
+
+            mensaje.className =
+                'error';
+
+            mensaje.textContent =
+                error.message;
+        }
+    }
+
+</script>
+
+</body>
+</html>

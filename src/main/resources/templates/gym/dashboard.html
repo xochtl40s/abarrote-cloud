@@ -8,161 +8,188 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0">
+        content="width=device-width, initial-scale=1">
 
-    <title>Gym Cloud | Commerce Cloud</title>
+    <title>Gym Cloud</title>
 
     <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
         }
 
         body {
-            min-height: 100vh;
+            margin: 0;
             font-family:
                 "Segoe UI",
                 system-ui,
                 sans-serif;
             color: #f8fafc;
-            background:
-                radial-gradient(
-                    circle at top right,
-                    #4c1d95 0,
-                    transparent 32%
-                ),
-                linear-gradient(
-                    135deg,
-                    #09090b,
-                    #111827
-                );
+            background: #09090b;
         }
 
         .topbar {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            gap: 1rem;
+            align-items: center;
             padding: 1rem 2rem;
             border-bottom: 1px solid #27272a;
-            background: rgba(9, 9, 11, 0.82);
-            backdrop-filter: blur(12px);
+            background: #18181b;
         }
 
         .brand {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        .brand-icon {
-            font-size: 2rem;
-        }
-
-        .brand h1 {
             color: #c084fc;
-            font-size: 1.35rem;
-        }
-
-        .brand p {
-            color: #94a3b8;
-            font-size: 0.82rem;
+            font-size: 1.4rem;
+            font-weight: 800;
         }
 
         .logout {
-            padding: 0.7rem 1rem;
-            border: 1px solid #ef4444;
-            border-radius: 10px;
             color: #fecaca;
             text-decoration: none;
-            background: rgba(239, 68, 68, 0.12);
         }
 
-        .main {
-            width: min(1200px, 92%);
-            margin: 0 auto;
-            padding: 3rem 0;
+        .layout {
+            display: grid;
+            grid-template-columns: 230px 1fr;
+            min-height: calc(100vh - 70px);
         }
 
-        .hero {
-            margin-bottom: 2rem;
+        .sidebar {
+            padding: 1.5rem;
+            border-right: 1px solid #27272a;
+            background: #111113;
         }
 
-        .hero span {
-            display: inline-block;
+        .sidebar a {
+            display: block;
             margin-bottom: 0.7rem;
-            padding: 0.35rem 0.7rem;
-            border: 1px solid #7e22ce;
-            border-radius: 999px;
-            color: #d8b4fe;
-            background: rgba(126, 34, 206, 0.18);
+            padding: 0.85rem;
+            border-radius: 10px;
+            color: #d4d4d8;
+            text-decoration: none;
         }
 
-        .hero h2 {
-            margin-bottom: 0.5rem;
-            font-size: clamp(2rem, 5vw, 3.3rem);
+        .sidebar a:hover {
+            color: white;
+            background: #27272a;
         }
 
-        .hero p {
-            color: #94a3b8;
-            font-size: 1.05rem;
+        main {
+            min-width: 0;
+            padding: 2rem;
         }
 
         .cards {
             display: grid;
             grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.2rem;
+                repeat(auto-fit, minmax(190px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
-        .card {
-            min-height: 170px;
-            padding: 1.4rem;
-            border: 1px solid #27272a;
-            border-radius: 18px;
-            background: rgba(24, 24, 27, 0.82);
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+        .card,
+        .panel {
+            padding: 1.35rem;
+            border: 1px solid #3f3f46;
+            border-radius: 16px;
+            background: #18181b;
         }
 
-        .card-icon {
-            margin-bottom: 1rem;
-            font-size: 2rem;
-        }
-
-        .card h3 {
-            margin-bottom: 0.5rem;
-            color: #e9d5ff;
-        }
-
-        .card .number {
-            margin-bottom: 0.4rem;
+        .card strong {
+            display: block;
+            margin-top: 0.6rem;
             color: #c084fc;
             font-size: 2rem;
-            font-weight: 800;
         }
 
-        .card p {
+        .analytics {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1rem;
+            margin-top: 1.4rem;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+        }
+
+        canvas {
+            width: 100%;
+            height: 260px;
+        }
+
+        .tables {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1.4rem;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #3f3f46;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            color: #d8b4fe;
+        }
+
+        .danger {
+            color: #fca5a5;
+        }
+
+        .warning {
+            color: #fde68a;
+        }
+
+        .empty {
             color: #94a3b8;
-            line-height: 1.5;
         }
 
-        .module-status {
+        .ai-button {
             display: inline-block;
-            margin-top: 0.8rem;
-            color: #86efac;
-            font-size: 0.85rem;
+            margin-top: 1.4rem;
+            padding: 0.9rem 1.2rem;
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: 800;
+            background:
+                linear-gradient(
+                    135deg,
+                    #6d28d9,
+                    #2563eb
+                );
         }
 
-        @media (max-width: 600px) {
-            .topbar {
-                align-items: flex-start;
+        @media (max-width: 760px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #27272a;
+            }
+
+            main {
                 padding: 1rem;
             }
 
-            .main {
-                width: 90%;
-                padding-top: 2rem;
+            .analytics {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -173,16 +200,7 @@
 <header class="topbar">
 
     <div class="brand">
-
-        <div class="brand-icon">
-            🏋️
-        </div>
-
-        <div>
-            <h1>Gym Cloud</h1>
-            <p>Vertical de Commerce Cloud</p>
-        </div>
-
+        🏋️ Gym Cloud
     </div>
 
     <a
@@ -193,126 +211,675 @@
 
 </header>
 
-<main class="main">
+<div class="layout">
 
-    <section class="hero">
+    <nav class="sidebar">
 
-        <span
-            th:text="${tenantSlug}">
-            gym-titan
-        </span>
+        <a th:href="@{/gym/dashboard}">
+            📊 Dashboard
+        </a>
 
-        <h2>
-            Bienvenido,
-            <span
-                th:text="${usuarioNombre}">
-                Administrador Gym
-            </span>
-        </h2>
+        <a th:href="@{/gym/pos}">
+            🧾 Punto de venta
+        </a>
+
+        <a th:href="@{/gym/productos}">
+            🥤 Productos
+        </a>
+
+        <a th:href="@{/gym/ventas}">
+            💰 Ventas
+        </a>
+
+        <a th:href="@{/gym/clientes}">
+            👥 Clientes
+        </a>
+
+        <a th:href="@{/gym/membresias}">
+            🎫 Membresías y pagos
+        </a>
+
+        <a th:href="@{/gym/asistente}">
+            🤖 Asistente IA
+        </a>
+
+    </nav>
+
+    <main>
+
+        <h1
+            th:text="${principal.tenantNombre}">
+            Gym
+        </h1>
 
         <p>
-            Administrando
+            Bienvenido,
             <strong
-                th:text="${tenantNombre}">
-                Gym Titan Ecatepec
+                th:text="${principal.nombre}">
+                Administrador
             </strong>
         </p>
 
-    </section>
+        <a
+            class="ai-button"
+            th:href="@{/gym/asistente}">
+            🤖 Consultar Asistente IA Gym
+        </a>
 
-    <section class="cards">
+        <section class="cards">
 
-        <article class="card">
+            <article class="card">
+                Productos activos
+                <strong
+                    th:text="${totalProductos}">
+                    0
+                </strong>
+            </article>
 
-            <div class="card-icon">
-                👥
-            </div>
+            <article class="card">
+                Ventas realizadas
+                <strong
+                    th:text="${totalVentas}">
+                    0
+                </strong>
+            </article>
 
-            <h3>Clientes</h3>
+            <article class="card">
+                Clientes registrados
+                <strong
+                    th:text="${totalClientes}">
+                    0
+                </strong>
+            </article>
 
-            <div
-                class="number"
-                th:text="${totalClientes}">
-                0
-            </div>
+            <article class="card">
+                Membresías activas
+                <strong
+                    th:text="${membresiasActivas}">
+                    0
+                </strong>
+            </article>
 
-            <p>
-                Socios registrados exclusivamente
-                para este gimnasio.
-            </p>
+            <article class="card">
+                Vencen en 5 días
+                <strong
+                    class="warning"
+                    th:text="${proximasAVencer.size()}">
+                    0
+                </strong>
+            </article>
 
-            <span class="module-status">
-                ● Módulo activo
-            </span>
+            <article class="card">
+                Sin membresía activa
+                <strong
+                    class="danger"
+                    th:text="${clientesSinMembresia.size()}">
+                    0
+                </strong>
+            </article>
 
-        </article>
+            <article class="card">
+                Productos con stock bajo
+                <strong
+                    class="danger"
+                    th:text="${productosStockBajo.size()}">
+                    0
+                </strong>
+            </article>
 
-        <article class="card">
+        </section>
 
-            <div class="card-icon">
-                🎫
-            </div>
+        <section class="analytics">
 
-            <h3>Planes</h3>
+            <article class="panel">
 
-            <div
-                class="number"
-                th:text="${totalPlanes}">
-                0
-            </div>
+                <h2>
+                    Membresías que vencen en los próximos 5 días
+                </h2>
 
-            <p>
-                Planes de membresía disponibles
-                para los clientes.
-            </p>
+                <canvas id="graficaVencimientos"></canvas>
 
-            <span class="module-status">
-                ● Módulo activo
-            </span>
+            </article>
 
-        </article>
+            <article class="panel">
 
-        <article class="card">
+                <h2>
+                    Estado actual de clientes
+                </h2>
 
-            <div class="card-icon">
-                📅
-            </div>
+                <canvas id="graficaMembresias"></canvas>
 
-            <h3>Membresías</h3>
+            </article>
 
-            <p>
-                Control de vigencia, activación,
-                suspensión y vencimiento.
-            </p>
+        </section>
 
-            <span class="module-status">
-                ● Base implementada
-            </span>
+        <section class="tables">
 
-        </article>
+            <article class="panel">
 
-        <article class="card">
+                <h2>
+                    Próximas membresías a vencer
+                </h2>
 
-            <div class="card-icon">
-                💳
-            </div>
+                <div class="table-wrapper">
 
-            <h3>Pagos</h3>
+                    <table>
 
-            <p>
-                Registro de pagos en efectivo,
-                tarjeta y transferencia.
-            </p>
+                        <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Plan</th>
+                            <th>Vencimiento</th>
+                        </tr>
+                        </thead>
 
-            <span class="module-status">
-                ● Base implementada
-            </span>
+                        <tbody>
 
-        </article>
+                        <tr
+                            th:each="membresia : ${proximasAVencer}">
 
-    </section>
+                            <td>
+                                <span
+                                    th:text="${membresia.cliente.nombre}">
+                                </span>
 
-</main>
+                                <span
+                                    th:text="${membresia.cliente.apellidoPaterno}">
+                                </span>
+                            </td>
+
+                            <td
+                                th:text="${membresia.plan.nombre}">
+                            </td>
+
+                            <td
+                                class="warning"
+                                th:text="${membresia.fechaFin}">
+                            </td>
+
+                        </tr>
+
+                        <tr
+                            th:if="${proximasAVencer.isEmpty()}">
+
+                            <td
+                                colspan="3"
+                                class="empty">
+                                No hay vencimientos próximos.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+            <article class="panel">
+
+                <h2>
+                    Clientes sin membresía activa
+                </h2>
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Cliente</th>
+                            <th>Teléfono</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                            th:each="cliente : ${clientesSinMembresia}">
+
+                            <td
+                                th:text="${cliente.numeroCliente}">
+                            </td>
+
+                            <td>
+                                <span
+                                    th:text="${cliente.nombre}">
+                                </span>
+
+                                <span
+                                    th:text="${cliente.apellidoPaterno}">
+                                </span>
+                            </td>
+
+                            <td
+                                th:text="${cliente.telefono}">
+                            </td>
+
+                        </tr>
+
+                        <tr
+                            th:if="${clientesSinMembresia.isEmpty()}">
+
+                            <td
+                                colspan="3"
+                                class="empty">
+                                Todos los clientes tienen membresía vigente.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+            <article class="panel">
+
+                <h2>
+                    Productos con stock bajo
+                </h2>
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Existencia</th>
+                            <th>Mínimo</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+
+                        <tr
+                            th:each="producto : ${productosStockBajo}">
+
+                            <td
+                                th:text="${producto.codigo}">
+                            </td>
+
+                            <td
+                                th:text="${producto.nombre}">
+                            </td>
+
+                            <td
+                                class="danger"
+                                th:text="${producto.existencia}">
+                            </td>
+
+                            <td
+                                th:text="${producto.stockMinimo}">
+                            </td>
+
+                        </tr>
+
+                        <tr
+                            th:if="${productosStockBajo.isEmpty()}">
+
+                            <td
+                                colspan="4"
+                                class="empty">
+                                No existen productos con stock bajo.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script th:inline="javascript">
+
+    const vencimientos =
+        /*[[${vencimientosDatos}]]*/ [0, 0, 0, 0, 0, 0];
+
+    const clientesConMembresia =
+        /*[[${clientesConMembresia}]]*/ 0;
+
+    const clientesSinMembresia =
+        /*[[${clientesSinMembresiaTotal}]]*/ 0;
+
+    function prepararCanvas(canvas) {
+
+        const ratio =
+            window.devicePixelRatio || 1;
+
+        const width =
+            canvas.clientWidth;
+
+        const height = 260;
+
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+
+        const ctx =
+            canvas.getContext('2d');
+
+        ctx.scale(ratio, ratio);
+
+        return {
+            ctx,
+            width,
+            height
+        };
+    }
+
+    function dibujarBarras(
+        canvasId,
+        labels,
+        values
+    ) {
+        const canvas =
+            document.getElementById(canvasId);
+
+        const {
+            ctx,
+            width,
+            height
+        } = prepararCanvas(canvas);
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+        const padding = 38;
+
+        const chartWidth =
+            width - padding * 2;
+
+        const chartHeight =
+            height - padding * 2;
+
+        const maxValue =
+            Math.max(...values, 1);
+
+        const espacio =
+            chartWidth / values.length;
+
+        const barWidth =
+            Math.max(20, espacio * 0.55);
+
+        ctx.font =
+            '12px Segoe UI';
+
+        ctx.textAlign =
+            'center';
+
+        values.forEach(
+            (value, index) => {
+
+                const barHeight =
+                    (value / maxValue)
+                    * chartHeight;
+
+                const x =
+                    padding
+                    + index * espacio
+                    + (espacio - barWidth) / 2;
+
+                const y =
+                    padding
+                    + chartHeight
+                    - barHeight;
+
+                const gradient =
+                    ctx.createLinearGradient(
+                        0,
+                        y,
+                        0,
+                        y + barHeight
+                    );
+
+                gradient.addColorStop(
+                    0,
+                    '#c084fc'
+                );
+
+                gradient.addColorStop(
+                    1,
+                    '#6d28d9'
+                );
+
+                ctx.fillStyle =
+                    gradient;
+
+                ctx.fillRect(
+                    x,
+                    y,
+                    barWidth,
+                    barHeight
+                );
+
+                ctx.fillStyle =
+                    '#f8fafc';
+
+                ctx.fillText(
+                    String(value),
+                    x + barWidth / 2,
+                    Math.max(
+                        y - 8,
+                        14
+                    )
+                );
+
+                ctx.fillStyle =
+                    '#a1a1aa';
+
+                ctx.fillText(
+                    labels[index],
+                    x + barWidth / 2,
+                    height - 12
+                );
+            }
+        );
+    }
+
+    function dibujarDona(
+        canvasId,
+        values,
+        labels
+    ) {
+        const canvas =
+            document.getElementById(canvasId);
+
+        const {
+            ctx,
+            width,
+            height
+        } = prepararCanvas(canvas);
+
+        const centerX =
+            width * 0.35;
+
+        const centerY =
+            height / 2;
+
+        const radius =
+            Math.min(
+                width,
+                height
+            ) * 0.3;
+
+        const total =
+            Math.max(
+                values.reduce(
+                    (sum, value) =>
+                        sum + value,
+                    0
+                ),
+                1
+            );
+
+        const colors = [
+            '#22c55e',
+            '#ef4444'
+        ];
+
+        let start =
+            -Math.PI / 2;
+
+        values.forEach(
+            (value, index) => {
+
+                const angle =
+                    (value / total)
+                    * Math.PI
+                    * 2;
+
+                ctx.beginPath();
+
+                ctx.arc(
+                    centerX,
+                    centerY,
+                    radius,
+                    start,
+                    start + angle
+                );
+
+                ctx.arc(
+                    centerX,
+                    centerY,
+                    radius * 0.55,
+                    start + angle,
+                    start,
+                    true
+                );
+
+                ctx.closePath();
+
+                ctx.fillStyle =
+                    colors[index];
+
+                ctx.fill();
+
+                start += angle;
+            }
+        );
+
+        ctx.font =
+            'bold 18px Segoe UI';
+
+        ctx.textAlign =
+            'center';
+
+        ctx.fillStyle =
+            '#f8fafc';
+
+        ctx.fillText(
+            String(
+                values.reduce(
+                    (sum, value) =>
+                        sum + value,
+                    0
+                )
+            ),
+            centerX,
+            centerY + 6
+        );
+
+        ctx.font =
+            '13px Segoe UI';
+
+        labels.forEach(
+            (label, index) => {
+
+                const x =
+                    width * 0.68;
+
+                const y =
+                    centerY
+                    - 25
+                    + index * 48;
+
+                ctx.fillStyle =
+                    colors[index];
+
+                ctx.fillRect(
+                    x,
+                    y - 12,
+                    14,
+                    14
+                );
+
+                ctx.fillStyle =
+                    '#e4e4e7';
+
+                ctx.textAlign =
+                    'left';
+
+                ctx.fillText(
+                    label
+                        + ': '
+                        + values[index],
+                    x + 22,
+                    y
+                );
+            }
+        );
+    }
+
+    function renderGraficas() {
+
+        dibujarBarras(
+            'graficaVencimientos',
+            [
+                'Hoy',
+                '1 día',
+                '2 días',
+                '3 días',
+                '4 días',
+                '5 días'
+            ],
+            vencimientos
+        );
+
+        dibujarDona(
+            'graficaMembresias',
+            [
+                clientesConMembresia,
+                clientesSinMembresia
+            ],
+            [
+                'Con membresía activa',
+                'Sin membresía activa'
+            ]
+        );
+    }
+
+    window.addEventListener(
+        'load',
+        renderGraficas
+    );
+
+    window.addEventListener(
+        'resize',
+        renderGraficas
+    );
+
+</script>
 
 </body>
 </html>
