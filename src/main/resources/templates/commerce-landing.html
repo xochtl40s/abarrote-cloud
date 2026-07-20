@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="description"
+        content="Commerce Cloud: plataforma para administrar abarrotes, restaurantes y gimnasios desde cualquier dispositivo."
+    >
+
+    <title>Commerce Cloud | Haz crecer tu negocio</title>
+
+    <link
+        rel="stylesheet"
+        th:href="@{/commerce/commerce-premium.css}"
+        href="/commerce/commerce-premium.css"
+    >
+</head>
+
+<body>
+
+<div class="cc-announcement">
+    Oferta para negocios fundadores:
+    configuración inicial y capacitación incluidas.
+    <a href="#precios">Conocer planes →</a>
+</div>
+
+<header class="cc-header">
+    <div class="cc-container cc-nav">
+
+        <a class="cc-brand" th:href="@{/}">
+            <span class="cc-brand-mark">CC</span>
+            <span class="cc-brand-text">Commerce Cloud</span>
+        </a>
+
+        <nav
+            class="cc-navigation"
+            data-navigation
+            aria-label="Navegación principal"
+        >
+            <a href="#abarrotes">Abarrotes</a>
+            <a href="#restaurantes">Restaurantes</a>
+            <a href="#gimnasios">Gimnasios</a>
+            <a href="#beneficios">Beneficios</a>
+            <a href="#precios">Precios</a>
+        </nav>
+
+        <div class="cc-nav-actions">
+
+            <a
+                class="cc-button cc-button-light"
+                th:href="@{/login}"
+            >
+                Iniciar sesión
+            </a>
+
+            <a
+                class="cc-button cc-button-primary"
+                th:href="${whatsappGeneral}"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Solicitar demo
+            </a>
+
+            <button
+                class="cc-menu-button"
+                type="button"
+                aria-label="Abrir menú"
+                aria-expanded="false"
+                data-menu-button
+            >
+                ☰
+            </button>
+
+        </div>
+    </div>
+</header>
+
+<main>
+
+    <section class="cc-hero">
+
+        <div class="cc-container cc-hero-grid">
+
+            <div class="cc-hero-copy">
+
+                <div class="cc-kicker">
+                    <span class="cc-kicker-dot"></span>
+                    Plataforma SaaS para pequeños negocios
+                </div>
+
+                <h1>
+                    Tu negocio crece mejor cuando todo está
+                    <span class="cc-highlight">bajo control.</span>
+                </h1>
+
+                <p class="cc-hero-description">
+                    Administra ventas, inventario, clientes, membresías,
+                    mesas, pedidos y reportes desde una sola plataforma
+                    diseñada para abarrotes, restaurantes y gimnasios.
+                </p>
+
+                <div class="cc-hero-actions">
+
+                    <a
+                        class="cc-button cc-button-primary"
+                        th:href="${whatsappGeneral}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Quiero una demostración
+                    </a>
+
+                    <a
+                        class="cc-button cc-button-light"
+                        href="#soluciones"
+                    >
+                        Explorar soluciones
+                    </a>
+
+                </div>
+
+                <div class="cc-hero-note">
+                    <span>Sin instalaciones complicadas</span>
+                    <span>Funciona en celular y PC</span>
+                    <span>Soporte directo</span>
+                </div>
+
+            </div>
+
+            <div class="cc-product-preview">
+
+                <div class="cc-preview-shadow"></div>
+
+                <div class="cc-browser">
+
+                    <div class="cc-browser-top">
+                        <span class="cc-browser-dot red"></span>
+                        <span class="cc-browser-dot yellow"></span>
+                        <span class="cc-browser-dot green"></span>
+
+                        <div class="cc-browser-address">
+                            commercecloud.mx/dashboard
+                        </div>
+                    </div>
+
+                    <div class="cc-dashboard">
+
+                        <aside class="cc-dashboard-sidebar">
+                            <div class="cc-dashboard-logo">CC</div>
+
+                            <div class="cc-dashboard-item active">
+                                📊 Dashboard
+                            </div>
+
+                            <div class="cc-dashboard-item">
+                                🧾 Ventas
+                            </div>
+
+                            <div class="cc-dashboard-item">
+                                📦 Inventario
+                            </div>
+
+                            <div class="cc-dashboard-item">
+                                👥 Clientes
+                            </div>
+
+                            <div class="cc-dashboard-item">
+                                ⚙️ Ajustes
+                            </div>
+                        </aside>
+
+                        <div class="cc-dashboard-main">
+
+                            <div class="cc-dashboard-title">
+                                Resumen del negocio
+                            </div>
+
+                            <div class="cc-dashboard-subtitle">
+                                Información actualizada en tiempo real
+                            </div>
+
+                            <div class="cc-dashboard-cards">
+
+                                <article class="cc-dashboard-card">
+                                    <div class="cc-dashboard-card-label">
+                                        Ventas de hoy
+                                    </div>
+
+                                    <div class="cc-dashboard-card-value green">
+                                        $12,480
+                                    </div>
+                                </article>
+
+                                <article class="cc-dashboard-card">
+                                    <div class="cc-dashboard-card-label">
+                                        Operaciones
+                                    </div>
+
+                                    <div class="cc-dashboard-card-value">
+                                        143
+                                    </div>
+                                </article>
+
+                                <article class="cc-dashboard-card">
+                                    <div class="cc-dashboard-card-label">
+                                        Ticket promedio
+                                    </div>
+
+                                    <div class="cc-dashboard-card-value">
+                                        $287
+                                    </div>
+                                </article>
+
+                            </div>
+
+                            <div class="cc-chart">
+
+                                <div class="cc-dashboard-card-label">
+                                    Ventas de los últimos siete días
+                                </div>
+
+                                <div class="cc-chart-bars">
+                                    <span class="cc-chart-bar" style="height:35%"></span>
+                                    <span class="cc-chart-bar" style="height:52%"></span>
+                                    <span class="cc-chart-bar" style="height:45%"></span>
+                                    <span class="cc-chart-bar" style="height:71%"></span>
+                                    <span class="cc-chart-bar" style="height:64%"></span>
+                                    <span class="cc-chart-bar" style="height:88%"></span>
+                                    <span class="cc-chart-bar" style="height:77%"></span>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="cc-floating-card">
+                    <div class="cc-floating-label">
+                        Crecimiento mensual
+                    </div>
+
+                    <div class="cc-floating-value">
+                        +18.4%
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="cc-trust">
+        <div class="cc-container cc-trust-grid">
+
+            <div class="cc-trust-title">
+                Una sola plataforma para administrar:
+            </div>
+
+            <div class="cc-trust-item">🛒 Abarrotes</div>
+            <div class="cc-trust-item">🍽️ Restaurantes</div>
+            <div class="cc-trust-item">🏋️ Gimnasios</div>
+            <div class="cc-trust-item">☕ Próximos giros</div>
+
+        </div>
+    </section>
+
+    <section id="soluciones" class="cc-section cc-section-soft">
+
+        <div class="cc-container">
+
+            <div class="cc-section-heading">
+
+                <span class="cc-section-eyebrow">
+                    Soluciones especializadas
+                </span>
+
+                <h2>
+                    Elige el sistema adecuado para tu negocio
+                </h2>
+
+                <p>
+                    No instalamos un sistema genérico. Cada vertical
+                    incorpora los procesos, indicadores y pantallas
+                    que realmente necesita ese tipo de negocio.
+                </p>
+
+            </div>
+
+            <div class="cc-carousel-wrapper">
+
+                <div class="cc-carousel-controls">
+
+                    <button
+                        class="cc-carousel-button"
+                        type="button"
+                        aria-label="Anterior"
+                        data-carousel-prev
+                    >
+                        ←
+                    </button>
+
+                    <button
+                        class="cc-carousel-button"
+                        type="button"
+                        aria-label="Siguiente"
+                        data-carousel-next
+                    >
+                        →
+                    </button>
+
+                </div>
+
+                <div class="cc-carousel" data-carousel>
+
+                    <article
+                        id="abarrotes"
+                        class="cc-solution-card"
+                    >
+
+                        <div class="cc-solution-cover store">
+                            <div class="cc-solution-icon">🛒</div>
+                        </div>
+
+                        <div class="cc-solution-content">
+
+                            <span class="cc-solution-tag">
+                                Tiendas y comercios
+                            </span>
+
+                            <h3>Abarrotes Cloud</h3>
+
+                            <p>
+                                Controla productos, inventario, caja,
+                                ventas y reportes desde cualquier dispositivo.
+                            </p>
+
+                            <ul class="cc-feature-list">
+                                <li>Punto de venta rápido</li>
+                                <li>Inventario y existencias</li>
+                                <li>Corte de caja diario</li>
+                                <li>Carga masiva con Excel</li>
+                                <li>Dashboard administrativo</li>
+                                <li>Asistente inteligente</li>
+                            </ul>
+
+                            <a
+                                class="cc-button cc-button-primary cc-button-block"
+                                th:href="${whatsappAbarrotes}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Probar Abarrotes Cloud
+                            </a>
+
+                        </div>
+                    </article>
+
+                    <article
+                        id="restaurantes"
+                        class="cc-solution-card"
+                    >
+
+                        <div class="cc-solution-cover restaurant">
+                            <div class="cc-solution-icon">🍽️</div>
+                        </div>
+
+                        <div class="cc-solution-content">
+
+                            <span class="cc-solution-tag">
+                                Restaurantes, fondas y cafeterías
+                            </span>
+
+                            <h3>Restaurante Cloud</h3>
+
+                            <p>
+                                Tus meseros toman pedidos desde el celular
+                                y el administrador controla ventas y mesas.
+                            </p>
+
+                            <ul class="cc-feature-list">
+                                <li>Pedidos desde celular</li>
+                                <li>Mapa y control de mesas</li>
+                                <li>Catálogo de platillos</li>
+                                <li>Pedidos y cuentas abiertas</li>
+                                <li>Ventas por mesero</li>
+                                <li>Corte del día</li>
+                            </ul>
+
+                            <a
+                                class="cc-button cc-button-primary cc-button-block"
+                                th:href="${whatsappRestaurante}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Probar Restaurante Cloud
+                            </a>
+
+                        </div>
+                    </article>
+
+                    <article
+                        id="gimnasios"
+                        class="cc-solution-card"
+                    >
+
+                        <div class="cc-solution-cover gym">
+                            <div class="cc-solution-icon">🏋️</div>
+                        </div>
+
+                        <div class="cc-solution-content">
+
+                            <span class="cc-solution-tag">
+                                Gimnasios y centros deportivos
+                            </span>
+
+                            <h3>Gym Cloud</h3>
+
+                            <p>
+                                Administra clientes, planes, membresías,
+                                pagos y productos en un solo lugar.
+                            </p>
+
+                            <ul class="cc-feature-list">
+                                <li>Registro de clientes</li>
+                                <li>Planes y membresías</li>
+                                <li>Seguimiento de pagos</li>
+                                <li>Venta de productos</li>
+                                <li>Importación desde Excel</li>
+                                <li>Indicadores de negocio</li>
+                            </ul>
+
+                            <a
+                                class="cc-button cc-button-primary cc-button-block"
+                                th:href="${whatsappGym}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Probar Gym Cloud
+                            </a>
+
+                        </div>
+                    </article>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="beneficios" class="cc-section">
+
+        <div class="cc-container">
+
+            <div class="cc-section-heading center">
+
+                <span class="cc-section-eyebrow">
+                    Menos complicaciones
+                </span>
+
+                <h2>
+                    Todo lo necesario para operar y crecer
+                </h2>
+
+                <p>
+                    Commerce Cloud reúne las herramientas que normalmente
+                    se encuentran separadas en varios sistemas.
+                </p>
+
+            </div>
+
+            <div class="cc-benefit-grid">
+
+                <article class="cc-benefit-card">
+                    <div class="cc-benefit-number">01</div>
+
+                    <h3>Control desde cualquier lugar</h3>
+
+                    <p>
+                        Consulta ventas, inventario, clientes y operaciones
+                        desde celular, tableta o computadora.
+                    </p>
+                </article>
+
+                <article class="cc-benefit-card">
+                    <div class="cc-benefit-number">02</div>
+
+                    <h3>Datos separados por cliente</h3>
+
+                    <p>
+                        La arquitectura multi-tenant mantiene aislada
+                        la información de cada negocio.
+                    </p>
+                </article>
+
+                <article class="cc-benefit-card">
+                    <div class="cc-benefit-number">03</div>
+
+                    <h3>Sin instalaciones locales</h3>
+
+                    <p>
+                        Las actualizaciones y nuevas funciones se publican
+                        sin reinstalar software en cada equipo.
+                    </p>
+                </article>
+
+                <article class="cc-benefit-card">
+                    <div class="cc-benefit-number">04</div>
+
+                    <h3>Capacitación inicial</h3>
+
+                    <p>
+                        Configuramos el negocio, cargamos información
+                        inicial y enseñamos al personal a utilizarlo.
+                    </p>
+                </article>
+
+                <article class="cc-benefit-card">
+                    <div class="cc-benefit-number">05</div>
+
+                    <h3>Reportes claros</h3>
+
+                    <p>
+                        Convierte las operaciones diarias en información
+                        útil para tomar mejores decisiones.
+                    </p>
+                </article>
+
+                <article class="cc-benefit-card">
+                    <div class="cc-benefit-number">06</div>
+
+                    <h3>Una plataforma que evoluciona</h3>
+
+                    <p>
+                        Agrega sucursales, usuarios y nuevas herramientas
+                        conforme crezca el negocio.
+                    </p>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="cc-section cc-section-dark">
+
+        <div class="cc-container cc-architecture">
+
+            <div class="cc-architecture-copy">
+
+                <span class="cc-section-eyebrow">
+                    Arquitectura Commerce Cloud
+                </span>
+
+                <h2>
+                    Treinta negocios. Una plataforma. Datos independientes.
+                </h2>
+
+                <p>
+                    Diez abarrotes, diez gimnasios y diez restaurantes
+                    pueden utilizar la misma aplicación, mientras cada
+                    empresa ve exclusivamente su información.
+                </p>
+
+                <p>
+                    Al iniciar sesión, Commerce Cloud identifica el tenant,
+                    el tipo de negocio y el rol del usuario para abrir
+                    automáticamente el módulo correcto.
+                </p>
+
+                <a
+                    class="cc-button cc-button-white"
+                    th:href="${whatsappGeneral}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Conocer la plataforma
+                </a>
+
+            </div>
+
+            <div class="cc-tenant-board">
+
+                <div class="cc-tenant-row">
+                    <div class="cc-tenant-icon">🛒</div>
+
+                    <div>
+                        <div class="cc-tenant-name">
+                            Abarrotes Don Pepe
+                        </div>
+
+                        <div class="cc-tenant-type">
+                            Tenant 001 · ABARROTES
+                        </div>
+                    </div>
+
+                    <span class="cc-status">Activo</span>
+                </div>
+
+                <div class="cc-tenant-row">
+                    <div class="cc-tenant-icon">🍽️</div>
+
+                    <div>
+                        <div class="cc-tenant-name">
+                            Restaurante Los Compadres
+                        </div>
+
+                        <div class="cc-tenant-type">
+                            Tenant 011 · RESTAURANTE
+                        </div>
+                    </div>
+
+                    <span class="cc-status">Activo</span>
+                </div>
+
+                <div class="cc-tenant-row">
+                    <div class="cc-tenant-icon">🏋️</div>
+
+                    <div>
+                        <div class="cc-tenant-name">
+                            Titan Gym
+                        </div>
+
+                        <div class="cc-tenant-type">
+                            Tenant 021 · GYM
+                        </div>
+                    </div>
+
+                    <span class="cc-status">Activo</span>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="precios" class="cc-section cc-section-soft">
+
+        <div class="cc-container">
+
+            <div class="cc-section-heading center">
+
+                <span class="cc-section-eyebrow">
+                    Precios de lanzamiento
+                </span>
+
+                <h2>
+                    Comienza con el plan que necesita tu negocio
+                </h2>
+
+                <p>
+                    Sin contratos largos. Los primeros clientes recibirán
+                    configuración y acompañamiento directo.
+                </p>
+
+            </div>
+
+            <div class="cc-pricing-grid">
+
+                <article class="cc-plan">
+
+                    <div class="cc-plan-name">
+                        Emprendedor
+                    </div>
+
+                    <div class="cc-plan-price">
+                        $299
+                        <small>MXN / mes</small>
+                    </div>
+
+                    <p class="cc-plan-description">
+                        Para pequeños negocios que comienzan
+                        su transformación digital.
+                    </p>
+
+                    <ul class="cc-feature-list">
+                        <li>Una sucursal</li>
+                        <li>Hasta dos usuarios</li>
+                        <li>Operación principal</li>
+                        <li>Reportes básicos</li>
+                        <li>Soporte de inicio</li>
+                    </ul>
+
+                    <a
+                        class="cc-button cc-button-light cc-button-block"
+                        th:href="${whatsappGeneral}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Solicitar información
+                    </a>
+
+                </article>
+
+                <article class="cc-plan featured">
+
+                    <span class="cc-plan-ribbon">
+                        Más recomendado
+                    </span>
+
+                    <div class="cc-plan-name">
+                        Profesional
+                    </div>
+
+                    <div class="cc-plan-price">
+                        $599
+                        <small>MXN / mes</small>
+                    </div>
+
+                    <p class="cc-plan-description">
+                        Para negocios en operación que necesitan
+                        control y reportes completos.
+                    </p>
+
+                    <ul class="cc-feature-list">
+                        <li>Una sucursal</li>
+                        <li>Hasta diez usuarios</li>
+                        <li>Dashboard completo</li>
+                        <li>Exportación a Excel</li>
+                        <li>Asistente inteligente</li>
+                        <li>Soporte por WhatsApp</li>
+                    </ul>
+
+                    <a
+                        class="cc-button cc-button-primary cc-button-block"
+                        th:href="${whatsappGeneral}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Solicitar demostración
+                    </a>
+
+                </article>
+
+                <article class="cc-plan">
+
+                    <div class="cc-plan-name">
+                        Business
+                    </div>
+
+                    <div class="cc-plan-price">
+                        $999
+                        <small>MXN / mes</small>
+                    </div>
+
+                    <p class="cc-plan-description">
+                        Para empresas que manejan más usuarios,
+                        cajas o sucursales.
+                    </p>
+
+                    <ul class="cc-feature-list">
+                        <li>Varias sucursales</li>
+                        <li>Usuarios adicionales</li>
+                        <li>Panel ejecutivo</li>
+                        <li>Respaldos ampliados</li>
+                        <li>Soporte prioritario</li>
+                    </ul>
+
+                    <a
+                        class="cc-button cc-button-light cc-button-block"
+                        th:href="${whatsappGeneral}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Hablar con un asesor
+                    </a>
+
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="cc-section">
+
+        <div class="cc-container">
+
+            <div class="cc-final-cta">
+
+                <h2>
+                    Tu primer mes de mejor control comienza hoy
+                </h2>
+
+                <p>
+                    Agenda una demostración y revisamos cómo adaptar
+                    Commerce Cloud a la operación real de tu negocio.
+                </p>
+
+                <a
+                    class="cc-button cc-button-white"
+                    th:href="${whatsappGeneral}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Solicitar demostración por WhatsApp
+                </a>
+
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="cc-footer">
+
+    <div class="cc-container">
+
+        <div class="cc-footer-grid">
+
+            <div>
+                <h3>Commerce Cloud</h3>
+
+                <p>
+                    Tecnología práctica para administrar y hacer crecer
+                    pequeños negocios en México.
+                </p>
+            </div>
+
+            <div>
+                <h4>Soluciones</h4>
+                <a href="#abarrotes">Abarrotes</a>
+                <a href="#restaurantes">Restaurantes</a>
+                <a href="#gimnasios">Gimnasios</a>
+            </div>
+
+            <div>
+                <h4>Plataforma</h4>
+                <a href="#beneficios">Beneficios</a>
+                <a href="#precios">Precios</a>
+                <a th:href="@{/login}">Acceso a clientes</a>
+            </div>
+
+            <div>
+                <h4>Contacto</h4>
+
+                <a
+                    th:href="${whatsappGeneral}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    WhatsApp
+                </a>
+            </div>
+
+        </div>
+
+        <div class="cc-footer-bottom">
+            <span>© 2026 Commerce Cloud.</span>
+            <span>Abarrotes · Restaurantes · Gimnasios</span>
+        </div>
+
+    </div>
+</footer>
+
+<script
+    th:src="@{/commerce/commerce-premium.js}"
+    src="/commerce/commerce-premium.js"
+></script>
+
+</body>
+</html>
