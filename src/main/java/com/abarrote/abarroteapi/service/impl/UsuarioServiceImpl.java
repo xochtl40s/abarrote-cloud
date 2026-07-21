@@ -242,15 +242,91 @@ public class UsuarioServiceImpl
                 .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
+        @Override
+    @Transactional
     public List<Sucursal>
             listarSucursalesActivasDelTenantActual() {
 
-        return sucursalRepository
-                .findByTenantIdAndActivaTrueOrderByNombreAsc(
-                        tenantContextService.tenantIdActual()
+        Long tenantId =
+                tenantContextService.tenantIdActual();
+
+        List<Sucursal> sucursales =
+                sucursalRepository
+                        .findByTenantIdAndActivaTrueOrderByNombreAsc(
+                                tenantId
+                        );
+
+        if (!sucursales.isEmpty()) {
+            return sucursales;
+        }
+
+        Tenant tenant =
+                tenantRepository
+                        .findById(tenantId)
+                        .orElseThrow(
+                                () -> new IllegalStateException(
+                                        "El tenant autenticado no existe."
+                                )
+                        );
+
+        Sucursal matriz =
+                sucursalRepository
+                        .findByTenantIdAndCodigoIgnoreCase(
+                                tenantId,
+                                "MAT"
+                        )
+                        .orElseGet(
+                                () -> {
+
+                                    Sucursal nueva =
+                                            new Sucursal();
+
+                                    nueva.setTenant(tenant);
+                                    nueva.setCodigo("MAT");
+                                    nueva.setNombre("Sucursal Matriz");
+                                    nueva.setActiva(true);
+
+                                    return sucursalRepository
+                                            .saveAndFlush(nueva);
+                                }
+                        );
+
+        /*
+         * Autocorrección del ADMIN autenticado:
+         *
+         * Si el usuario no tenía sucursal o estaba apuntando
+         * a una sucursal heredada de otro tenant, se reasigna
+         * a la nueva MAT correcta.
+         */
+        Usuario usuarioActual =
+                usuarioRepository
+                        .findByIdAndTenantId(
+                                tenantContextService.usuarioIdActual(),
+                                tenantId
+                        )
+                        .orElseThrow(
+                                () -> new IllegalStateException(
+                                        "No se encontró el usuario "
+                                                + "autenticado en su tenant."
+                                )
+                        );
+
+        boolean necesitaCorreccion =
+                usuarioActual.getSucursal() == null
+                || usuarioActual.getSucursal().getTenant() == null
+                || !tenantId.equals(
+                        usuarioActual
+                                .getSucursal()
+                                .getTenant()
+                                .getId()
                 );
+
+        if (necesitaCorreccion) {
+            usuarioActual.setSucursal(matriz);
+            usuarioRepository.saveAndFlush(usuarioActual);
+        }
+
+        return List.of(matriz);
     }
 
     @Override

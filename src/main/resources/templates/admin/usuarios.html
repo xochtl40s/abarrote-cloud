@@ -571,27 +571,19 @@
                                 th:disabled="${#lists.size(
                                     sucursalesActivas
                                 ) == 1}"
-                                required>
+                                required
+ name="sucursalId">
+    <option value="">
+        Selecciona una sucursal
+    </option>
 
-                            <option
-                                    value=""
-                                    th:if="${#lists.size(
-                                        sucursalesActivas
-                                    ) > 1}">
-                                Selecciona una sucursal
-                            </option>
-
-                            <option
-                                    th:each="sucursal :
-                                        ${sucursalesActivas}"
-                                    th:value="${sucursal.id}"
-                                    th:text="${sucursal.codigo
-                                        + ' - '
-                                        + sucursal.nombre}">
-                                Sucursal
-                            </option>
-
-                        </select>
+    <option th:each="sucursal : ${sucursalesActivas}"
+            th:value="${sucursal.id}"
+            th:text="${sucursal.codigo + ' - ' + sucursal.nombre}"
+            th:selected="${#lists.size(sucursalesActivas) == 1}">
+        MAT - Sucursal Matriz
+    </option>
+</select>
 
                         <small
                                 th:if="${#lists.size(
@@ -1848,6 +1840,44 @@
 <script
         defer
         th:src="@{/js/mobile-logout.js?v=4}">
+</script>
+
+
+<script>
+    function seleccionarSucursalUnicaCommerce() {
+
+        const selectores =
+            document.querySelectorAll(
+                'select[id*="sucursal" i], '
+                + 'select[name*="sucursal" i]'
+            );
+
+        selectores.forEach(function (selector) {
+
+            const opcionesValidas =
+                Array.from(selector.options)
+                    .filter(function (opcion) {
+                        return opcion.value !== "";
+                    });
+
+            if (opcionesValidas.length === 1) {
+                selector.value =
+                    opcionesValidas[0].value;
+
+                selector.dispatchEvent(
+                    new Event(
+                        "change",
+                        { bubbles: true }
+                    )
+                );
+            }
+        });
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        seleccionarSucursalUnicaCommerce
+    );
 </script>
 
 </body>
