@@ -1,10 +1,12 @@
 package com.abarrote.abarroteapi.saas.service.impl;
 
+import com.abarrote.abarroteapi.entity.Sucursal;
 import com.abarrote.abarroteapi.entity.Usuario;
 import com.abarrote.abarroteapi.multitenant.domain.EstadoTenant;
 import com.abarrote.abarroteapi.multitenant.domain.Tenant;
 import com.abarrote.abarroteapi.multitenant.domain.TipoNegocio;
 import com.abarrote.abarroteapi.multitenant.repository.TenantRepository;
+import com.abarrote.abarroteapi.repository.SucursalRepository;
 import com.abarrote.abarroteapi.repository.UsuarioRepository;
 import com.abarrote.abarroteapi.saas.dto.TenantProvisioningResult;
 import com.abarrote.abarroteapi.saas.entity.SaasProspecto;
@@ -45,6 +47,7 @@ public class TenantProvisioningServiceImpl
     private final SaasProspectoRepository prospectoRepository;
     private final TenantRepository tenantRepository;
     private final UsuarioRepository usuarioRepository;
+    private final SucursalRepository sucursalRepository;
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
     private final SecureRandom secureRandom;
@@ -53,12 +56,14 @@ public class TenantProvisioningServiceImpl
             SaasProspectoRepository prospectoRepository,
             TenantRepository tenantRepository,
             UsuarioRepository usuarioRepository,
+            SucursalRepository sucursalRepository,
             PasswordEncoder passwordEncoder,
             JdbcTemplate jdbcTemplate) {
 
         this.prospectoRepository = prospectoRepository;
         this.tenantRepository = tenantRepository;
         this.usuarioRepository = usuarioRepository;
+        this.sucursalRepository = sucursalRepository;
         this.passwordEncoder = passwordEncoder;
         this.jdbcTemplate = jdbcTemplate;
         this.secureRandom = new SecureRandom();
@@ -160,10 +165,16 @@ public class TenantProvisioningServiceImpl
                 passwordEncoder.encode(passwordTemporal)
         );
 
+        Sucursal sucursalPrincipal =
+                crearSucursalPrincipal(
+                        tenantGuardado,
+                        prospecto
+                );
+
         administrador.setRol("ADMIN");
         administrador.setActivo(true);
         administrador.setTenant(tenantGuardado);
-        administrador.setSucursal(null);
+        administrador.setSucursal(sucursalPrincipal);
 
         usuarioRepository.saveAndFlush(administrador);
 
@@ -224,6 +235,22 @@ public class TenantProvisioningServiceImpl
 
         administrador.setActivo(true);
 
+        if (administrador.getSucursal() == null
+                && requiereSucursal(
+                        tenant.getTipoNegocio()
+                )) {
+
+            Sucursal sucursalPrincipal =
+                    obtenerOCrearSucursalPrincipal(
+                            tenant,
+                            prospecto
+                    );
+
+            administrador.setSucursal(
+                    sucursalPrincipal
+            );
+        }
+
         usuarioRepository.saveAndFlush(administrador);
 
         prospecto.setEstado("ACTIVADO");
@@ -262,6 +289,76 @@ public class TenantProvisioningServiceImpl
                 prospecto.getFolio(),
                 regeneradas
         );
+    }
+
+    private Sucursal crearSucursalPrincipal(
+            Tenant tenant,
+            SaasProspecto prospecto) {
+
+        if (!requiereSucursal(
+                tenant.getTipoNegocio()
+        )) {
+            return null;
+        }
+
+        return obtenerOCrearSucursalPrincipal(
+                tenant,
+                prospecto
+        );
+    }
+
+    private Sucursal obtenerOCrearSucursalPrincipal(
+            Tenant tenant,
+            SaasProspecto prospecto) {
+
+        return sucursalRepository
+                .findByTenantIdAndCodigoIgnoreCase(
+                        tenant.getId(),
+                        "MAT"
+                )
+                .orElseGet(
+                        () -> {
+
+                            Sucursal sucursal =
+                                    new Sucursal();
+
+                            sucursal.setTenant(tenant);
+                            sucursal.setCodigo("MAT");
+
+                            sucursal.setNombre(
+                                    "Sucursal Matriz"
+                            );
+
+                            sucursal.setDireccion(
+                                    prospecto.getCiudad()
+                            );
+
+                            sucursal.setTelefono(
+                                    prospecto.getWhatsapp()
+                            );
+
+                            sucursal.setActiva(true);
+
+                            /*
+                             * No se crean productos.
+                             * No se crea inventario.
+                             * No se cargan registros demo.
+                             */
+                            return sucursalRepository
+                                    .saveAndFlush(
+                                            sucursal
+                                    );
+                        }
+                );
+    }
+
+    private boolean requiereSucursal(
+            TipoNegocio tipoNegocio) {
+
+        return TipoNegocio.ABARROTES
+                .equals(tipoNegocio)
+            || TipoNegocio.RESTAURANTE
+                .equals(tipoNegocio);
     }
 
     private TipoNegocio convertirTipoNegocio(
