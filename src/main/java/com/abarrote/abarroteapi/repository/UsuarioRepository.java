@@ -10,14 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface UsuarioRepository
-    extends JpaRepository<Usuario, Long> {
+        extends JpaRepository<Usuario, Long> {
 
-    /*
-     * Carga usuario, sucursal y tenant en la misma consulta.
-     *
-     * Esto evita LazyInitializationException cuando
-     * open-in-view está deshabilitado.
-     */
     @EntityGraph(
         attributePaths = {
             "sucursal",
@@ -25,7 +19,7 @@ public interface UsuarioRepository
         }
     )
     Optional<Usuario> findByUsernameIgnoreCase(
-        String username
+            String username
     );
 
     @EntityGraph(
@@ -35,7 +29,7 @@ public interface UsuarioRepository
         }
     )
     Optional<Usuario> findConSucursalById(
-        Long id
+            Long id
     );
 
     @EntityGraph(
@@ -45,7 +39,7 @@ public interface UsuarioRepository
         }
     )
     List<Usuario> findBySucursalIdOrderByNombreAsc(
-        Long sucursalId
+            Long sucursalId
     );
 
     @EntityGraph(
@@ -65,6 +59,18 @@ public interface UsuarioRepository
         }
     )
     List<Usuario> findByTenantIdOrderByNombreAsc(
-        Long tenantId
+            Long tenantId
     );
+
+    @EntityGraph(
+        attributePaths = {
+            "tenant",
+            "sucursal"
+        }
+    )
+    Optional<Usuario>
+        findFirstByTenantIdAndRolIgnoreCaseOrderByIdAsc(
+            Long tenantId,
+            String rol
+        );
 }

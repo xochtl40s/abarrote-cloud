@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Dashboard | Commerce Cloud
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --fondo: #07111f;
+            --sidebar: #081522;
+            --panel: #0d1b2a;
+            --panel-secundario: #12263a;
+            --borde: #243b53;
+            --texto: #f8fafc;
+            --texto-secundario: #94a3b8;
+            --verde: #22c55e;
+            --verde-hover: #16a34a;
+            --azul: #38bdf8;
+            --amarillo: #facc15;
+            --morado: #a78bfa;
+            --rojo: #fb7185;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--texto);
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(56, 189, 248, 0.10),
+                    transparent 30%
+                ),
+                var(--fondo);
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 270px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 28px 22px;
+            border-right: 1px solid var(--borde);
+            background: rgba(8, 21, 34, 0.97);
+        }
+
+        .marca {
+            margin-bottom: 40px;
+        }
+
+        .marca h2 {
+            margin: 0;
+            font-size: 23px;
+            font-weight: 900;
+        }
+
+        .marca span {
+            display: block;
+            margin-top: 6px;
+            color: var(--azul);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .menu a {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 13px 15px;
+            border-radius: 12px;
+            color: var(--texto-secundario);
+            text-decoration: none;
+            transition: 0.2s ease;
+        }
+
+        .menu a:hover {
+            color: var(--texto);
+            background: var(--panel-secundario);
+        }
+
+        .menu a.activo {
+            color: white;
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(34, 197, 94, 0.25),
+                    rgba(56, 189, 248, 0.14)
+                );
+        }
+
+        .contenido {
+            min-width: 0;
+            padding: 34px;
+        }
+
+        .encabezado {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .encabezado h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .encabezado p {
+            margin: 8px 0 0;
+            color: var(--texto-secundario);
+        }
+
+        .boton {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 43px;
+            padding: 10px 17px;
+            border: 0;
+            border-radius: 11px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .boton-primario {
+            color: #04130a;
+            background: var(--verde);
+        }
+
+        .boton-primario:hover {
+            color: white;
+            background: var(--verde-hover);
+        }
+
+        .metricas {
+            display: grid;
+            grid-template-columns:
+                repeat(4, minmax(170px, 1fr));
+            gap: 17px;
+            margin-bottom: 25px;
+        }
+
+        .metrica {
+            position: relative;
+            overflow: hidden;
+            min-height: 145px;
+            padding: 21px;
+            border: 1px solid var(--borde);
+            border-radius: 16px;
+            background: rgba(13, 27, 42, 0.94);
+        }
+
+        .metrica::after {
+            content: "";
+            position: absolute;
+            top: -32px;
+            right: -32px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.07);
+        }
+
+        .metrica-icono {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 37px;
+            height: 37px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            background: var(--panel-secundario);
+        }
+
+        .metrica-etiqueta {
+            color: var(--texto-secundario);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .metrica-valor {
+            margin-top: 7px;
+            font-size: 33px;
+            font-weight: 900;
+        }
+
+        .rejilla {
+            display: grid;
+            grid-template-columns:
+                minmax(0, 2fr)
+                minmax(280px, 1fr);
+            gap: 20px;
+        }
+
+        .panel {
+            overflow: hidden;
+            border: 1px solid var(--borde);
+            border-radius: 17px;
+            background: rgba(13, 27, 42, 0.94);
+        }
+
+        .panel-encabezado {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--borde);
+        }
+
+        .panel-encabezado h2 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .panel-encabezado a {
+            color: var(--azul);
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .tabla-contenedor {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 720px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 15px 17px;
+            border-bottom: 1px solid rgba(36, 59, 83, 0.70);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--texto-secundario);
+            background: rgba(8, 21, 34, 0.75);
+            font-size: 11px;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 13px;
+        }
+
+        tbody tr:hover {
+            background: rgba(56, 189, 248, 0.04);
+        }
+
+        .negocio {
+            font-weight: 900;
+        }
+
+        .secundario {
+            display: block;
+            margin-top: 4px;
+            color: var(--texto-secundario);
+            font-size: 11px;
+        }
+
+        .folio {
+            color: var(--azul);
+            font-family:
+                "Courier New",
+                monospace;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .insignia {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        .estado-nuevo {
+            color: #bae6fd;
+            background: rgba(56, 189, 248, 0.16);
+        }
+
+        .estado-proceso {
+            color: #fef08a;
+            background: rgba(250, 204, 21, 0.15);
+        }
+
+        .estado-activado {
+            color: #bbf7d0;
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .estado-otro {
+            color: #fecdd3;
+            background: rgba(251, 113, 133, 0.15);
+        }
+
+        .vacio {
+            padding: 45px 20px;
+            color: var(--texto-secundario);
+            text-align: center;
+        }
+
+        .acciones-rapidas {
+            padding: 20px;
+        }
+
+        .accion {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 15px;
+            border: 1px solid var(--borde);
+            border-radius: 13px;
+            color: var(--texto);
+            background: rgba(18, 38, 58, 0.55);
+            text-decoration: none;
+            transition: 0.2s ease;
+        }
+
+        .accion:hover {
+            border-color: rgba(56, 189, 248, 0.50);
+            transform: translateY(-1px);
+        }
+
+        .accion-icono {
+            display: flex;
+            flex: 0 0 42px;
+            justify-content: center;
+            align-items: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            color: var(--azul);
+            background: rgba(56, 189, 248, 0.12);
+            font-size: 19px;
+        }
+
+        .accion-titulo {
+            display: block;
+            font-weight: 900;
+        }
+
+        .accion-descripcion {
+            display: block;
+            margin-top: 4px;
+            color: var(--texto-secundario);
+            font-size: 11px;
+        }
+
+        .estado-sistema {
+            margin: 0 20px 20px;
+            padding: 15px;
+            border: 1px solid rgba(34, 197, 94, 0.30);
+            border-radius: 12px;
+            color: #bbf7d0;
+            background: rgba(34, 197, 94, 0.09);
+            font-size: 13px;
+        }
+
+        .punto {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            margin-right: 7px;
+            border-radius: 50%;
+            background: var(--verde);
+            box-shadow: 0 0 12px var(--verde);
+        }
+
+        @media (max-width: 1180px) {
+            .metricas {
+                grid-template-columns:
+                    repeat(2, minmax(170px, 1fr));
+            }
+
+            .rejilla {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .contenido {
+                padding: 22px 15px;
+            }
+
+            .encabezado {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .metricas {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="marca">
+
+            <h2>
+                Commerce Cloud
+            </h2>
+
+            <span>
+                Super Admin
+            </span>
+
+        </div>
+
+        <nav class="menu">
+
+            <a href="/super-admin"
+               class="activo">
+                <span>▦</span>
+                Dashboard
+            </a>
+
+            <a href="/super-admin/prospectos">
+                <span>◎</span>
+                Prospectos
+            </a>
+
+            <a href="#">
+                <span>▣</span>
+                Empresas
+            </a>
+
+            <a href="#">
+                <span>◆</span>
+                Planes
+            </a>
+
+            <a href="#">
+                <span>◷</span>
+                Suscripciones
+            </a>
+
+            <a href="#">
+                <span>☷</span>
+                Bitácora
+            </a>
+
+            <a href="/logout">
+                <span>↪</span>
+                Cerrar sesión
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <main class="contenido">
+
+        <header class="encabezado">
+
+            <div>
+
+                <h1>
+                    Dashboard SaaS
+                </h1>
+
+                <p>
+                    Administración central de clientes,
+                    prospectos, planes y suscripciones.
+                </p>
+
+            </div>
+
+            <a href="/super-admin/prospectos"
+               class="boton boton-primario">
+                Ver prospectos
+            </a>
+
+        </header>
+
+        <section class="metricas">
+
+            <article class="metrica">
+
+                <div class="metrica-icono">
+                    ◎
+                </div>
+
+                <div class="metrica-etiqueta">
+                    Prospectos totales
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${totalProspectos}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-icono">
+                    ✦
+                </div>
+
+                <div class="metrica-etiqueta">
+                    Prospectos nuevos
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${prospectosNuevos}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-icono">
+                    ▣
+                </div>
+
+                <div class="metrica-etiqueta">
+                    Empresas activadas
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${empresasActivadas}">
+                    0
+                </div>
+
+            </article>
+
+            <article class="metrica">
+
+                <div class="metrica-icono">
+                    ◆
+                </div>
+
+                <div class="metrica-etiqueta">
+                    Planes activos
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${planesActivos}">
+                    0
+                </div>
+
+            </article>
+
+        </section>
+
+        <section class="rejilla">
+
+            <article class="panel">
+
+                <div class="panel-encabezado">
+
+                    <h2>
+                        Prospectos recientes
+                    </h2>
+
+                    <a href="/super-admin/prospectos">
+                        Ver todos →
+                    </a>
+
+                </div>
+
+                <div class="tabla-contenedor">
+
+                    <table>
+
+                        <thead>
+
+                        <tr>
+                            <th>Folio</th>
+                            <th>Negocio</th>
+                            <th>Plan</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="prospecto : ${prospectosRecientes}">
+
+                            <td>
+
+                                <span class="folio"
+                                      th:text="${prospecto.folio}">
+                                    CC-00000000-ABC123
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span class="negocio"
+                                      th:text="${prospecto.nombreNegocio}">
+                                    Restaurante
+                                </span>
+
+                                <span class="secundario"
+                                      th:text="${prospecto.propietario}">
+                                    Propietario
+                                </span>
+
+                            </td>
+
+                            <td th:text="${prospecto.planCodigo}">
+                                PRO
+                            </td>
+
+                            <td>
+
+                                <span
+                                    class="insignia"
+                                    th:classappend="${
+                                        prospecto.estado == 'NUEVO'
+                                        ? ' estado-nuevo'
+                                        : (
+                                            prospecto.estado == 'EN_PROCESO'
+                                            ? ' estado-proceso'
+                                            : (
+                                                prospecto.estado == 'ACTIVADO'
+                                                ? ' estado-activado'
+                                                : ' estado-otro'
+                                            )
+                                        )
+                                    }"
+                                    th:text="${prospecto.estado}">
+                                    NUEVO
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span
+                                    th:text="${
+                                        #temporals.format(
+                                            prospecto.fechaCreacion,
+                                            'dd/MM/yyyy'
+                                        )
+                                    }">
+                                    20/07/2026
+                                </span>
+
+                                <span
+                                    class="secundario"
+                                    th:text="${
+                                        #temporals.format(
+                                            prospecto.fechaCreacion,
+                                            'HH:mm'
+                                        )
+                                    }">
+                                    20:52
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(prospectosRecientes)}">
+
+                            <td colspan="5"
+                                class="vacio">
+                                No existen prospectos registrados.
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </article>
+
+            <aside class="panel">
+
+                <div class="panel-encabezado">
+
+                    <h2>
+                        Acciones rápidas
+                    </h2>
+
+                </div>
+
+                <div class="acciones-rapidas">
+
+                    <a href="/super-admin/prospectos"
+                       class="accion">
+
+                        <span class="accion-icono">
+                            ◎
+                        </span>
+
+                        <span>
+
+                            <span class="accion-titulo">
+                                Revisar prospectos
+                            </span>
+
+                            <span class="accion-descripcion">
+                                Consulta solicitudes y activa clientes.
+                            </span>
+
+                        </span>
+
+                    </a>
+
+                    <a href="/api/saas/planes"
+                       class="accion"
+                       target="_blank">
+
+                        <span class="accion-icono">
+                            ◆
+                        </span>
+
+                        <span>
+
+                            <span class="accion-titulo">
+                                Consultar planes
+                            </span>
+
+                            <span class="accion-descripcion">
+                                Revisa el catálogo SaaS actual.
+                            </span>
+
+                        </span>
+
+                    </a>
+
+                    <a href="/api/saas/prospectos/resumen/nuevos"
+                       class="accion"
+                       target="_blank">
+
+                        <span class="accion-icono">
+                            ◷
+                        </span>
+
+                        <span>
+
+                            <span class="accion-titulo">
+                                Resumen comercial
+                            </span>
+
+                            <span class="accion-descripcion">
+                                Consulta prospectos pendientes.
+                            </span>
+
+                        </span>
+
+                    </a>
+
+                </div>
+
+                <div class="estado-sistema">
+
+                    <span class="punto"></span>
+
+                    Plataforma operativa.
+
+                    <strong th:text="${prospectosEnProceso}">
+                        0
+                    </strong>
+
+                    prospecto(s) en proceso.
+
+                </div>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+</html>

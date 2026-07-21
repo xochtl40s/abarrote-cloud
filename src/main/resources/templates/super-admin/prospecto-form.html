@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Registrar prospecto | Commerce Cloud
+    </title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --fondo: #07111f;
+            --panel: #0d1b2a;
+            --panel-secundario: #12263a;
+            --borde: #243b53;
+            --texto: #f8fafc;
+            --texto-secundario: #94a3b8;
+            --primario: #22c55e;
+            --primario-hover: #16a34a;
+            --azul: #38bdf8;
+            --rojo: #fb7185;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(56, 189, 248, 0.10),
+                    transparent 32%
+                ),
+                var(--fondo);
+            color: var(--texto);
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 270px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 28px 22px;
+            background: rgba(8, 20, 35, 0.97);
+            border-right: 1px solid var(--borde);
+        }
+
+        .marca {
+            margin-bottom: 40px;
+        }
+
+        .marca h2 {
+            margin: 0;
+            font-size: 23px;
+        }
+
+        .marca span {
+            display: block;
+            margin-top: 6px;
+            color: var(--azul);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .menu a {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 13px 15px;
+            border-radius: 12px;
+            color: var(--texto-secundario);
+            text-decoration: none;
+        }
+
+        .menu a:hover,
+        .menu a.activo {
+            color: var(--texto);
+            background: var(--panel-secundario);
+        }
+
+        .menu a.activo {
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(34, 197, 94, 0.24),
+                    rgba(56, 189, 248, 0.12)
+                );
+        }
+
+        .contenido {
+            padding: 34px;
+        }
+
+        .encabezado {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .subtitulo {
+            margin: 8px 0 0;
+            color: var(--texto-secundario);
+        }
+
+        .panel {
+            max-width: 1050px;
+            padding: 28px;
+            border: 1px solid var(--borde);
+            border-radius: 18px;
+            background: rgba(13, 27, 42, 0.96);
+        }
+
+        .seccion-titulo {
+            margin: 0 0 6px;
+            font-size: 20px;
+        }
+
+        .seccion-texto {
+            margin: 0 0 25px;
+            color: var(--texto-secundario);
+        }
+
+        .alerta-error {
+            margin-bottom: 22px;
+            padding: 14px 17px;
+            border: 1px solid rgba(251, 113, 133, 0.45);
+            border-radius: 12px;
+            color: #fecdd3;
+            background: rgba(251, 113, 133, 0.12);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .campo {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .campo-completo {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .requerido {
+            color: var(--rojo);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid var(--borde);
+            border-radius: 11px;
+            outline: none;
+            color: var(--texto);
+            background: #081522;
+            font: inherit;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--azul);
+            box-shadow:
+                0 0 0 3px rgba(56, 189, 248, 0.10);
+        }
+
+        textarea {
+            min-height: 115px;
+            resize: vertical;
+        }
+
+        .ayuda {
+            color: var(--texto-secundario);
+            font-size: 12px;
+        }
+
+        .acciones {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 28px;
+            padding-top: 22px;
+            border-top: 1px solid var(--borde);
+        }
+
+        .boton {
+            display: inline-flex;
+            min-height: 44px;
+            padding: 11px 19px;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 11px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .boton-secundario {
+            color: var(--texto);
+            background: var(--panel-secundario);
+            border: 1px solid var(--borde);
+        }
+
+        .boton-primario {
+            color: #04130a;
+            background: var(--primario);
+        }
+
+        .boton-primario:hover {
+            color: white;
+            background: var(--primario-hover);
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                height: auto;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .campo-completo {
+                grid-column: auto;
+            }
+
+            .contenido {
+                padding: 22px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="marca">
+            <h2>Commerce Cloud</h2>
+            <span>SUPER ADMIN</span>
+        </div>
+
+        <nav class="menu">
+            <a th:href="@{/super-admin}">
+                ▦ Dashboard
+            </a>
+
+            <a class="activo"
+               th:href="@{/super-admin/prospectos}">
+                ◎ Prospectos
+            </a>
+
+            <a th:href="@{/super-admin/empresas}">
+                ▣ Empresas
+            </a>
+
+            <a th:href="@{/super-admin/planes}">
+                ◆ Planes
+            </a>
+
+            <a th:href="@{/super-admin/suscripciones}">
+                ◷ Suscripciones
+            </a>
+
+            <a th:href="@{/super-admin/bitacora}">
+                ☷ Bitácora
+            </a>
+
+            <a th:href="@{/logout}">
+                ↪ Cerrar sesión
+            </a>
+        </nav>
+
+    </aside>
+
+    <main class="contenido">
+
+        <header class="encabezado">
+
+            <div>
+                <h1>Registrar prospecto</h1>
+
+                <p class="subtitulo">
+                    Captura una nueva solicitud comercial.
+                    El sistema generará el folio automáticamente.
+                </p>
+            </div>
+
+            <a class="boton boton-secundario"
+               th:href="@{/super-admin/prospectos}">
+                ← Regresar
+            </a>
+
+        </header>
+
+        <section class="panel">
+
+            <h2 class="seccion-titulo">
+                Información comercial
+            </h2>
+
+            <p class="seccion-texto">
+                Los campos marcados con * son obligatorios.
+            </p>
+
+            <div class="alerta-error"
+                 th:if="${error != null}"
+                 th:text="${error}">
+                Error de validación
+            </div>
+
+            <form method="post"
+                  th:action="@{/super-admin/prospectos/registrar}"
+                  th:object="${prospecto}">
+
+                <div class="grid">
+
+                    <div class="campo">
+                        <label for="nombreNegocio">
+                            Nombre del negocio
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <input id="nombreNegocio"
+                               type="text"
+                               th:field="*{nombreNegocio}"
+                               maxlength="150"
+                               placeholder="Restaurante El Fogón"
+                               required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="propietario">
+                            Propietario
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <input id="propietario"
+                               type="text"
+                               th:field="*{propietario}"
+                               maxlength="150"
+                               placeholder="Juan Pérez"
+                               required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="correo">
+                            Correo
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <input id="correo"
+                               type="email"
+                               th:field="*{correo}"
+                               maxlength="180"
+                               placeholder="juan@elfogon.mx"
+                               required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="whatsapp">
+                            WhatsApp
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <input id="whatsapp"
+                               type="tel"
+                               th:field="*{whatsapp}"
+                               maxlength="20"
+                               placeholder="5512345678"
+                               required>
+
+                        <span class="ayuda">
+                            Usa 10 dígitos para México.
+                        </span>
+                    </div>
+
+                    <div class="campo">
+                        <label for="ciudad">
+                            Ciudad
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <input id="ciudad"
+                               type="text"
+                               th:field="*{ciudad}"
+                               maxlength="120"
+                               placeholder="Ecatepec"
+                               required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="tipoNegocio">
+                            Tipo de negocio
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <select id="tipoNegocio"
+                                th:field="*{tipoNegocio}"
+                                onchange="actualizarMesas()"
+                                required>
+
+                            <option value="RESTAURANTE">
+                                Restaurante
+                            </option>
+
+                            <option value="ABARROTES">
+                                Abarrotes
+                            </option>
+
+                            <option value="GYM">
+                                Gimnasio
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="campo"
+                         id="campoMesas">
+
+                        <label for="numeroMesas">
+                            Número de mesas
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <input id="numeroMesas"
+                               type="number"
+                               th:field="*{numeroMesas}"
+                               min="1"
+                               max="500"
+                               placeholder="15">
+
+                        <span class="ayuda">
+                            Solo aplica para restaurantes.
+                        </span>
+                    </div>
+
+                    <div class="campo">
+                        <label for="planCodigo">
+                            Plan
+                            <span class="requerido">*</span>
+                        </label>
+
+                        <select id="planCodigo"
+                                th:field="*{planCodigo}"
+                                required>
+
+                            <option value="BASICO">
+                                BÁSICO
+                            </option>
+
+                            <option value="PRO">
+                                PRO
+                            </option>
+
+                            <option value="ENTERPRISE">
+                                ENTERPRISE
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="campo campo-completo">
+                        <label for="observaciones">
+                            Observaciones
+                        </label>
+
+                        <textarea id="observaciones"
+                                  th:field="*{observaciones}"
+                                  maxlength="1000"
+                                  placeholder="Comentarios comerciales, necesidades particulares o referencias."></textarea>
+                    </div>
+
+                </div>
+
+                <div class="acciones">
+
+                    <a class="boton boton-secundario"
+                       th:href="@{/super-admin/prospectos}">
+                        Cancelar
+                    </a>
+
+                    <button class="boton boton-primario"
+                            type="submit">
+                        ✓ Registrar prospecto
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+    function actualizarMesas() {
+        const tipoNegocio =
+            document.getElementById("tipoNegocio");
+
+        const campoMesas =
+            document.getElementById("campoMesas");
+
+        const numeroMesas =
+            document.getElementById("numeroMesas");
+
+        const esRestaurante =
+            tipoNegocio.value === "RESTAURANTE";
+
+        campoMesas.style.display =
+            esRestaurante ? "flex" : "none";
+
+        numeroMesas.required =
+            esRestaurante;
+
+        if (!esRestaurante) {
+            numeroMesas.value = "";
+        } else if (!numeroMesas.value) {
+            numeroMesas.value = "1";
+        }
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        actualizarMesas
+    );
+</script>
+
+</body>
+</html>

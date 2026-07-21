@@ -68,3 +68,6 @@ reportes/
 *.swo
 *~
 .backups/
+*.bak
+*.bak-*
+application-local.properties

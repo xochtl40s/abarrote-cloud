@@ -69,6 +69,8 @@ public class SecurityConfig {
                                         "/login",
                                         "/error",
                                         "/api/version",
+                                        "/api/saas/planes/**",
+                                        "/api/saas/prospectos/**",
                                         "/css/**",
                                         "/js/**",
                                         "/images/**",
@@ -166,6 +168,15 @@ public class SecurityConfig {
                                         "ADMIN",
                                         "MESERO"
                                 )
+                                /*
+                                 * Portal SaaS del Super Administrador.
+                                 * Solamente ROLE_SUPER_ADMIN puede acceder.
+                                 */
+                                .requestMatchers(
+                                        "/super-admin",
+                                        "/super-admin/**"
+                                )
+                                .hasRole("SUPER_ADMIN")
 
                                 /*
                                  * Todas las pantallas administrativas

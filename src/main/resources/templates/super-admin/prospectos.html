@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Prospectos | Commerce Cloud
+    </title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --fondo: #07111f;
+            --panel: #0d1b2a;
+            --panel-secundario: #12263a;
+            --borde: #243b53;
+            --texto: #f8fafc;
+            --texto-secundario: #94a3b8;
+            --primario: #22c55e;
+            --primario-hover: #16a34a;
+            --azul: #38bdf8;
+            --amarillo: #facc15;
+            --morado: #a78bfa;
+            --rojo: #fb7185;
+            --blanco: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(56, 189, 248, 0.10),
+                    transparent 30%
+                ),
+                var(--fondo);
+            color: var(--texto);
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 270px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 28px 22px;
+            background: rgba(8, 20, 35, 0.96);
+            border-right: 1px solid var(--borde);
+        }
+
+        .marca {
+            margin-bottom: 40px;
+        }
+
+        .marca-nombre {
+            margin: 0;
+            font-size: 23px;
+            font-weight: 800;
+        }
+
+        .marca-subtitulo {
+            display: block;
+            margin-top: 6px;
+            color: var(--azul);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 15px;
+            border-radius: 12px;
+            color: var(--texto-secundario);
+            text-decoration: none;
+            transition: 0.2s ease;
+        }
+
+        .menu a:hover {
+            color: var(--texto);
+            background: var(--panel-secundario);
+        }
+
+        .menu a.activo {
+            color: var(--blanco);
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(34, 197, 94, 0.25),
+                    rgba(56, 189, 248, 0.14)
+                );
+            border: 1px solid rgba(34, 197, 94, 0.35);
+        }
+
+        .contenido {
+            padding: 34px;
+            min-width: 0;
+        }
+
+        .encabezado {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .encabezado h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .encabezado p {
+            margin: 8px 0 0;
+            color: var(--texto-secundario);
+        }
+
+        .boton {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            min-height: 43px;
+            padding: 10px 17px;
+            border: 0;
+            border-radius: 11px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .boton-primario {
+            background: var(--primario);
+            color: #04130a;
+        }
+
+        .boton-primario:hover {
+            background: var(--primario-hover);
+            color: var(--blanco);
+        }
+
+        .boton-secundario {
+            color: var(--texto);
+            background: var(--panel-secundario);
+            border: 1px solid var(--borde);
+        }
+
+        .alerta {
+            margin-bottom: 22px;
+            padding: 15px 18px;
+            border: 1px solid rgba(34, 197, 94, 0.40);
+            border-radius: 12px;
+            color: #bbf7d0;
+            background: rgba(34, 197, 94, 0.12);
+        }
+
+        .metricas {
+            display: grid;
+            grid-template-columns:
+                repeat(4, minmax(170px, 1fr));
+            gap: 17px;
+            margin-bottom: 25px;
+        }
+
+        .metrica {
+            position: relative;
+            overflow: hidden;
+            padding: 21px;
+            border: 1px solid var(--borde);
+            border-radius: 16px;
+            background: rgba(13, 27, 42, 0.94);
+        }
+
+        .metrica::after {
+            content: "";
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.07);
+        }
+
+        .metrica-etiqueta {
+            color: var(--texto-secundario);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+
+        .metrica-valor {
+            margin-top: 10px;
+            font-size: 31px;
+            font-weight: 900;
+        }
+
+        .panel {
+            overflow: hidden;
+            border: 1px solid var(--borde);
+            border-radius: 17px;
+            background: rgba(13, 27, 42, 0.94);
+        }
+
+        .panel-encabezado {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: center;
+            padding: 20px 22px;
+            border-bottom: 1px solid var(--borde);
+        }
+
+        .panel-encabezado h2 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .buscador {
+            width: min(340px, 100%);
+            padding: 11px 14px;
+            border: 1px solid var(--borde);
+            border-radius: 10px;
+            outline: none;
+            color: var(--texto);
+            background: #081522;
+        }
+
+        .buscador:focus {
+            border-color: var(--azul);
+        }
+
+        .tabla-contenedor {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1050px;
+        }
+
+        th,
+        td {
+            padding: 16px 17px;
+            border-bottom: 1px solid rgba(36, 59, 83, 0.70);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--texto-secundario);
+            background: rgba(8, 21, 34, 0.80);
+            font-size: 12px;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: rgba(56, 189, 248, 0.04);
+        }
+
+        .negocio {
+            font-weight: 800;
+        }
+
+        .dato-secundario {
+            display: block;
+            margin-top: 4px;
+            color: var(--texto-secundario);
+            font-size: 12px;
+        }
+
+        .folio {
+            color: var(--azul);
+            font-family:
+                "JetBrains Mono",
+                "Courier New",
+                monospace;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .insignia {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        .estado-nuevo {
+            color: #bae6fd;
+            background: rgba(56, 189, 248, 0.16);
+        }
+
+        .estado-proceso {
+            color: #fef08a;
+            background: rgba(250, 204, 21, 0.15);
+        }
+
+        .estado-activado {
+            color: #bbf7d0;
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .estado-rechazado {
+            color: #fecdd3;
+            background: rgba(251, 113, 133, 0.15);
+        }
+
+        .plan-basico {
+            color: #bae6fd;
+            background: rgba(56, 189, 248, 0.14);
+        }
+
+        .plan-pro {
+            color: #ddd6fe;
+            background: rgba(167, 139, 250, 0.16);
+        }
+
+        .plan-enterprise {
+            color: #fef08a;
+            background: rgba(250, 204, 21, 0.15);
+        }
+
+        .acciones {
+            display: flex;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .boton-tabla {
+            padding: 8px 11px;
+            border: 1px solid var(--borde);
+            border-radius: 9px;
+            color: var(--texto);
+            background: var(--panel-secundario);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .boton-activar {
+            color: #bbf7d0;
+            border-color: rgba(34, 197, 94, 0.40);
+            background: rgba(34, 197, 94, 0.12);
+        }
+
+        .boton-activar:hover {
+            color: #04130a;
+            background: var(--primario);
+        }
+
+        .vacio {
+            padding: 55px 20px;
+            color: var(--texto-secundario);
+            text-align: center;
+        }
+
+        .pie {
+            padding: 18px 22px;
+            color: var(--texto-secundario);
+            font-size: 12px;
+        }
+
+        @media (max-width: 1150px) {
+            .metricas {
+                grid-template-columns:
+                    repeat(2, minmax(170px, 1fr));
+            }
+        }
+
+        @media (max-width: 800px) {
+            .layout {
+                display: block;
+            }
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .contenido {
+                padding: 22px 15px;
+            }
+
+            .encabezado {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .metricas {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-encabezado {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .buscador {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="marca">
+            <h2 class="marca-nombre">
+                Commerce Cloud
+            </h2>
+
+            <span class="marca-subtitulo">
+                Super Admin
+            </span>
+        </div>
+
+        <nav class="menu">
+
+            <a href="/super-admin">
+                <span>▦</span>
+                Dashboard
+            </a>
+
+            <a href="/super-admin/prospectos"
+               class="activo">
+                <span>◎</span>
+                Prospectos
+            </a>
+
+            <a href="#">
+                <span>▣</span>
+                Empresas
+            </a>
+
+            <a href="#">
+                <span>◆</span>
+                Planes
+            </a>
+
+            <a href="#">
+                <span>◷</span>
+                Suscripciones
+            </a>
+
+            <a href="#">
+                <span>☷</span>
+                Bitácora
+            </a>
+
+            <a href="/logout">
+                <span>↪</span>
+                Cerrar sesión
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <main class="contenido">
+
+        <header class="encabezado">
+
+            <div>
+                <h1>
+                    Prospectos comerciales
+                </h1>
+
+                <p>
+                    Solicitudes recibidas desde la landing
+                    de Commerce Cloud.
+                </p>
+            </div>
+
+            <a href="#"
+               class="boton boton-primario" th:href="@{/super-admin/prospectos/nuevo}">+ Registrar prospecto</a>
+
+        </header>
+
+        <div th:if="${registroExitoso}"
+             class="alerta">
+            El prospecto fue registrado correctamente.
+        </div>
+
+        <section class="metricas">
+
+            <article class="metrica">
+                <div class="metrica-etiqueta">
+                    Total
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${totalProspectos}">
+                    0
+                </div>
+            </article>
+
+            <article class="metrica">
+                <div class="metrica-etiqueta">
+                    Nuevos
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${totalNuevos}">
+                    0
+                </div>
+            </article>
+
+            <article class="metrica">
+                <div class="metrica-etiqueta">
+                    En proceso
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${totalEnProceso}">
+                    0
+                </div>
+            </article>
+
+            <article class="metrica">
+                <div class="metrica-etiqueta">
+                    Activados
+                </div>
+
+                <div class="metrica-valor"
+                     th:text="${totalActivados}">
+                    0
+                </div>
+            </article>
+
+        </section>
+
+        <section class="panel">
+
+            <div class="panel-encabezado">
+
+                <h2>
+                    Solicitudes registradas
+                </h2>
+
+                <input
+                    id="buscador"
+                    type="search"
+                    class="buscador"
+                    placeholder="Buscar negocio, propietario, folio..."
+                    autocomplete="off"
+                >
+
+            </div>
+
+            <div class="tabla-contenedor">
+
+                <table id="tablaProspectos">
+
+                    <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>Negocio</th>
+                        <th>Contacto</th>
+                        <th>Ciudad</th>
+                        <th>Plan</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:each="prospecto : ${prospectos}">
+
+                        <td>
+                            <span
+                                class="folio"
+                                th:text="${prospecto.folio}">
+                                CC-20260720-ABC123
+                            </span>
+                        </td>
+
+                        <td>
+                            <span
+                                class="negocio"
+                                th:text="${prospecto.nombreNegocio}">
+                                Restaurante El Fogón
+                            </span>
+
+                            <span
+                                class="dato-secundario"
+                                th:text="${prospecto.tipoNegocio}">
+                                RESTAURANTE
+                            </span>
+                        </td>
+
+                        <td>
+                            <span
+                                th:text="${prospecto.propietario}">
+                                Juan Pérez
+                            </span>
+
+                            <span
+                                class="dato-secundario"
+                                th:text="${prospecto.correo}">
+                                juan@elfogon.mx
+                            </span>
+
+                            <span
+                                class="dato-secundario"
+                                th:text="${prospecto.whatsapp}">
+                                5512345678
+                            </span>
+                        </td>
+
+                        <td th:text="${prospecto.ciudad}">
+                            Ecatepec
+                        </td>
+
+                        <td>
+                            <span
+                                class="insignia"
+                                th:classappend="${
+                                    prospecto.planCodigo == 'BASICO'
+                                    ? ' plan-basico'
+                                    : (
+                                        prospecto.planCodigo == 'PRO'
+                                        ? ' plan-pro'
+                                        : ' plan-enterprise'
+                                    )
+                                }"
+                                th:text="${prospecto.planCodigo}">
+                                PRO
+                            </span>
+                        </td>
+
+                        <td>
+                            <span
+                                class="insignia"
+                                th:classappend="${
+                                    prospecto.estado == 'NUEVO'
+                                    ? ' estado-nuevo'
+                                    : (
+                                        prospecto.estado == 'EN_PROCESO'
+                                        ? ' estado-proceso'
+                                        : (
+                                            prospecto.estado == 'ACTIVADO'
+                                            ? ' estado-activado'
+                                            : ' estado-rechazado'
+                                        )
+                                    )
+                                }"
+                                th:text="${prospecto.estado}">
+                                NUEVO
+                            </span>
+                        </td>
+
+                        <td>
+                            <span
+                                th:text="${
+                                    #temporals.format(
+                                        prospecto.fechaCreacion,
+                                        'dd/MM/yyyy'
+                                    )
+                                }">
+                                20/07/2026
+                            </span>
+
+                            <span
+                                class="dato-secundario"
+                                th:text="${
+                                    #temporals.format(
+                                        prospecto.fechaCreacion,
+                                        'HH:mm'
+                                    )
+                                }">
+                                20:52
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="acciones">
+
+                                <a href="#"
+                                   class="boton-tabla">
+                                    Ver
+                                </a>
+
+                                <a class="boton-tabla boton-activar" th:if="${prospecto.estado != 'ACTIVADO'}" th:href="@{/super-admin/prospectos/{folio}/activar(folio=${prospecto.folio})}">Activar</a><a class="boton boton-secundario"
+   th:if="${prospecto.estado == 'ACTIVADO'}"
+   th:href="@{/super-admin/prospectos/{folio}/activar(
+       folio=${prospecto.folio}
+   )}">
+    Credenciales
+</a>
+
+                            </div>
+                        </td>
+
+                    </tr>
+
+                    <tr th:if="${#lists.isEmpty(prospectos)}">
+                        <td colspan="8"
+                            class="vacio">
+                            Todavía no existen prospectos registrados.
+                        </td>
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="pie">
+                Los botones Ver y Activar empresa se conectarán
+                al flujo de aprovisionamiento en el siguiente módulo.
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script>
+    const buscador =
+        document.getElementById("buscador");
+
+    const filas =
+        document.querySelectorAll(
+            "#tablaProspectos tbody tr"
+        );
+
+    buscador.addEventListener("input", function () {
+        const texto =
+            buscador.value
+                .toLowerCase()
+                .trim();
+
+        filas.forEach(function (fila) {
+            const contenido =
+                fila.textContent.toLowerCase();
+
+            fila.style.display =
+                contenido.includes(texto)
+                    ? ""
+                    : "none";
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Credenciales de acceso | Commerce Cloud
+    </title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --fondo: #07111f;
+            --panel: #0d1b2a;
+            --borde: #243b53;
+            --texto: #f8fafc;
+            --muted: #94a3b8;
+            --verde: #22c55e;
+            --verde-hover: #16a34a;
+            --azul: #38bdf8;
+            --amarillo: #facc15;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 30px;
+            color: var(--texto);
+            background:
+                radial-gradient(
+                    circle at top right,
+                    rgba(56, 189, 248, 0.12),
+                    transparent 35%
+                ),
+                var(--fondo);
+            font-family:
+                Inter,
+                system-ui,
+                sans-serif;
+        }
+
+        .tarjeta {
+            width: min(780px, 100%);
+            padding: 32px;
+            border: 1px solid var(--borde);
+            border-radius: 20px;
+            background: rgba(13, 27, 42, 0.98);
+        }
+
+        .icono {
+            display: grid;
+            width: 62px;
+            height: 62px;
+            place-items: center;
+            margin-bottom: 20px;
+            border-radius: 50%;
+            color: #04130a;
+            background: var(--verde);
+            font-size: 32px;
+            font-weight: 900;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        .subtitulo {
+            margin: 9px 0 25px;
+            color: var(--muted);
+        }
+
+        .aviso-regeneracion {
+            margin-bottom: 20px;
+            padding: 14px 16px;
+            border: 1px solid rgba(250, 204, 21, 0.40);
+            border-radius: 12px;
+            color: #fef08a;
+            background: rgba(250, 204, 21, 0.10);
+        }
+
+        .credenciales {
+            overflow: hidden;
+            border: 1px solid var(--borde);
+            border-radius: 15px;
+        }
+
+        .fila {
+            display: grid;
+            grid-template-columns: 210px 1fr auto;
+            gap: 16px;
+            align-items: center;
+            padding: 15px 18px;
+            border-bottom: 1px solid var(--borde);
+        }
+
+        .fila:last-child {
+            border-bottom: 0;
+        }
+
+        .etiqueta {
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .valor {
+            overflow-wrap: anywhere;
+            font-weight: 800;
+        }
+
+        .credencial {
+            color: var(--azul);
+            font-family:
+                "Courier New",
+                monospace;
+            font-size: 16px;
+        }
+
+        .copiar {
+            padding: 7px 11px;
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--texto);
+            background: #12263a;
+            font-weight: 800;
+        }
+
+        .advertencia {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid rgba(56, 189, 248, 0.30);
+            border-radius: 12px;
+            color: #bae6fd;
+            background: rgba(56, 189, 248, 0.10);
+        }
+
+        .acciones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .boton {
+            display: inline-flex;
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+            padding: 11px 18px;
+            border: 0;
+            border-radius: 11px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .primario {
+            color: #04130a;
+            background: var(--verde);
+        }
+
+        .primario:hover {
+            color: white;
+            background: var(--verde-hover);
+        }
+
+        .secundario {
+            color: var(--texto);
+            border: 1px solid var(--borde);
+            background: #12263a;
+        }
+
+        @media (max-width: 650px) {
+            .fila {
+                grid-template-columns: 1fr;
+                gap: 7px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<section class="tarjeta"
+         th:if="${resultado != null}">
+
+    <div class="icono">✓</div>
+
+    <h1 th:text="${resultado.credencialesRegeneradas
+        ? 'Credenciales regeneradas'
+        : 'Empresa activada'}">
+        Empresa activada
+    </h1>
+
+    <p class="subtitulo"
+       th:text="${resultado.credencialesRegeneradas
+        ? 'El tenant existente fue conservado y se generó una nueva contraseña temporal.'
+        : 'El tenant y su usuario administrador fueron creados correctamente.'}">
+        Activación completada
+    </p>
+
+    <div class="aviso-regeneracion"
+         th:if="${resultado.credencialesRegeneradas}">
+
+        No se creó un tenant duplicado. La contraseña anterior
+        dejó de ser válida y fue sustituida por esta nueva.
+    </div>
+
+    <div class="credenciales">
+
+        <div class="fila">
+            <div class="etiqueta">Folio</div>
+
+            <div class="valor"
+                 th:text="${resultado.folio}">
+                CC-000
+            </div>
+
+            <span></span>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">Empresa</div>
+
+            <div class="valor"
+                 th:text="${resultado.tenantNombre}">
+                Empresa
+            </div>
+
+            <span></span>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">Tenant</div>
+
+            <div class="valor credencial"
+                 th:text="${resultado.tenantSlug}">
+                tenant
+            </div>
+
+            <span></span>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">Tipo de negocio</div>
+
+            <div class="valor"
+                 th:text="${resultado.tipoNegocio}">
+                RESTAURANTE
+            </div>
+
+            <span></span>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">Plan</div>
+
+            <div class="valor"
+                 th:text="${resultado.plan}">
+                PRO
+            </div>
+
+            <span></span>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">Usuario</div>
+
+            <div id="username"
+                 class="valor credencial"
+                 th:text="${resultado.username}">
+                admin.empresa
+            </div>
+
+            <button class="copiar"
+                    type="button"
+                    onclick="copiarTexto('username', this)">
+                Copiar
+            </button>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">
+                Contraseña temporal
+            </div>
+
+            <div id="password"
+                 class="valor credencial"
+                 th:text="${resultado.passwordTemporal}">
+                password
+            </div>
+
+            <button class="copiar"
+                    type="button"
+                    onclick="copiarTexto('password', this)">
+                Copiar
+            </button>
+        </div>
+
+        <div class="fila">
+            <div class="etiqueta">Página de acceso</div>
+
+            <a id="loginUrl"
+               class="valor credencial"
+               th:href="${loginUrl}"
+               th:text="${loginUrl}"
+               target="_blank"
+               rel="noopener noreferrer">
+                http://localhost:8080/login
+            </a>
+
+            <button class="copiar"
+                    type="button"
+                    onclick="copiarTexto('loginUrl', this)">
+                Copiar
+            </button>
+        </div>
+
+    </div>
+
+    <div class="advertencia">
+        Guarda y entrega estas credenciales antes de finalizar.
+        La contraseña solo permanece disponible temporalmente
+        en esta sesión del Super Admin.
+    </div>
+
+    <div class="acciones">
+
+        <a class="boton secundario"
+           th:href="${loginUrl}"
+           target="_blank"
+           rel="noopener noreferrer">
+            Probar acceso
+        </a>
+
+        <form method="post"
+              th:action="@{
+                /super-admin/prospectos/{folio}/resultado/finalizar(
+                    folio=${resultado.folio}
+                )
+              }">
+
+            <button class="boton primario"
+                    type="submit">
+                Ya guardé las credenciales
+            </button>
+
+        </form>
+
+    </div>
+
+</section>
+
+<script>
+    async function copiarTexto(id, boton) {
+        const elemento =
+            document.getElementById(id);
+
+        const texto =
+            elemento.textContent.trim();
+
+        try {
+            await navigator.clipboard.writeText(texto);
+
+            const anterior =
+                boton.textContent;
+
+            boton.textContent =
+                "Copiado";
+
+            setTimeout(
+                () => boton.textContent = anterior,
+                1400
+            );
+
+        } catch (error) {
+            window.prompt(
+                "Copia el valor:",
+                texto
+            );
+        }
+    }
+</script>
+
+</body>
+</html>

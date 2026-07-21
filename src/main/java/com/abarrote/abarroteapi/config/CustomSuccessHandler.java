@@ -74,6 +74,26 @@ public class CustomSuccessHandler
                             destino.rol()
                     );
 
+            /*
+             * =====================================================
+             * SUPER ADMINISTRADOR GLOBAL DE COMMERCE CLOUD
+             * =====================================================
+             */
+            if ("PLATFORM".equals(tipoNegocio)
+                    && "SUPER_ADMIN".equals(rol)) {
+
+                response.sendRedirect(
+                        "/super-admin"
+                );
+
+                return;
+            }
+
+            /*
+             * =====================================================
+             * RESTAURANTE
+             * =====================================================
+             */
             if ("RESTAURANTE".equals(tipoNegocio)) {
 
                 if ("MESERO".equals(rol)) {
@@ -95,6 +115,11 @@ public class CustomSuccessHandler
                 }
             }
 
+            /*
+             * =====================================================
+             * GYM
+             * =====================================================
+             */
             if ("GYM".equals(tipoNegocio)) {
 
                 response.sendRedirect(
@@ -104,6 +129,11 @@ public class CustomSuccessHandler
                 return;
             }
 
+            /*
+             * =====================================================
+             * ABARROTES
+             * =====================================================
+             */
             if ("ABARROTES".equals(tipoNegocio)) {
 
                 if ("CAJERO".equals(rol)) {
@@ -126,6 +156,18 @@ public class CustomSuccessHandler
             }
         }
 
+        /*
+         * =========================================================
+         * RESPALDO POR AUTORIDAD
+         * =========================================================
+         */
+
+        boolean superAdministrador =
+                tieneAutoridad(
+                        authentication,
+                        "ROLE_SUPER_ADMIN"
+                );
+
         boolean administrador =
                 tieneAutoridad(
                         authentication,
@@ -143,6 +185,15 @@ public class CustomSuccessHandler
                         authentication,
                         "ROLE_MESERO"
                 );
+
+        if (superAdministrador) {
+
+            response.sendRedirect(
+                    "/super-admin"
+            );
+
+            return;
+        }
 
         if (mesero) {
 
