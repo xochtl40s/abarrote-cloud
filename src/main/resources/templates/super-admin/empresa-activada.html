@@ -235,7 +235,7 @@
             <div class="etiqueta">Empresa</div>
 
             <div class="valor"
-                 th:text="${resultado.tenantNombre}">
+                 th:text="${resultado.tenantNombre}" data-credencial="empresa">
                 Empresa
             </div>
 
@@ -246,7 +246,7 @@
             <div class="etiqueta">Tenant</div>
 
             <div class="valor credencial"
-                 th:text="${resultado.tenantSlug}">
+                 th:text="${resultado.tenantSlug}" data-credencial="tenant">
                 tenant
             </div>
 
@@ -330,20 +330,36 @@
 
     </div>
 
+    
     <div class="advertencia">
-        Guarda y entrega estas credenciales antes de finalizar.
-        La contraseña solo permanece disponible temporalmente
-        en esta sesión del Super Admin.
+
+        <strong>Importante: protege tu sesión de Super Admin.</strong>
+
+        <p style="margin: 8px 0 0;">
+            No pruebes estas credenciales en otra pestaña normal.
+            Todas las pestañas del mismo navegador comparten la
+            misma sesión y el acceso del cliente sustituiría la
+            sesión de <strong>super-admin</strong>.
+        </p>
+
+        <p style="margin: 8px 0 0;">
+            Copia el enlace, el usuario y la contraseña.
+            Después abre una ventana privada con
+            <strong>Ctrl + Shift + P</strong> y realiza ahí la prueba.
+        </p>
+
     </div>
 
-    <div class="acciones">
 
-        <a class="boton secundario"
-           th:href="${loginUrl}"
-           target="_blank"
-           rel="noopener noreferrer">
-            Probar acceso
-        </a>
+    <div class="acciones">
+        <button class="boton secundario"
+                type="button"
+                onclick="copiarCredenciales(this)">
+            Copiar todas las credenciales
+        </button>
+
+
+        
 
         <form method="post"
               th:action="@{
@@ -354,7 +370,7 @@
 
             <button class="boton primario"
                     type="submit">
-                Ya guardé las credenciales
+                Finalizar y volver a Prospectos
             </button>
 
         </form>
@@ -392,6 +408,71 @@
             );
         }
     }
+
+    async function copiarCredenciales(boton) {
+
+        const empresa =
+            document.querySelector(
+                "[data-credencial='empresa']"
+            );
+
+        const tenant =
+            document.querySelector(
+                "[data-credencial='tenant']"
+            );
+
+        const username =
+            document.getElementById("username");
+
+        const password =
+            document.getElementById("password");
+
+        const loginUrl =
+            document.getElementById("loginUrl");
+
+        const texto = [
+            "COMMERCE CLOUD",
+            "",
+            "Empresa: "
+                + (empresa
+                    ? empresa.textContent.trim()
+                    : ""),
+            "Tenant: "
+                + (tenant
+                    ? tenant.textContent.trim()
+                    : ""),
+            "Usuario: "
+                + username.textContent.trim(),
+            "Contraseña temporal: "
+                + password.textContent.trim(),
+            "Acceso: "
+                + loginUrl.textContent.trim(),
+            "",
+            "Prueba estas credenciales en una ventana privada."
+        ].join("\\n");
+
+        try {
+            await navigator.clipboard.writeText(texto);
+
+            const original =
+                boton.textContent;
+
+            boton.textContent =
+                "Credenciales copiadas";
+
+            setTimeout(
+                () => boton.textContent = original,
+                1600
+            );
+
+        } catch (error) {
+            window.prompt(
+                "Copia las credenciales:",
+                texto
+            );
+        }
+    }
+
 </script>
 
 </body>
