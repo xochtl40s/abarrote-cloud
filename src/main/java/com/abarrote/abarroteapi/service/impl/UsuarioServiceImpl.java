@@ -4,6 +4,9 @@ import com.abarrote.abarroteapi.dto.UsuarioRequest;
 import com.abarrote.abarroteapi.dto.UsuarioResponse;
 import com.abarrote.abarroteapi.entity.Sucursal;
 import com.abarrote.abarroteapi.entity.Usuario;
+import com.abarrote.abarroteapi.multitenant.domain.Tenant;
+import com.abarrote.abarroteapi.multitenant.repository.TenantRepository;
+import com.abarrote.abarroteapi.multitenant.service.TenantContextService;
 import com.abarrote.abarroteapi.repository.SucursalRepository;
 import com.abarrote.abarroteapi.repository.UsuarioRepository;
 import com.abarrote.abarroteapi.service.UsuarioService;
@@ -11,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,15 +25,23 @@ public class UsuarioServiceImpl
 
     private final SucursalRepository sucursalRepository;
 
+    private final TenantRepository tenantRepository;
+
+    private final TenantContextService tenantContextService;
+
     private final PasswordEncoder passwordEncoder;
 
     public UsuarioServiceImpl(
             UsuarioRepository usuarioRepository,
             SucursalRepository sucursalRepository,
+            TenantRepository tenantRepository,
+            TenantContextService tenantContextService,
             PasswordEncoder passwordEncoder) {
 
         this.usuarioRepository = usuarioRepository;
         this.sucursalRepository = sucursalRepository;
+        this.tenantRepository = tenantRepository;
+        this.tenantContextService = tenantContextService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -76,10 +86,17 @@ public class UsuarioServiceImpl
                 )
         );
 
-        usuario.setRol(
+        String rolNormalizado =
                 request.getRol()
                         .trim()
-                        .toUpperCase()
+                        .toUpperCase();
+
+        validarRolAdministrable(
+                rolNormalizado
+        );
+
+        usuario.setRol(
+                rolNormalizado
         );
 
         usuario.setActivo(
@@ -90,6 +107,14 @@ public class UsuarioServiceImpl
 
         usuario.setSucursal(
                 sucursal
+        );
+
+        usuario.setTenant(
+                obtenerTenantActual()
+        );
+
+        validarRolAdministrable(
+                usuario.getRol()
         );
 
         return mapearAResponse(
@@ -135,10 +160,17 @@ public class UsuarioServiceImpl
             );
         }
 
-        usuario.setRol(
+        String rolNormalizado =
                 request.getRol()
                         .trim()
-                        .toUpperCase()
+                        .toUpperCase();
+
+        validarRolAdministrable(
+                rolNormalizado
+        );
+
+        usuario.setRol(
+                rolNormalizado
         );
 
         usuario.setActivo(
@@ -182,15 +214,14 @@ public class UsuarioServiceImpl
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listarTodos() {
 
+        Long tenantId =
+                tenantContextService.tenantIdActual();
+
         return usuarioRepository
-                .findAll()
-                .stream()
-                .sorted(
-                        Comparator.comparing(
-                                Usuario::getNombre,
-                                String.CASE_INSENSITIVE_ORDER
-                        )
+                .findByTenantIdOrderByNombreAsc(
+                        tenantId
                 )
+                .stream()
                 .map(this::mapearAResponse)
                 .toList();
     }
@@ -199,23 +230,27 @@ public class UsuarioServiceImpl
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listarActivos() {
 
+        Long tenantId =
+                tenantContextService.tenantIdActual();
+
         return usuarioRepository
-                .findAll()
+                .findByTenantIdAndActivoTrueOrderByNombreAsc(
+                        tenantId
+                )
                 .stream()
-                .filter(
-                        usuario ->
-                                Boolean.TRUE.equals(
-                                        usuario.getActivo()
-                                )
-                )
-                .sorted(
-                        Comparator.comparing(
-                                Usuario::getNombre,
-                                String.CASE_INSENSITIVE_ORDER
-                        )
-                )
                 .map(this::mapearAResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Sucursal>
+            listarSucursalesActivasDelTenantActual() {
+
+        return sucursalRepository
+                .findByTenantIdAndActivaTrueOrderByNombreAsc(
+                        tenantContextService.tenantIdActual()
+                );
     }
 
     @Override
@@ -224,6 +259,25 @@ public class UsuarioServiceImpl
 
         Usuario usuario =
                 obtenerEntityPorId(id);
+
+        if (tenantContextService
+                .usuarioIdActual()
+                .equals(usuario.getId())) {
+
+            throw new IllegalArgumentException(
+                    "No puedes eliminar tu propio usuario."
+            );
+        }
+
+        if ("SUPER_ADMIN".equalsIgnoreCase(
+                usuario.getRol()
+        )) {
+            throw new IllegalArgumentException(
+                    "No está permitido administrar "
+                            + "usuarios SUPER_ADMIN "
+                            + "desde un negocio."
+            );
+        }
 
         usuarioRepository.delete(
                 usuario
@@ -310,11 +364,15 @@ public class UsuarioServiceImpl
                     "El identificador del usuario es obligatorio"
             );
         }
-	return usuarioRepository
-        .findConSucursalById(id)
-        .orElseThrow(
+	        return usuarioRepository
+                .findByIdAndTenantId(
+                        id,
+                        tenantContextService.tenantIdActual()
+                )
+                .orElseThrow(
                         () -> new IllegalArgumentException(
-                                "Usuario no encontrado"
+                                "Usuario no encontrado "
+                                        + "en tu negocio"
                         )
                 );
     }
@@ -333,12 +391,14 @@ public class UsuarioServiceImpl
         }
 
         return usuarioRepository
-                .findByUsernameIgnoreCase(
-                        username.trim()
+                .findByUsernameIgnoreCaseAndTenantId(
+                        username.trim(),
+                        tenantContextService.tenantIdActual()
                 )
                 .orElseThrow(
                         () -> new IllegalArgumentException(
-                                "Usuario no encontrado"
+                                "Usuario no encontrado "
+                                        + "en tu negocio"
                         )
                 );
     }
@@ -346,9 +406,14 @@ public class UsuarioServiceImpl
     private Sucursal resolverSucursal(
             Long sucursalIdSolicitada) {
 
+        Long tenantId =
+                tenantContextService.tenantIdActual();
+
         List<Sucursal> sucursalesActivas =
                 sucursalRepository
-                        .findByActivaTrueOrderByNombreAsc();
+                        .findByTenantIdAndActivaTrueOrderByNombreAsc(
+                                tenantId
+                        );
 
         if (sucursalesActivas.isEmpty()) {
 
@@ -384,9 +449,19 @@ public class UsuarioServiceImpl
                         .findById(
                                 sucursalIdSolicitada
                         )
+                        .filter(
+                                candidata ->
+                                        candidata.getTenant() != null
+                                        && tenantId.equals(
+                                            candidata
+                                                .getTenant()
+                                                .getId()
+                                        )
+                        )
                         .orElseThrow(
                                 () -> new IllegalArgumentException(
-                                        "La sucursal seleccionada no existe"
+                                        "La sucursal seleccionada "
+                                                + "no pertenece a tu negocio"
                                 )
                         );
 
@@ -399,6 +474,52 @@ public class UsuarioServiceImpl
         }
 
         return sucursal;
+    }
+
+    private Tenant obtenerTenantActual() {
+
+        Long tenantId =
+                tenantContextService.tenantIdActual();
+
+        return tenantRepository
+                .findById(tenantId)
+                .orElseThrow(
+                        () -> new IllegalStateException(
+                                "El tenant autenticado no existe."
+                        )
+                );
+    }
+
+    private void validarRolAdministrable(
+            String rol) {
+
+        if (rol == null || rol.isBlank()) {
+            throw new IllegalArgumentException(
+                    "El rol es obligatorio."
+            );
+        }
+
+        String rolNormalizado =
+                rol.trim().toUpperCase();
+
+        if ("SUPER_ADMIN".equals(rolNormalizado)) {
+            throw new IllegalArgumentException(
+                    "Un administrador de negocio no puede "
+                            + "crear ni modificar SUPER_ADMIN."
+            );
+        }
+
+        if (!List.of(
+                "ADMIN",
+                "CAJERO",
+                "MESERO"
+        ).contains(rolNormalizado)) {
+
+            throw new IllegalArgumentException(
+                    "Rol no permitido para este negocio: "
+                            + rolNormalizado
+            );
+        }
     }
 
     private void validarUsernameDisponible(

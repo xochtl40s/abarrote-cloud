@@ -2,6 +2,7 @@ package com.abarrote.abarroteapi.service;
 
 import com.abarrote.abarroteapi.dto.UsuarioRequest;
 import com.abarrote.abarroteapi.dto.UsuarioResponse;
+import com.abarrote.abarroteapi.entity.Sucursal;
 import com.abarrote.abarroteapi.entity.Usuario;
 
 import java.util.List;
@@ -19,6 +20,12 @@ public interface UsuarioService {
     List<UsuarioResponse> listarTodos();
 
     List<UsuarioResponse> listarActivos();
+
+    /*
+     * Devuelve únicamente las sucursales activas
+     * del tenant autenticado.
+     */
+    List<Sucursal> listarSucursalesActivasDelTenantActual();
 
     void eliminar(Long id);
 

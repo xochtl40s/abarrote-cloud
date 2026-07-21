@@ -12,6 +12,10 @@ import java.util.Optional;
 public interface UsuarioRepository
         extends JpaRepository<Usuario, Long> {
 
+    /*
+     * Se conserva para autenticación, donde el username
+     * actualmente es único globalmente.
+     */
     @EntityGraph(
         attributePaths = {
             "sucursal",
@@ -22,15 +26,53 @@ public interface UsuarioRepository
             String username
     );
 
+    /*
+     * Consultas administrativas seguras por tenant.
+     */
+
     @EntityGraph(
         attributePaths = {
             "sucursal",
             "tenant"
         }
     )
-    Optional<Usuario> findConSucursalById(
-            Long id
+    Optional<Usuario> findByIdAndTenantId(
+            Long id,
+            Long tenantId
     );
+
+    @EntityGraph(
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
+    )
+    Optional<Usuario>
+        findByUsernameIgnoreCaseAndTenantId(
+            String username,
+            Long tenantId
+        );
+
+    @EntityGraph(
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
+    )
+    List<Usuario> findByTenantIdOrderByNombreAsc(
+            Long tenantId
+    );
+
+    @EntityGraph(
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
+    )
+    List<Usuario>
+        findByTenantIdAndActivoTrueOrderByNombreAsc(
+            Long tenantId
+        );
 
     @EntityGraph(
         attributePaths = {
@@ -55,15 +97,6 @@ public interface UsuarioRepository
 
     @EntityGraph(
         attributePaths = {
-            "tenant"
-        }
-    )
-    List<Usuario> findByTenantIdOrderByNombreAsc(
-            Long tenantId
-    );
-
-    @EntityGraph(
-        attributePaths = {
             "tenant",
             "sucursal"
         }
@@ -73,4 +106,18 @@ public interface UsuarioRepository
             Long tenantId,
             String rol
         );
+
+    /*
+     * Compatibilidad con código heredado.
+     * No debe utilizarse en pantallas administrativas SaaS.
+     */
+    @EntityGraph(
+        attributePaths = {
+            "sucursal",
+            "tenant"
+        }
+    )
+    Optional<Usuario> findConSucursalById(
+            Long id
+    );
 }

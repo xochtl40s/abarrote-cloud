@@ -283,7 +283,8 @@ public class AdminController {
          */
         model.addAttribute(
                 "sucursalesActivas",
-                sucursalService.listarActivas()
+                usuarioService
+                        .listarSucursalesActivasDelTenantActual()
         );
 
         model.addAttribute(
