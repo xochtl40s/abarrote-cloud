@@ -443,7 +443,24 @@
                 width: 100%;
             }
         }
-    </style>
+    
+        .boton-peligro {
+            color: #fecdd3;
+            background: rgba(239, 68, 68, 0.14);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+        }
+
+        .boton-peligro:hover {
+            color: #ffffff;
+            background: #dc2626;
+        }
+
+        .form-eliminar {
+            display: inline-flex;
+            margin: 0;
+        }
+
+</style>
 </head>
 
 <body>
@@ -730,13 +747,35 @@
                                     Ver
                                 </a>
 
-                                <a class="boton-tabla boton-activar" th:if="${prospecto.estado != 'ACTIVADO'}" th:href="@{/super-admin/prospectos/{folio}/activar(folio=${prospecto.folio})}">Activar</a><a class="boton boton-secundario"
+                                <a class="boton-tabla boton-activar" th:if="${prospecto.estado != 'ACTIVADO'}" th:href="@{/super-admin/prospectos/{folio}/activar(folio=${prospecto.folio})}">Activar</a>
+<a class="boton boton-secundario"
    th:if="${prospecto.estado == 'ACTIVADO'}"
    th:href="@{/super-admin/prospectos/{folio}/activar(
        folio=${prospecto.folio}
    )}">
     Credenciales
 </a>
+
+<form class="form-eliminar"
+      method="post"
+      th:action="@{
+        /super-admin/prospectos/{folio}/eliminar(
+            folio=${prospecto.folio}
+        )
+      }"
+      onsubmit="return eliminarNegocioCommerce(
+          this,
+          '[[${prospecto.nombreNegocio}]]'
+      );">
+
+    <button class="boton boton-peligro"
+            type="submit"
+            title="Eliminar negocio">
+        🗑 Eliminar
+    </button>
+
+</form>
+
 
                             </div>
                         </td>
@@ -792,6 +831,43 @@
                     : "none";
         });
     });
+</script>
+
+
+<script>
+    function eliminarNegocioCommerce(
+            formulario,
+            nombreNegocio) {
+
+        const mensaje =
+            "Vas a eliminar el negocio:\n\n"
+            + nombreNegocio
+            + "\n\n"
+            + "Esta acción cancelará el tenant, "
+            + "desactivará todos sus usuarios y "
+            + "lo retirará del listado.\n\n"
+            + "Los datos históricos no serán borrados.\n\n"
+            + "¿Deseas continuar?";
+
+        const confirmado =
+            window.confirm(mensaje);
+
+        if (!confirmado) {
+            return false;
+        }
+
+        const boton =
+            formulario.querySelector(
+                "button[type='submit']"
+            );
+
+        if (boton) {
+            boton.disabled = true;
+            boton.textContent = "Eliminando...";
+        }
+
+        return true;
+    }
 </script>
 
 </body>

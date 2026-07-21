@@ -94,7 +94,7 @@ public class SaasProspectoServiceImpl
     @Transactional(readOnly = true)
     public List<SaasProspectoResponse> listarTodos() {
         return prospectoRepository
-            .findAllByOrderByFechaCreacionDesc()
+            .findVisiblesOrderByFechaCreacionDesc()
             .stream()
             .map(this::convertirRespuesta)
             .toList();
