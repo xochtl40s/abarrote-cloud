@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>Planes comerciales | Commerce Cloud</title>
+    <style th:replace="~{super-admin/_portal-style :: styles}"></style>
+</head>
+<body>
+<div class="portal-layout">
+    <aside class="portal-sidebar">
+        <div class="portal-brand">
+            <h2>Commerce Cloud</h2>
+            <span>SUPER ADMIN</span>
+        </div>
+
+        <nav class="portal-menu">
+            <a th:href="@{/super-admin/resumen}"
+               class="">
+                📊 Resumen comercial
+            </a>
+
+            <a th:href="@{/super-admin/prospectos}"
+               class="">
+                ◎ Prospectos
+            </a>
+
+            <a th:href="@{/super-admin/empresas}"
+               class="">
+                🏢 Empresas
+            </a>
+
+            <a th:href="@{/super-admin/planes}"
+               class="active">
+                ◆ Planes
+            </a>
+
+            <a th:href="@{/super-admin/suscripciones}"
+               class="">
+                💳 Suscripciones
+            </a>
+
+            <a th:href="@{/super-admin/bitacora}"
+               class="">
+                ☷ Bitácora
+            </a>
+
+            <a th:href="@{/logout}">
+                ↪ Cerrar sesión
+            </a>
+        </nav>
+    </aside>
+
+    <main class="portal-content">
+        <h1 class="page-title">Planes comerciales</h1>
+        <p class="page-subtitle">Catálogo de planes disponibles para los clientes.</p>
+<div class="plan-grid">
+    <article class="plan-card"
+             th:each="plan : ${planes}">
+
+        <span class="badge"
+              th:text="${plan.codigo}">
+            PRO
+        </span>
+
+        <h2 th:text="${plan.nombre}">
+            Plan Profesional
+        </h2>
+
+        <p th:text="${plan.descripcion}">
+            Descripción
+        </p>
+
+        <div class="plan-price">
+            $<span th:text="${plan.precio_mensual}">0</span>
+            <small>/ mes</small>
+        </div>
+
+        <ul class="feature-list">
+            <li>
+                ✓ Usuarios:
+                <strong th:text="${plan.max_usuarios}">0</strong>
+            </li>
+            <li>
+                ✓ Sucursales:
+                <strong th:text="${plan.max_sucursales}">0</strong>
+            </li>
+            <li>
+                ✓ Mesas:
+                <strong th:text="${plan.max_mesas}">0</strong>
+            </li>
+            <li>
+                ✓ Prueba:
+                <strong th:text="${plan.dias_prueba}">0</strong>
+                días
+            </li>
+            <li th:if="${plan.permite_reportes_avanzados}">
+                ✓ Reportes avanzados
+            </li>
+            <li th:if="${plan.permite_asistente_ia}">
+                ✓ Asistente IA
+            </li>
+            <li th:if="${plan.permite_exportacion_excel}">
+                ✓ Exportación Excel
+            </li>
+            <li th:if="${plan.permite_soporte_prioritario}">
+                ✓ Soporte prioritario
+            </li>
+        </ul>
+    </article>
+</div>
+    </main>
+</div>
+</body>
+</html>

@@ -460,6 +460,31 @@
             margin: 0;
         }
 
+
+        .estado-form {
+            display: inline-flex;
+            margin: 0;
+        }
+
+        .estado-toggle {
+            padding: 7px 12px;
+            border: 0;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .estado-activo {
+            color: #bbf7d0;
+            background: rgba(34, 197, 94, .18);
+        }
+
+        .estado-inactivo {
+            color: #fef08a;
+            background: rgba(250, 204, 21, .15);
+        }
+
 </style>
 </head>
 
@@ -696,24 +721,32 @@
                         </td>
 
                         <td>
-                            <span
-                                class="insignia"
-                                th:classappend="${
-                                    prospecto.estado == 'NUEVO'
-                                    ? ' estado-nuevo'
-                                    : (
-                                        prospecto.estado == 'EN_PROCESO'
-                                        ? ' estado-proceso'
-                                        : (
-                                            prospecto.estado == 'ACTIVADO'
-                                            ? ' estado-activado'
-                                            : ' estado-rechazado'
-                                        )
-                                    )
-                                }"
-                                th:text="${prospecto.estado}">
-                                NUEVO
-                            </span>
+                            
+<form method="post"
+      class="estado-form"
+      th:action="@{
+        /super-admin/prospectos/{folio}/alternar-estado(
+            folio=${prospecto.folio}
+        )
+      }"
+      onsubmit="return confirmarCambioEstadoCommerce(
+          '[[${prospecto.nombreNegocio}]]',
+          '[[${prospecto.estado}]]'
+      );">
+
+    <button type="submit"
+            class="estado-toggle"
+            th:classappend="${prospecto.estado == 'ACTIVADO'}
+                ? ' estado-activo'
+                : ' estado-inactivo'"
+            th:text="${prospecto.estado == 'ACTIVADO'}
+                ? 'ACTIVADO'
+                : 'SUSPENDIDO'">
+        ACTIVADO
+    </button>
+
+</form>
+
                         </td>
 
                         <td>
@@ -867,6 +900,27 @@
         }
 
         return true;
+    }
+</script>
+
+
+<script>
+    function confirmarCambioEstadoCommerce(
+            negocio,
+            estado) {
+
+        const accion =
+            estado === "ACTIVADO"
+                ? "suspender"
+                : "reactivar";
+
+        return window.confirm(
+            "¿Deseas "
+            + accion
+            + " el negocio "
+            + negocio
+            + "?"
+        );
     }
 </script>
 

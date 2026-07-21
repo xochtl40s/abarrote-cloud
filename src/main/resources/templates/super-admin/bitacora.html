@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>Bitácora comercial | Commerce Cloud</title>
+    <style th:replace="~{super-admin/_portal-style :: styles}"></style>
+</head>
+<body>
+<div class="portal-layout">
+    <aside class="portal-sidebar">
+        <div class="portal-brand">
+            <h2>Commerce Cloud</h2>
+            <span>SUPER ADMIN</span>
+        </div>
+
+        <nav class="portal-menu">
+            <a th:href="@{/super-admin/resumen}"
+               class="">
+                📊 Resumen comercial
+            </a>
+
+            <a th:href="@{/super-admin/prospectos}"
+               class="">
+                ◎ Prospectos
+            </a>
+
+            <a th:href="@{/super-admin/empresas}"
+               class="">
+                🏢 Empresas
+            </a>
+
+            <a th:href="@{/super-admin/planes}"
+               class="">
+                ◆ Planes
+            </a>
+
+            <a th:href="@{/super-admin/suscripciones}"
+               class="">
+                💳 Suscripciones
+            </a>
+
+            <a th:href="@{/super-admin/bitacora}"
+               class="active">
+                ☷ Bitácora
+            </a>
+
+            <a th:href="@{/logout}">
+                ↪ Cerrar sesión
+            </a>
+        </nav>
+    </aside>
+
+    <main class="portal-content">
+        <h1 class="page-title">Bitácora comercial</h1>
+        <p class="page-subtitle">Historial de altas, activaciones, suspensiones y eliminaciones.</p>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Actualización</th>
+                <th>Folio</th>
+                <th>Negocio</th>
+                <th>Tenant</th>
+                <th>Estado</th>
+                <th>Evento</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="evento : ${eventos}">
+                <td th:text="${evento.fecha_actualizacion}">Fecha</td>
+                <td th:text="${evento.folio}">Folio</td>
+                <td th:text="${evento.nombre_negocio}">Negocio</td>
+                <td th:text="${evento.tenant_slug ?: '-'}">Tenant</td>
+                <td th:text="${evento.estado}">Estado</td>
+                <td th:text="${evento.observaciones ?: 'Sin observaciones'}">
+                    Evento
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>Empresas | Commerce Cloud</title>
+    <style th:replace="~{super-admin/_portal-style :: styles}"></style>
+</head>
+<body>
+<div class="portal-layout">
+    <aside class="portal-sidebar">
+        <div class="portal-brand">
+            <h2>Commerce Cloud</h2>
+            <span>SUPER ADMIN</span>
+        </div>
+
+        <nav class="portal-menu">
+            <a th:href="@{/super-admin/resumen}"
+               class="">
+                📊 Resumen comercial
+            </a>
+
+            <a th:href="@{/super-admin/prospectos}"
+               class="">
+                ◎ Prospectos
+            </a>
+
+            <a th:href="@{/super-admin/empresas}"
+               class="active">
+                🏢 Empresas
+            </a>
+
+            <a th:href="@{/super-admin/planes}"
+               class="">
+                ◆ Planes
+            </a>
+
+            <a th:href="@{/super-admin/suscripciones}"
+               class="">
+                💳 Suscripciones
+            </a>
+
+            <a th:href="@{/super-admin/bitacora}"
+               class="">
+                ☷ Bitácora
+            </a>
+
+            <a th:href="@{/logout}">
+                ↪ Cerrar sesión
+            </a>
+        </nav>
+    </aside>
+
+    <main class="portal-content">
+        <h1 class="page-title">Empresas</h1>
+        <p class="page-subtitle">Tenants registrados y estado general de cada cliente.</p>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>Empresa</th>
+                <th>Tenant</th>
+                <th>Vertical</th>
+                <th>Plan</th>
+                <th>Usuarios</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="empresa : ${empresas}">
+                <td th:text="${empresa.nombre}">Empresa</td>
+                <td th:text="${empresa.slug}">tenant</td>
+                <td th:text="${empresa.tipo_negocio}">Tipo</td>
+                <td th:text="${empresa.plan}">Plan</td>
+                <td th:text="${empresa.total_usuarios}">0</td>
+                <td th:text="${empresa.fecha_vencimiento ?: '-'}">-</td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${empresa.activo}
+                              ? ' badge-green'
+                              : ' badge-yellow'"
+                          th:text="${empresa.activo}
+                              ? 'ACTIVA'
+                              : 'INACTIVA'">
+                        ACTIVA
+                    </span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+    </main>
+</div>
+</body>
+</html>

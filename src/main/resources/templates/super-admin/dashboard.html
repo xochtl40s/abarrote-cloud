@@ -479,13 +479,13 @@
 
         <nav class="menu">
 
-            <a href="/super-admin"
+            <a th:href="@{/super-admin/resumen}"
                class="activo">
                 <span>▦</span>
                 Dashboard
             </a>
 
-            <a href="/super-admin/prospectos">
+            <a th:href="@{/super-admin/prospectos}">
                 <span>◎</span>
                 Prospectos
             </a>
@@ -536,7 +536,7 @@
 
             </div>
 
-            <a href="/super-admin/prospectos"
+            <a th:href="@{/super-admin/prospectos}"
                class="boton boton-primario">
                 Ver prospectos
             </a>
@@ -625,7 +625,7 @@
                         Prospectos recientes
                     </h2>
 
-                    <a href="/super-admin/prospectos">
+                    <a th:href="@{/super-admin/prospectos}">
                         Ver todos →
                     </a>
 
@@ -757,7 +757,7 @@
 
                 <div class="acciones-rapidas">
 
-                    <a href="/super-admin/prospectos"
+                    <a th:href="@{/super-admin/prospectos}"
                        class="accion">
 
                         <span class="accion-icono">
@@ -778,7 +778,7 @@
 
                     </a>
 
-                    <a href="/api/saas/planes"
+                    <a th:href="@{/super-admin/planes}"
                        class="accion"
                        target="_blank">
 
@@ -800,7 +800,7 @@
 
                     </a>
 
-                    <a href="/api/saas/prospectos/resumen/nuevos"
+                    <a th:href="@{/super-admin/resumen}"
                        class="accion"
                        target="_blank">
 

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <title>Suscripciones | Commerce Cloud</title>
+    <style th:replace="~{super-admin/_portal-style :: styles}"></style>
+</head>
+<body>
+<div class="portal-layout">
+    <aside class="portal-sidebar">
+        <div class="portal-brand">
+            <h2>Commerce Cloud</h2>
+            <span>SUPER ADMIN</span>
+        </div>
+
+        <nav class="portal-menu">
+            <a th:href="@{/super-admin/resumen}"
+               class="">
+                📊 Resumen comercial
+            </a>
+
+            <a th:href="@{/super-admin/prospectos}"
+               class="">
+                ◎ Prospectos
+            </a>
+
+            <a th:href="@{/super-admin/empresas}"
+               class="">
+                🏢 Empresas
+            </a>
+
+            <a th:href="@{/super-admin/planes}"
+               class="">
+                ◆ Planes
+            </a>
+
+            <a th:href="@{/super-admin/suscripciones}"
+               class="active">
+                💳 Suscripciones
+            </a>
+
+            <a th:href="@{/super-admin/bitacora}"
+               class="">
+                ☷ Bitácora
+            </a>
+
+            <a th:href="@{/logout}">
+                ↪ Cerrar sesión
+            </a>
+        </nav>
+    </aside>
+
+    <main class="portal-content">
+        <h1 class="page-title">Suscripciones</h1>
+        <p class="page-subtitle">Control de suscripciones y relación con cada tenant.</p>
+<section class="panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Empresa</th>
+                <th>Tenant</th>
+                <th>Estado</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <tr th:each="suscripcion : ${suscripciones}">
+                <td th:text="${suscripcion.id}">1</td>
+                <td th:text="${suscripcion.tenant_nombre ?: '-'}">Empresa</td>
+                <td th:text="${suscripcion.tenant_slug ?: '-'}">Tenant</td>
+                <td>
+                    <span class="badge"
+                          th:text="${suscripcion.estado ?: 'REGISTRADA'}">
+                        Estado
+                    </span>
+                </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(suscripciones)}">
+                <td colspan="4">
+                    No existen suscripciones registradas.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+    </main>
+</div>
+</body>
+</html>
