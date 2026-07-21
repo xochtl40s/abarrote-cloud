@@ -51,10 +51,10 @@ public class UsuarioServiceImpl
 
         validarRequest(request);
 
-        validarUsernameDisponible(
-                request.getUsername(),
-                null
-        );
+        String usernameAsignado =
+                resolverUsernameNuevo(
+                        request.getUsername()
+                );
 
         if (request.getPassword() == null
                 || request.getPassword().isBlank()) {
@@ -77,7 +77,7 @@ public class UsuarioServiceImpl
         );
 
         usuario.setUsername(
-                request.getUsername().trim()
+                usernameAsignado
         );
 
         usuario.setPassword(
@@ -596,6 +596,129 @@ public class UsuarioServiceImpl
                             + rolNormalizado
             );
         }
+    }
+
+    /**
+     * Genera un username globalmente único.
+     *
+     * El login actual no solicita tenant, por lo tanto el
+     * username debe continuar siendo único en toda la plataforma.
+     *
+     * Ejemplos:
+     *
+     * cajero1
+     * cajero1.13
+     * cajero1.13.2
+     */
+    private String resolverUsernameNuevo(
+            String usernameSolicitado) {
+
+        if (usernameSolicitado == null
+                || usernameSolicitado.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "El username es obligatorio"
+            );
+        }
+
+        String base =
+                normalizarUsername(
+                        usernameSolicitado
+                );
+
+        if (usuarioRepository
+                .findByUsernameIgnoreCase(base)
+                .isEmpty()) {
+
+            return base;
+        }
+
+        String tenantSuffix =
+                "."
+                + tenantContextService
+                    .tenantIdActual();
+
+        String candidato =
+                construirUsername(
+                        base,
+                        tenantSuffix
+                );
+
+        int consecutivo = 2;
+
+        while (usuarioRepository
+                .findByUsernameIgnoreCase(candidato)
+                .isPresent()) {
+
+            String suffix =
+                    tenantSuffix
+                    + "."
+                    + consecutivo;
+
+            candidato =
+                    construirUsername(
+                            base,
+                            suffix
+                    );
+
+            consecutivo++;
+        }
+
+        return candidato;
+    }
+
+    private String normalizarUsername(
+            String username) {
+
+        String normalizado =
+                username
+                        .trim()
+                        .toLowerCase()
+                        .replaceAll(
+                                "[^a-z0-9._-]",
+                                ""
+                        );
+
+        if (normalizado.length() < 4) {
+            throw new IllegalArgumentException(
+                    "El username debe tener al menos "
+                            + "4 caracteres válidos"
+            );
+        }
+
+        if (normalizado.length() > 20) {
+            normalizado =
+                    normalizado.substring(
+                            0,
+                            20
+                    );
+        }
+
+        return normalizado;
+    }
+
+    private String construirUsername(
+            String base,
+            String suffix) {
+
+        int longitudBase =
+                20 - suffix.length();
+
+        if (longitudBase < 4) {
+            throw new IllegalStateException(
+                    "No fue posible generar un username válido"
+            );
+        }
+
+        String baseRecortada =
+                base.length() > longitudBase
+                        ? base.substring(
+                            0,
+                            longitudBase
+                        )
+                        : base;
+
+        return baseRecortada + suffix;
     }
 
     private void validarUsernameDisponible(
