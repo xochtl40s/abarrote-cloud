@@ -184,6 +184,20 @@
         }
     </style>
 
+
+    <!-- Commerce Cloud: evitar formulario de login obsoleto -->
+    <meta name="commerce-session-control"
+          content="enabled">
+
+    <meta http-equiv="Cache-Control"
+          content="no-store, no-cache, must-revalidate">
+
+    <meta http-equiv="Pragma"
+          content="no-cache">
+
+    <meta http-equiv="Expires"
+          content="0">
+
 </head>
 
 <body>
@@ -330,6 +344,39 @@
 >
     ← Conoce Abarrotes, Restaurantes y Gym Cloud
 </a>
+
+
+<script>
+    /*
+     * Firefox y otros navegadores pueden restaurar el formulario
+     * de login desde Back/Forward Cache sin consultar al servidor.
+     *
+     * Si la página fue recuperada desde historial, hacemos una
+     * navegación real hacia /login. El interceptor comprobará
+     * entonces si la sesión sigue autenticada y redirigirá al
+     * último módulo autorizado.
+     */
+    window.addEventListener("pageshow", function (event) {
+
+        const navigationEntries =
+            performance.getEntriesByType("navigation");
+
+        const restoredFromHistory =
+            event.persisted
+            || (
+                navigationEntries.length > 0
+                && navigationEntries[0].type === "back_forward"
+            );
+
+        if (restoredFromHistory) {
+            window.location.replace(
+                window.location.pathname
+                + "?sessionCheck="
+                + Date.now()
+            );
+        }
+    });
+</script>
 
 </body>
 </html>
