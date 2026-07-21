@@ -1,140 +1,220 @@
 package com.abarrote.abarroteapi.config;
 
-import com.abarrote.abarroteapi.security.CommerceUserPrincipal;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class CustomSuccessHandler
-    implements AuthenticationSuccessHandler {
+        implements AuthenticationSuccessHandler {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public CustomSuccessHandler(
+            JdbcTemplate jdbcTemplate) {
+
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @Override
     public void onAuthenticationSuccess(
-        HttpServletRequest request,
-        HttpServletResponse response,
-        Authentication authentication
-    ) throws IOException, ServletException {
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication)
+            throws IOException, ServletException {
 
-        HttpSession session = request.getSession(true);
-
-        if (
-            authentication.getPrincipal()
-                instanceof CommerceUserPrincipal principal
-        ) {
-            guardarContextoEnSesion(
-                session,
-                principal
-            );
-
-            if (principal.esGym()) {
-                response.sendRedirect(
-                    request.getContextPath()
-                        + "/gym/dashboard"
+        List<UsuarioDestino> destinos =
+                jdbcTemplate.query(
+                        """
+                        SELECT
+                            u.rol,
+                            t.tipo_negocio
+                        FROM usuario u
+                        JOIN tenant t
+                          ON t.id = u.tenant_id
+                        WHERE LOWER(u.username) =
+                              LOWER(?)
+                          AND u.activo = TRUE
+                        """,
+                        (
+                                resultSet,
+                                rowNumber
+                        ) -> new UsuarioDestino(
+                                resultSet.getString(
+                                        "rol"
+                                ),
+                                resultSet.getString(
+                                        "tipo_negocio"
+                                )
+                        ),
+                        authentication.getName()
                 );
+
+        if (!destinos.isEmpty()) {
+
+            UsuarioDestino destino =
+                    destinos.get(0);
+
+            String tipoNegocio =
+                    normalizar(
+                            destino.tipoNegocio()
+                    );
+
+            String rol =
+                    normalizar(
+                            destino.rol()
+                    );
+
+            if ("RESTAURANTE".equals(tipoNegocio)) {
+
+                if ("MESERO".equals(rol)) {
+
+                    response.sendRedirect(
+                            "/restaurante/mesero"
+                    );
+
+                    return;
+                }
+
+                if ("ADMIN".equals(rol)) {
+
+                    response.sendRedirect(
+                            "/restaurante/dashboard"
+                    );
+
+                    return;
+                }
+            }
+
+            if ("GYM".equals(tipoNegocio)) {
+
+                response.sendRedirect(
+                        "/gym/dashboard"
+                );
+
                 return;
             }
 
-            if (principal.tieneRol("CAJERO")) {
-                response.sendRedirect(
-                    request.getContextPath()
-                        + "/pos"
-                );
-                return;
+            if ("ABARROTES".equals(tipoNegocio)) {
+
+                if ("CAJERO".equals(rol)) {
+
+                    response.sendRedirect(
+                            "/pos"
+                    );
+
+                    return;
+                }
+
+                if ("ADMIN".equals(rol)) {
+
+                    response.sendRedirect(
+                            "/admin"
+                    );
+
+                    return;
+                }
             }
+        }
+
+        boolean administrador =
+                tieneAutoridad(
+                        authentication,
+                        "ROLE_ADMIN"
+                );
+
+        boolean cajero =
+                tieneAutoridad(
+                        authentication,
+                        "ROLE_CAJERO"
+                );
+
+        boolean mesero =
+                tieneAutoridad(
+                        authentication,
+                        "ROLE_MESERO"
+                );
+
+        if (mesero) {
 
             response.sendRedirect(
-                request.getContextPath()
-                    + "/admin"
+                    "/restaurante/mesero"
             );
 
             return;
         }
 
-        /*
-         * Compatibilidad temporal por si algún proceso interno
-         * todavía crea un User estándar de Spring Security.
-         */
-        boolean esAdministrador =
-            authentication
-                .getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_ADMIN"::equals);
+        if (administrador) {
 
-        boolean esCajero =
-            authentication
-                .getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_CAJERO"::equals);
-
-        if (esAdministrador) {
             response.sendRedirect(
-                request.getContextPath()
-                    + "/admin"
+                    "/admin"
             );
+
             return;
         }
 
-        if (esCajero) {
+        if (cajero) {
+
             response.sendRedirect(
-                request.getContextPath()
-                    + "/pos"
+                    "/pos"
             );
+
             return;
         }
 
         response.sendRedirect(
-            request.getContextPath()
-                + "/login?sinDestino"
+                "/login?error"
         );
     }
 
-    private void guardarContextoEnSesion(
-        HttpSession session,
-        CommerceUserPrincipal principal
-    ) {
-        session.setAttribute(
-            "usuarioId",
-            principal.getUsuarioId()
-        );
+    private boolean tieneAutoridad(
+            Authentication authentication,
+            String autoridad) {
 
-        session.setAttribute(
-            "usuarioNombre",
-            principal.getNombre()
-        );
+        return authentication
+                .getAuthorities()
+                .stream()
+                .map(
+                        GrantedAuthority::getAuthority
+                )
+                .anyMatch(
+                        autoridad::equals
+                );
+    }
 
-        session.setAttribute(
-            "tenantId",
-            principal.getTenantId()
-        );
+    private String normalizar(
+            String valor) {
 
-        session.setAttribute(
-            "tenantSlug",
-            principal.getTenantSlug()
-        );
+        if (valor == null) {
+            return "";
+        }
 
-        session.setAttribute(
-            "tenantNombre",
-            principal.getTenantNombre()
-        );
+        String resultado =
+                valor
+                        .trim()
+                        .toUpperCase();
 
-        session.setAttribute(
-            "tipoNegocio",
-            principal.getTipoNegocio()
-        );
+        if (resultado.startsWith("ROLE_")) {
 
-        session.setAttribute(
-            "sucursalId",
-            principal.getSucursalId()
-        );
+            return resultado.substring(
+                    "ROLE_".length()
+            );
+        }
+
+        return resultado;
+    }
+
+    private record UsuarioDestino(
+            String rol,
+            String tipoNegocio) {
     }
 }
