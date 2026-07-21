@@ -3,7 +3,6 @@ package com.abarrote.abarroteapi.controller;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,72 +10,103 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class CommerceLandingController {
 
-    private final String whatsapp;
-    private final String nombreComercial;
+    /*
+     * Número de WhatsApp en formato internacional:
+     *
+     * 52  = México
+     * 1   = prefijo usado para número móvil
+     *
+     * No se deben incluir:
+     * - signo +
+     * - espacios
+     * - guiones
+     * - paréntesis
+     */
+    private static final String WHATSAPP_NUMBER =
+            "5215539862218";
 
-    public CommerceLandingController(
-            @Value("${commerce.marketing.whatsapp:5215512345678}")
-            String whatsapp,
-            @Value("${commerce.marketing.nombre:Commerce Cloud}")
-            String nombreComercial) {
-
-        this.whatsapp = limpiarTelefono(whatsapp);
-        this.nombreComercial = nombreComercial;
-    }
+    private static final String WHATSAPP_BASE_URL =
+            "https://wa.me/";
 
     @GetMapping({
             "/",
-            "/inicio",
-            "/commerce-cloud",
-            "/productos"
+            "/commerce",
+            "/commerce-cloud"
     })
-    public String mostrarPortalComercial(Model model) {
-
-        model.addAttribute("nombreComercial", nombreComercial);
+    public String mostrarLanding(
+            Model model) {
 
         model.addAttribute(
                 "whatsappGeneral",
-                crearWhatsappUrl(
-                        "Hola, me interesa conocer Commerce Cloud y solicitar una demostración."
+                construirEnlaceWhatsApp(
+                        """
+                        Hola, me interesa conocer Commerce Cloud.
+
+                        Quiero solicitar una demostración y recibir información sobre los planes disponibles.
+                        """
                 )
         );
 
         model.addAttribute(
                 "whatsappAbarrotes",
-                crearWhatsappUrl(
-                        "Hola, me interesa una demostración de Abarrotes Cloud para mi negocio."
-                )
-        );
+                construirEnlaceWhatsApp(
+                        """
+                        Hola, me interesa Abarrotes Cloud.
 
-        model.addAttribute(
-                "whatsappGym",
-                crearWhatsappUrl(
-                        "Hola, me interesa una demostración de Gym Cloud para administrar mi gimnasio."
+                        Quiero solicitar una demostración para conocer el punto de venta, inventario, corte de caja y reportes.
+                        """
                 )
         );
 
         model.addAttribute(
                 "whatsappRestaurante",
-                crearWhatsappUrl(
-                        "Hola, me interesa una demostración de Restaurante Cloud para mi restaurante."
+                construirEnlaceWhatsApp(
+                        """
+                        Hola, me interesa Restaurante Cloud.
+
+                        Quiero solicitar una demostración para conocer el control de mesas, pedidos, meseros, cuentas y corte del día.
+                        """
+                )
+        );
+
+        model.addAttribute(
+                "whatsappGym",
+                construirEnlaceWhatsApp(
+                        """
+                        Hola, me interesa Gym Cloud.
+
+                        Quiero solicitar una demostración para conocer el registro de clientes, membresías, pagos y reportes.
+                        """
                 )
         );
 
         return "commerce-landing";
     }
 
-    private String crearWhatsappUrl(String mensaje) {
+    private String construirEnlaceWhatsApp(
+            String mensaje) {
+
+        String mensajeNormalizado =
+                mensaje
+                        .strip()
+                        .replace(
+                                "\r\n",
+                                "\n"
+                        );
+
         String mensajeCodificado =
-                URLEncoder.encode(mensaje, StandardCharsets.UTF_8);
+                URLEncoder.encode(
+                                mensajeNormalizado,
+                                StandardCharsets.UTF_8
+                        )
+                        .replace(
+                                "+",
+                                "%20"
+                        );
 
-        return "https://wa.me/" + whatsapp + "?text=" + mensajeCodificado;
-    }
-
-    private String limpiarTelefono(String telefono) {
-        if (telefono == null || telefono.isBlank()) {
-            return "5215512345678";
-        }
-
-        return telefono.replaceAll("[^0-9]", "");
+        return WHATSAPP_BASE_URL
+                + WHATSAPP_NUMBER
+                + "?text="
+                + mensajeCodificado;
     }
 }

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <meta
+        name="theme-color"
+        content="#17231f"
+    >
+
+    <title>Mesero | Restaurante Cloud</title>
+
+    <link
+        rel="stylesheet"
+        th:href="@{/restaurante/restaurante.css}"
+        href="/restaurante/restaurante.css"
+    >
+</head>
+
+<body class="waiter-body">
+
+<header class="waiter-header">
+
+    <div>
+        <span class="waiter-logo">🍽️</span>
+
+        <div>
+            <strong th:text="${tenantNombre}">
+                Restaurante Cloud
+            </strong>
+
+            <small>
+                Mesero:
+                <span th:text="${usuarioNombre}">
+                    Mesero 1
+                </span>
+            </small>
+        </div>
+    </div>
+
+    <form
+        th:action="@{/logout}"
+        method="post"
+    >
+        <button
+            class="waiter-logout"
+            type="submit"
+        >
+            Salir
+        </button>
+    </form>
+
+</header>
+
+<main class="waiter-main">
+
+    <section class="waiter-section">
+
+        <div class="waiter-section-header">
+
+            <div>
+                <span>Paso 1</span>
+                <h1>Selecciona una mesa</h1>
+            </div>
+
+            <strong>
+                <span th:text="${#lists.size(mesas)}">10</span>
+                mesas
+            </strong>
+
+        </div>
+
+        <div class="waiter-table-grid">
+
+            <button
+                class="waiter-table"
+                type="button"
+                th:each="mesa : ${mesas}"
+                th:attr="
+                    data-mesa-id=${mesa.id},
+                    data-mesa-numero=${mesa.numero}
+                "
+                th:classappend="${
+                    #strings.equals(
+                        mesa.estado,
+                        'OCUPADA'
+                    )
+                } ? ' occupied' :
+                (${
+                    #strings.equals(
+                        mesa.estado,
+                        'RESERVADA'
+                    )
+                } ? ' reserved' : ' free')"
+                onclick="seleccionarMesa(this)"
+            >
+
+                <span class="waiter-table-icon">
+                    🪑
+                </span>
+
+                <strong>
+                    Mesa
+                    <span th:text="${mesa.numero}">
+                        1
+                    </span>
+                </strong>
+
+                <small th:text="${mesa.estado}">
+                    LIBRE
+                </small>
+
+            </button>
+
+        </div>
+    </section>
+
+    <section class="waiter-catalog">
+
+        <div class="waiter-section-header">
+
+            <div>
+                <span>Paso 2</span>
+                <h2>Agrega platillos</h2>
+            </div>
+
+            <div
+                id="mesaSeleccionada"
+                class="waiter-selected-table"
+            >
+                Ninguna mesa seleccionada
+            </div>
+
+        </div>
+
+        <div class="waiter-category-list">
+
+            <button
+                type="button"
+                class="waiter-category active"
+                onclick="filtrarCategoria('TODAS', this)"
+            >
+                Todos
+            </button>
+
+            <button
+                type="button"
+                class="waiter-category"
+                th:each="categoria : ${categorias}"
+                th:text="${categoria.nombre}"
+                th:attr="onclick=|filtrarCategoria('${categoria.nombre}', this)|"
+            >
+                Bebidas
+            </button>
+
+        </div>
+
+        <div class="waiter-product-grid">
+
+            <article
+                class="waiter-product"
+                th:each="platillo : ${platillos}"
+                th:attr="
+                    data-categoria=${platillo.categoria},
+                    data-id=${platillo.id},
+                    data-nombre=${platillo.nombre},
+                    data-precio=${platillo.precio}
+                "
+            >
+
+                <div class="waiter-product-image">
+                    🍴
+                </div>
+
+                <div class="waiter-product-info">
+
+                    <span th:text="${platillo.categoria}">
+                        Bebidas
+                    </span>
+
+                    <h3 th:text="${platillo.nombre}">
+                        Refresco
+                    </h3>
+
+                    <p th:text="${platillo.descripcion}">
+                        Refresco de lata
+                    </p>
+
+                    <div>
+                        <strong
+                            th:text="${'$' + #numbers.formatDecimal(platillo.precio, 1, 'COMMA', 2, 'POINT')}"
+                        >
+                            $35.00
+                        </strong>
+
+                        <button
+                            type="button"
+                            onclick="agregarPlatillo(this)"
+                        >
+                            Agregar
+                        </button>
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+    </section>
+
+</main>
+
+<section class="waiter-ticket">
+
+    <div class="waiter-ticket-header">
+
+        <div>
+            <span>Pedido actual</span>
+            <strong id="ticketMesa">
+                Sin mesa
+            </strong>
+        </div>
+
+        <span
+            id="ticketCantidad"
+            class="waiter-ticket-count"
+        >
+            0
+        </span>
+
+    </div>
+
+    <div
+        id="ticketItems"
+        class="waiter-ticket-items"
+    >
+        <p class="waiter-empty-ticket">
+            Selecciona una mesa y agrega platillos.
+        </p>
+    </div>
+
+    <div class="waiter-ticket-total">
+        <span>Total</span>
+        <strong id="ticketTotal">$0.00</strong>
+    </div>
+
+    <button
+        class="waiter-send-order"
+        type="button"
+        onclick="mostrarSprintDos()"
+    >
+        Enviar pedido
+    </button>
+
+    <small class="waiter-sprint-note">
+        La persistencia de pedidos se activa en el Sprint 2.
+    </small>
+
+</section>
+
+<script>
+    "use strict";
+
+    let mesaActual = null;
+    const carrito = [];
+
+    function seleccionarMesa(boton) {
+        document
+            .querySelectorAll(".waiter-table")
+            .forEach((mesa) => {
+                mesa.classList.remove("selected");
+            });
+
+        boton.classList.add("selected");
+
+        mesaActual = {
+            id: boton.dataset.mesaId,
+            numero: boton.dataset.mesaNumero
+        };
+
+        document.getElementById(
+            "mesaSeleccionada"
+        ).textContent =
+            "Mesa " + mesaActual.numero;
+
+        document.getElementById(
+            "ticketMesa"
+        ).textContent =
+            "Mesa " + mesaActual.numero;
+    }
+
+    function filtrarCategoria(
+        categoria,
+        boton
+    ) {
+        document
+            .querySelectorAll(".waiter-category")
+            .forEach((elemento) => {
+                elemento.classList.remove("active");
+            });
+
+        boton.classList.add("active");
+
+        document
+            .querySelectorAll(".waiter-product")
+            .forEach((producto) => {
+                const coincide =
+                    categoria === "TODAS"
+                    || producto.dataset.categoria === categoria;
+
+                producto.style.display =
+                    coincide
+                    ? ""
+                    : "none";
+            });
+    }
+
+    function agregarPlatillo(boton) {
+        if (!mesaActual) {
+            alert("Primero selecciona una mesa.");
+            return;
+        }
+
+        const tarjeta =
+            boton.closest(".waiter-product");
+
+        const id =
+            tarjeta.dataset.id;
+
+        const existente =
+            carrito.find(
+                (item) => item.id === id
+            );
+
+        if (existente) {
+            existente.cantidad++;
+        } else {
+            carrito.push({
+                id: id,
+                nombre: tarjeta.dataset.nombre,
+                precio: Number(
+                    tarjeta.dataset.precio
+                ),
+                cantidad: 1
+            });
+        }
+
+        renderizarTicket();
+    }
+
+    function cambiarCantidad(
+        id,
+        cambio
+    ) {
+        const item =
+            carrito.find(
+                (elemento) => elemento.id === id
+            );
+
+        if (!item) {
+            return;
+        }
+
+        item.cantidad += cambio;
+
+        if (item.cantidad <= 0) {
+            const indice =
+                carrito.findIndex(
+                    (elemento) => elemento.id === id
+                );
+
+            carrito.splice(indice, 1);
+        }
+
+        renderizarTicket();
+    }
+
+    function renderizarTicket() {
+        const contenedor =
+            document.getElementById(
+                "ticketItems"
+            );
+
+        if (carrito.length === 0) {
+            contenedor.innerHTML =
+                '<p class="waiter-empty-ticket">'
+                + 'Selecciona platillos para iniciar.'
+                + '</p>';
+        } else {
+            contenedor.innerHTML =
+                carrito
+                    .map((item) => {
+                        const subtotal =
+                            item.precio
+                            * item.cantidad;
+
+                        return `
+                            <article class="waiter-ticket-item">
+                                <div>
+                                    <strong>${item.nombre}</strong>
+                                    <small>
+                                        $${item.precio.toFixed(2)}
+                                    </small>
+                                </div>
+
+                                <div class="waiter-quantity">
+                                    <button
+                                        type="button"
+                                        onclick="cambiarCantidad(
+                                            '${item.id}',
+                                            -1
+                                        )"
+                                    >
+                                        −
+                                    </button>
+
+                                    <span>${item.cantidad}</span>
+
+                                    <button
+                                        type="button"
+                                        onclick="cambiarCantidad(
+                                            '${item.id}',
+                                            1
+                                        )"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+
+                                <strong>
+                                    $${subtotal.toFixed(2)}
+                                </strong>
+                            </article>
+                        `;
+                    })
+                    .join("");
+        }
+
+        const cantidad =
+            carrito.reduce(
+                (total, item) =>
+                    total + item.cantidad,
+                0
+            );
+
+        const total =
+            carrito.reduce(
+                (acumulado, item) =>
+                    acumulado
+                    + item.precio
+                    * item.cantidad,
+                0
+            );
+
+        document.getElementById(
+            "ticketCantidad"
+        ).textContent =
+            cantidad;
+
+        document.getElementById(
+            "ticketTotal"
+        ).textContent =
+            "$" + total.toFixed(2);
+    }
+
+    function mostrarSprintDos() {
+        if (!mesaActual) {
+            alert("Selecciona una mesa.");
+            return;
+        }
+
+        if (carrito.length === 0) {
+            alert("Agrega al menos un platillo.");
+            return;
+        }
+
+        alert(
+            "La interfaz funciona correctamente. "
+            + "En el Sprint 2 conectaremos este pedido "
+            + "con el backend y PostgreSQL."
+        );
+    }
+</script>
+
+</body>
+</html>

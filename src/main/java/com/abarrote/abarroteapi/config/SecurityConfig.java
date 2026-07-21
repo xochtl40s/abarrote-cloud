@@ -140,6 +140,33 @@ public class SecurityConfig {
                                 )
                                 .hasRole("ADMIN")
 
+
+                                /*
+                                 * Restaurante Cloud.
+                                 */
+                                .requestMatchers(
+                                        "/restaurante/dashboard",
+                                        "/restaurante/dashboard/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                .requestMatchers(
+                                        "/restaurante/mesero",
+                                        "/restaurante/mesero/**"
+                                )
+                                .hasAnyRole(
+                                        "ADMIN",
+                                        "MESERO"
+                                )
+
+                                .requestMatchers(
+                                        "/restaurante/api/**"
+                                )
+                                .hasAnyRole(
+                                        "ADMIN",
+                                        "MESERO"
+                                )
+
                                 /*
                                  * Todas las pantallas administrativas
                                  * requieren rol ADMIN.

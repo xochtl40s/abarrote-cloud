@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Dashboard | Restaurante Cloud</title>
+
+    <link
+        rel="stylesheet"
+        th:href="@{/restaurante/restaurante.css}"
+        href="/restaurante/restaurante.css"
+    >
+</head>
+
+<body class="restaurant-body">
+
+<div class="restaurant-layout">
+
+    <aside class="restaurant-sidebar">
+
+        <a
+            class="restaurant-brand"
+            th:href="@{/restaurante/dashboard}"
+        >
+            <span class="restaurant-brand-icon">🍽️</span>
+
+            <span>
+                <strong>Restaurante</strong>
+                <small>Cloud</small>
+            </span>
+        </a>
+
+        <nav class="restaurant-navigation">
+
+            <a
+                class="active"
+                th:href="@{/restaurante/dashboard}"
+            >
+                <span>📊</span>
+                Dashboard
+            </a>
+
+            <a th:href="@{/restaurante/mesero}">
+                <span>📱</span>
+                Punto de venta
+            </a>
+
+            <a href="#mesas">
+                <span>🪑</span>
+                Mesas
+            </a>
+
+            <a href="#platillos">
+                <span>🍔</span>
+                Platillos
+            </a>
+
+            <a href="#ventas">
+                <span>🧾</span>
+                Ventas
+            </a>
+
+            <a href="#reportes">
+                <span>📈</span>
+                Reportes
+            </a>
+
+        </nav>
+
+        <form
+            class="restaurant-logout"
+            th:action="@{/logout}"
+            method="post"
+        >
+            <button type="submit">
+                Cerrar sesión
+            </button>
+        </form>
+
+    </aside>
+
+    <main class="restaurant-main">
+
+        <header class="restaurant-topbar">
+
+            <div>
+                <p class="restaurant-eyebrow">
+                    Panel administrativo
+                </p>
+
+                <h1 th:text="${tenantNombre}">
+                    Restaurante Cloud Principal
+                </h1>
+
+                <p class="restaurant-welcome">
+                    Bienvenido,
+                    <strong th:text="${usuarioNombre}">
+                        Administrador Restaurante
+                    </strong>
+                </p>
+            </div>
+
+            <a
+                class="restaurant-primary-button"
+                th:href="@{/restaurante/mesero}"
+            >
+                Abrir terminal mesero
+            </a>
+
+        </header>
+
+        <section class="restaurant-kpi-grid">
+
+            <article class="restaurant-kpi-card">
+                <div class="restaurant-kpi-icon green">
+                    💰
+                </div>
+
+                <div>
+                    <span>Ventas de hoy</span>
+
+                    <strong
+                        th:text="${'$' + #numbers.formatDecimal(ventasDia, 1, 'COMMA', 2, 'POINT')}"
+                    >
+                        $0.00
+                    </strong>
+                </div>
+            </article>
+
+            <article class="restaurant-kpi-card">
+                <div class="restaurant-kpi-icon orange">
+                    🧾
+                </div>
+
+                <div>
+                    <span>Cuentas cobradas</span>
+
+                    <strong th:text="${ticketsDia}">
+                        0
+                    </strong>
+                </div>
+            </article>
+
+            <article class="restaurant-kpi-card">
+                <div class="restaurant-kpi-icon purple">
+                    🍳
+                </div>
+
+                <div>
+                    <span>Pedidos abiertos</span>
+
+                    <strong th:text="${pedidosAbiertos}">
+                        0
+                    </strong>
+                </div>
+            </article>
+
+            <article class="restaurant-kpi-card">
+                <div class="restaurant-kpi-icon red">
+                    🪑
+                </div>
+
+                <div>
+                    <span>Mesas ocupadas</span>
+
+                    <strong>
+                        <span th:text="${mesasOcupadas}">0</span>
+                        /
+                        <span th:text="${totalMesas}">10</span>
+                    </strong>
+                </div>
+            </article>
+
+            <article class="restaurant-kpi-card">
+                <div class="restaurant-kpi-icon blue">
+                    🎫
+                </div>
+
+                <div>
+                    <span>Ticket promedio</span>
+
+                    <strong
+                        th:text="${'$' + #numbers.formatDecimal(ticketPromedio, 1, 'COMMA', 2, 'POINT')}"
+                    >
+                        $0.00
+                    </strong>
+                </div>
+            </article>
+
+            <article class="restaurant-kpi-card">
+                <div class="restaurant-kpi-icon cyan">
+                    🍽️
+                </div>
+
+                <div>
+                    <span>Platillos disponibles</span>
+
+                    <strong th:text="${platillosDisponibles}">
+                        0
+                    </strong>
+                </div>
+            </article>
+
+        </section>
+
+        <section
+            id="mesas"
+            class="restaurant-panel"
+        >
+
+            <div class="restaurant-panel-header">
+                <div>
+                    <p class="restaurant-eyebrow">
+                        Operación
+                    </p>
+
+                    <h2>Estado de mesas</h2>
+                </div>
+
+                <span class="restaurant-live-badge">
+                    ● Tiempo real
+                </span>
+            </div>
+
+            <div class="restaurant-table-grid">
+
+                <article
+                    class="restaurant-table-card"
+                    th:each="mesa : ${mesas}"
+                    th:classappend="${
+                        #strings.equals(
+                            mesa.estado,
+                            'OCUPADA'
+                        )
+                    } ? ' occupied' :
+                    (${
+                        #strings.equals(
+                            mesa.estado,
+                            'RESERVADA'
+                        )
+                    } ? ' reserved' : ' free')"
+                >
+
+                    <div class="restaurant-table-number">
+                        <span>🪑</span>
+                        <strong th:text="${mesa.numero}">
+                            1
+                        </strong>
+                    </div>
+
+                    <h3 th:text="${mesa.nombre}">
+                        Mesa 1
+                    </h3>
+
+                    <p>
+                        Capacidad:
+                        <span th:text="${mesa.capacidad}">
+                            4
+                        </span>
+                        personas
+                    </p>
+
+                    <span
+                        class="restaurant-table-status"
+                        th:text="${mesa.estado}"
+                    >
+                        LIBRE
+                    </span>
+
+                </article>
+
+            </div>
+        </section>
+
+        <section
+            id="platillos"
+            class="restaurant-panel"
+        >
+
+            <div class="restaurant-panel-header">
+                <div>
+                    <p class="restaurant-eyebrow">
+                        Catálogo inicial
+                    </p>
+
+                    <h2>Platillos disponibles</h2>
+                </div>
+            </div>
+
+            <div class="restaurant-product-grid">
+
+                <article
+                    class="restaurant-product-card"
+                    th:each="platillo : ${platillos}"
+                >
+
+                    <div class="restaurant-product-picture">
+                        🍴
+                    </div>
+
+                    <div class="restaurant-product-content">
+
+                        <span
+                            class="restaurant-product-category"
+                            th:text="${platillo.categoria}"
+                        >
+                            Bebidas
+                        </span>
+
+                        <h3 th:text="${platillo.nombre}">
+                            Refresco
+                        </h3>
+
+                        <p th:text="${platillo.codigo}">
+                            BEB-002
+                        </p>
+
+                        <div class="restaurant-product-footer">
+
+                            <strong
+                                th:text="${'$' + #numbers.formatDecimal(platillo.precio, 1, 'COMMA', 2, 'POINT')}"
+                            >
+                                $35.00
+                            </strong>
+
+                            <span
+                                th:classappend="${
+                                    platillo.disponible
+                                } ? ' available' : ' unavailable'"
+                                th:text="${
+                                    platillo.disponible
+                                } ? 'Disponible' : 'No disponible'"
+                            >
+                                Disponible
+                            </span>
+
+                        </div>
+                    </div>
+
+                </article>
+
+            </div>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>
